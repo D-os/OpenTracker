@@ -148,7 +148,6 @@ MountMenu::AddDynamicItem(add_state)
 	autoMounter->CheckVolumesNow();
 	autoMounter->EachPartition(&AddOnePartitionAsMenuItem, &params);
 
-
 #ifdef SHOW_NETWORK_VOLUMES
 
 	// iterate the volume roster and look for volumes with the
@@ -199,8 +198,8 @@ MountMenu::AddDynamicItem(add_state)
 	SetTargetForItems(be_app);
 	
 	if (rescanItem)
-		rescanItem->SetTarget(dynamic_cast<TTracker*>(be_app)->AutoMounterLoop());
-	
+		rescanItem->SetTarget(autoMounter);
+
 	return false;
 #else
 	return true;

@@ -61,7 +61,6 @@ All rights reserved.
 #include "Attributes.h"
 #include "AttributeStream.h"
 #include "AutoLock.h"
-#include "AutoMounter.h"
 #include "BackgroundImage.h"
 #include "Bitmaps.h"
 #include "Commands.h"

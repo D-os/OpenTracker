@@ -46,7 +46,6 @@ All rights reserved.
 
 #include "Attributes.h"
 #include "AutoLock.h"
-#include "AutoMounter.h"
 #include "BackgroundImage.h"
 #include "Commands.h"
 #include "DesktopPoseView.h"

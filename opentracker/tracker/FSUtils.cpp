@@ -65,7 +65,6 @@ All rights reserved.
 #include <VolumeRoster.h>
 
 #include "Attributes.h"
-#include "AutoMounter.h"
 #include "Bitmaps.h"
 #include "Commands.h"
 #include "FSUtils.h"
