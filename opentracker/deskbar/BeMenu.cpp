@@ -178,11 +178,11 @@ TBeMenu::AddNextItem()
 	TrackingHookData *data = fBarView->GetTrackingHookData();
 	if (fAddState == kAddingRecents) {
 		const char *recentTitle[] = {"Recent Documents", "Recent Folders", "Recent Applications"};
-		const int recentType[] = {0,2,1};
-		int recentTypes = 3;
-		TRecentsMenu *recentItem[3];
+		const int recentType[] = {kRecentDocuments, kRecentFolders, kRecentApplications};
+		const int recentTypes = 3;
+		TRecentsMenu *recentItem[recentTypes];
 		int count = 0;
-		
+
 		for (int i = 0; i < recentTypes; i++) {
 			recentItem[i] = new TRecentsMenu(recentTitle[i], fBarView, recentType[i]);
 			if (recentItem[i])
@@ -191,23 +191,23 @@ TBeMenu::AddNextItem()
 		if (count > 0) {
 			AddSeparatorItem();
 			
-			for(int i = 0;i < recentTypes;i++) {			
+			for (int i = 0;i < recentTypes;i++) {			
 				if (!recentItem[i])
 					continue;
-					
+
 				if (recentItem[i]->RecentsCount() > 0) {
 					recentItem[i]->SetTypesList(TypesList());
 					recentItem[i]->SetTarget(Target());
 					AddItem(recentItem[i]);
 				}
-				
+
 				if (data && fBarView && fBarView->Dragging()) {
 					recentItem[i]->InitTrackingHook(data->fTrackingHook,
 						&data->fTarget, data->fDragMessage);
 				}
 			}
 		}
-		
+
 		AddSeparatorItem();
 		fAddState = kAddingBeMenu;
 		return true;
@@ -477,26 +477,33 @@ TBeMenu::ScreenLocation()
 //
 
 
-TRecentsMenu::TRecentsMenu(const char *name, TBarView *bar, int32 which)
+TRecentsMenu::TRecentsMenu(const char *name, TBarView *bar, int32 which, const char *signature)
 	: BNavMenu(name, B_REFS_RECEIVED, BMessenger(kTrackerSignature)),
 	fWhich(which),
+	fSignature(NULL),
 	fRecentsCount(0),
 	fItemIndex(0),
 	fBarView(bar)
 {
 	TBarApp *app = dynamic_cast<TBarApp *>(be_app);
-	if (app) {
-		switch (which) {
-			case kRecentDocuments:
-				fRecentsCount = app->Settings()->recentDocsCount;
-				break;
-			case kRecentApplications:
-				fRecentsCount = app->Settings()->recentAppsCount;
-				break;
-			case kRecentFolders:
-				fRecentsCount = app->Settings()->recentFoldersCount;
-				break;
-		}
+	if (app == NULL)
+		return;
+
+	switch (which) {
+		case kRecentDocuments:
+			fRecentsCount = app->Settings()->recentDocsCount;
+			break;
+		case kRecentApplications:
+			fRecentsCount = app->Settings()->recentAppsCount;
+			break;
+		case kRecentAppDocuments:
+			fRecentsCount = app->Settings()->recentDocsCount;
+			if (signature != NULL)
+				fSignature = strdup(signature);
+			break;
+		case kRecentFolders:
+			fRecentsCount = app->Settings()->recentFoldersCount;
+			break;
 	}
 }
 
@@ -550,22 +557,25 @@ TRecentsMenu::AddRecents(int32 count)
 	if (fItemIndex == 0) {
 		fRecentList.MakeEmpty();
 		BRoster roster;
-		
-		switch(fWhich) {
+
+		switch (fWhich) {
 			case kRecentDocuments:
 				roster.GetRecentDocuments(&fRecentList, count);
 				break;
 			case kRecentApplications:
 				roster.GetRecentApps(&fRecentList, count);
 				break;
+			case kRecentAppDocuments:
+				roster.GetRecentDocuments(&fRecentList, count, NULL, fSignature);
+				break;
 			case kRecentFolders:
 				roster.GetRecentFolders(&fRecentList, count);
 				break;
 			default:
 				return false;
-				break;
 		}
 	}
+
 	for (;;) {
 		entry_ref ref;
 		if (fRecentList.FindRef("refs", fItemIndex++, &ref) != B_OK)
@@ -573,17 +583,45 @@ TRecentsMenu::AddRecents(int32 count)
 
 		if (ref.name && strlen(ref.name) > 0) {
 			Model model(&ref, true);
-			ModelMenuItem *item = BNavMenu::NewModelItem(&model,
+
+			if (fWhich != kRecentApplications) {
+				ModelMenuItem *item = BNavMenu::NewModelItem(&model,
 					new BMessage(B_REFS_RECEIVED),
 					Target(), false, NULL, TypesList());
-	
-			if (item) {
-				AddItem(item);
 
-				//	return true so that we know to reenter this list
-				return true;
+				if (item)
+					AddItem(item);
+			} else {
+				// The application items expand to a list of recent documents
+				// for that application - so they must be handled extra
+				BFile file(&ref, B_READ_ONLY);
+				char signature[B_MIME_TYPE_LENGTH];
+
+				BAppFileInfo appInfo(&file);
+				if (appInfo.InitCheck() != B_OK
+					|| appInfo.GetSignature(signature) != B_OK)
+					continue;
+
+				// create recents menu that will contain the recent docs of this app
+				TRecentsMenu *docs = new TRecentsMenu(ref.name, fBarView,
+					kRecentAppDocuments, signature);
+				docs->SetTypesList(TypesList());
+				docs->SetTarget(Target());
+
+				ModelMenuItem *item = new ModelMenuItem(&model, docs);
+				if (item)
+				{
+					// add refs-message sothat recent app can be launched
+					BMessage *msg = new BMessage(B_REFS_RECEIVED);
+					msg->AddRef("refs", &ref);
+					item->SetMessage(msg);
+					item->SetTarget(Target());
+
+					AddItem(item);
+				}
 			}
-			
+
+			//	return true so that we know to reenter this list
 			return true;
 		}
 	}

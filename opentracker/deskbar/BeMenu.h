@@ -32,22 +32,25 @@ names are registered trademarks or trademarks of their respective holders.
 All rights reserved.
 */
 
-#ifndef __BE_MENU__
-#define __BE_MENU__
+#ifndef _BE_MENU_H_
+#define _BE_MENU_H_
+
 
 #include "NavMenu.h"
+
 
 class TBarView;
 
 enum recent_type {
-	kRecentDocuments = 0,
-	kRecentApplications = 1,
-	kRecentFolders = 2
+	kRecentDocuments	= 0,
+	kRecentApplications,
+	kRecentFolders,
+	kRecentAppDocuments
 };
 
 class TRecentsMenu : public BNavMenu {
 	public:
-		TRecentsMenu(const char *name, TBarView *bar, int32 which);
+		TRecentsMenu(const char *name, TBarView *bar, int32 which, const char *signature = NULL);
 
 		void			DetachedFromWindow();
 		void			ResetTargets();
@@ -63,6 +66,7 @@ class TRecentsMenu : public BNavMenu {
 
 	private:		
 		int32			fWhich;
+		const char		*fSignature;
 		int32			fRecentsCount;
 
 		int32 			fItemIndex;
@@ -81,8 +85,8 @@ TRecentsMenu::RecentsCount()
 
 class TBeMenu : public BNavMenu {
 	public:
-						TBeMenu(TBarView *bar);
-						
+		TBeMenu(TBarView *bar);
+
 		void			AttachedToWindow();
 		void			DetachedFromWindow();
 
@@ -97,7 +101,7 @@ class TBeMenu : public BNavMenu {
 		};
 	protected:
 		BPoint			ScreenLocation();
-		
+
 		bool			AddStandardBeMenuItems();
 
 	private:		
@@ -108,7 +112,7 @@ class TBeMenu : public BNavMenu {
 
 		//	to keep track of the menu building state
 		State 			fAddState;	
-		TBarView*		fBarView;
+		TBarView		*fBarView;
 };
 
-#endif
+#endif	/* _BE_MENU_H_ */
