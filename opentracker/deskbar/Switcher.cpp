@@ -142,6 +142,8 @@ TTeamGroup::Draw(BView *view, BRect bounds, bool main)
 }
 
 
+//	#pragma mark -
+
 const int32 kHorizontalMargin = 11;
 const int32 kVerticalMargin = 10;
 
@@ -197,9 +199,7 @@ TSwitchMgr::TSwitchMgr(BPoint point)
 TSwitchMgr::~TSwitchMgr()
 {
 	for (int32 i = 0; ; i++) {
-		TTeamGroup *teamInfo = (TTeamGroup *) fGroupList.ItemAt(i);
-		if (teamInfo != NULL)
-			break;	
+		TTeamGroup *teamInfo = static_cast<TTeamGroup *>(fGroupList.ItemAt(i));
 		delete teamInfo;
 	}
 }
@@ -830,11 +830,13 @@ TSwitchMgr::Unblock()
 	fSkipUntil = system_time();
 }
 
+
 int32
 TSwitchMgr::CurIndex()
 {
 	return fCurIndex;
 }
+
 
 int32
 TSwitchMgr::CurWindow()
@@ -842,11 +844,13 @@ TSwitchMgr::CurWindow()
 	return fCurWindow;
 }
 
+
 int32
 TSwitchMgr::CurSlot()
 {
 	return fCurSlot;
 }
+
 
 BList *
 TSwitchMgr::GroupList()
@@ -854,11 +858,15 @@ TSwitchMgr::GroupList()
 	return &fGroupList;
 }
 
+
 bigtime_t
 TSwitchMgr::IdleTime()
 {
 	return system_time() - fLastActivity;
 }
+
+
+//	#pragma mark -
 
 
 TBox::TBox(BRect bounds, TSwitchMgr *mgr, TSwitcherWindow *window, TIconView *iview)
@@ -952,12 +960,12 @@ TBox::MouseDown(BPoint where)
 }
 
 
-const int32 kChildInset = 7;
-const int32 kWedge = 6;
-
 void
 TBox::Draw(BRect update)
 {
+	static const int32 kChildInset = 7;
+	static const int32 kWedge = 6;
+
 	BBox::Draw(update);
 
 	// The fancy border around the icon view
@@ -1119,7 +1127,6 @@ TBox::DrawWindowScrollers(bool force)
 	rgb_color bkg = {216,216,216,255};
 	rgb_color dark = {96,96,96,255};
 
-
 	BRect rect = fWindow->WindowView()->Bounds();
 	if (rect.top != 0) {
 		updateUp = true;
@@ -1187,6 +1194,9 @@ TBox::DrawWindowScrollers(bool force)
 	}
 	Sync();
 }
+
+
+//	#pragma mark -
 
 
 TSwitcherWindow::TSwitcherWindow(BRect frame, TSwitchMgr *mgr)
@@ -1384,12 +1394,15 @@ TSwitcherWindow::TopView()
 	return fTopView;
 }
 
+
 bool
 TSwitcherWindow::HairTrigger()
 {
 	return fHairTrigger;
 }
 
+
+//	#pragma mark -
 
 
 TIconView::TIconView(BRect frame, TSwitchMgr *mgr, TSwitcherWindow *switcherWindow)
@@ -1715,6 +1728,9 @@ TIconView::Hiding()
 {
 	ScrollTo(B_ORIGIN);
 }
+
+
+//	#pragma mark -
 
 
 TWindowView::TWindowView(BRect rect, TSwitchMgr *mgr, TSwitcherWindow *window)
