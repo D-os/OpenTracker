@@ -2,9 +2,9 @@
 #
 # Helper rules without side effects.
 
-rule Filter
+rule FFilter
 {
-	# Filter <list> : <excludes> ;
+	# FFilter <list> : <excludes> ;
 	#
 	# Removes all occurrences of <excludes> in <list>.
 
