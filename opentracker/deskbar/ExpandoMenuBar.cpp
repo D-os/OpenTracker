@@ -424,14 +424,14 @@ TExpandoMenuBar::AddTeam(BList *team, BBitmap *icon, char *name, char *sig)
 			firstApp++;
 		}
 		int32 count = CountItems();
-		for (int32 i = firstApp; i < count; i++) {
-			if (strcasecmp(static_cast<TTeamMenuItem *>(ItemAt(i))->Name(), name) > 0) {
+		for (int32 i = firstApp; i <= count; i++) {
+			if (i == count) {
+				AddItem(new TTeamMenuItem(team, icon, name, sig,
+					itemWidth, itemHeight, fDrawLabel, fVertical));
+			} else if (strcasecmp(static_cast<TTeamMenuItem *>(ItemAt(i))->Name(), name) > 0) {
 				AddItem(new TTeamMenuItem(team, icon, name, sig,
 					itemWidth, itemHeight, fDrawLabel, fVertical), i);
 				break;
-			} else if (i == (count - 1)) {
-				AddItem(new TTeamMenuItem(team, icon, name, sig,
-					itemWidth, itemHeight, fDrawLabel, fVertical));
 			}
 		}
 	} else {
