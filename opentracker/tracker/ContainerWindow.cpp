@@ -2399,7 +2399,13 @@ void
 BContainerWindow::BuildAddOnMenu(BMenu *menu)
 {
 	BMenuItem *item = menu->FindItem(kAddOnsMenuName);
-	if (!item)
+	if (menu->IndexOf(item) == 0) {
+		// the folder of the context menu seems to be named "Add-Ons"
+		// so we just take the last menu item, which is correct if not
+		// build with debug option
+		item = menu->ItemAt(menu->CountItems() - 1);
+	}
+	if (item == NULL)
 		return;
 
 	menu = item->Submenu();
