@@ -13,19 +13,6 @@
 #include <ctype.h>
 
 
-struct input_context {
-	input_context(bool ignorePunctuation)
-		:
-		double_char(0),
-		ignore_punctuation(ignorePunctuation)
-	{
-	}
-
-	uint32	double_char;
-	bool	ignore_punctuation;
-};
-
-
 // conversion array for character ranges 192 - 223 & 224 - 255
 static const uint8 kNoDiacrits[] = {
 	'a','a','a','a','a','a','a',
@@ -42,6 +29,7 @@ static const uint8 kNoDiacrits[] = {
 	254,	// thorn
 	'y'
 };
+
 
 static inline uint32
 getPrimaryChar(uint32 c)
@@ -61,55 +49,13 @@ getPrimaryChar(uint32 c)
 }
 
 
-/** This returns the next Unicode character from the UTF-8 encoded
- *	input string, and bumps it to the next character.
- *	It will ignore punctuation if specified by the context, and
- *	might substitute characters if needed.
- */
-
-static inline uint32
-getNextChar(const char **string, input_context &context)
+BCollatorAddOn::input_context::input_context(bool ignorePunctuation)
+	:
+	ignore_punctuation(ignorePunctuation),
+	next_char(0),
+	reserved1(0),
+	reserved2(0)
 {
-	uint32 c = context.double_char;
-	if (c != 0) {
-		context.double_char = 0;
-		return c;
-	}
-
-	do {
-		c = BUnicodeChar::FromUTF8(string);
-	} while (context.ignore_punctuation
-		&& (BUnicodeChar::IsPunctuation(c) || BUnicodeChar::IsSpace(c)));
-
-	if (c == 223) {
-		context.double_char = 's';
-		return 's';
-	}
-
-	return c;
-}
-
-
-/** Fills the specified buffer with the primary sort key. The buffer
- *	has to be long enough to hold the key.
- *	It returns the position in the buffer immediately after the key;
- *	it does not add a terminating null byte!
- */
-
-static char *
-putPrimarySortKey(const char *string, char *buffer, int32 length, bool ignorePunctuation)
-{
-	input_context context(ignorePunctuation);
-
-	uint32 c;
-	for (int32 i = 0; (c = getNextChar(&string, context)) != 0 && i < length; i++) {
-		if (c < 0x80)
-			*buffer++ = tolower(c);
-		else
-			BUnicodeChar::ToUTF8(getPrimaryChar(c), &buffer);
-	}
-
-	return buffer;
 }
 
 
@@ -283,25 +229,85 @@ BCollatorAddOn::~BCollatorAddOn()
 }
 
 
+/** This returns the next Unicode character from the UTF-8 encoded
+ *	input string, and bumps it to the next character.
+ *	It will ignore punctuation if specified by the context, and
+ *	might substitute characters if needed.
+ */
+
+uint32
+BCollatorAddOn::GetNextChar(const char **string, input_context &context)
+{
+	uint32 c = context.next_char;
+	if (c != 0) {
+		context.next_char = 0;
+		return c;
+	}
+
+	do {
+		c = BUnicodeChar::FromUTF8(string);
+	} while (context.ignore_punctuation
+		&& (BUnicodeChar::IsPunctuation(c) || BUnicodeChar::IsSpace(c)));
+
+	if (c == 223) {
+		context.next_char = 's';
+		return 's';
+	}
+
+	return c;
+}
+
+
+/** Fills the specified buffer with the primary sort key. The buffer
+ *	has to be long enough to hold the key.
+ *	It returns the position in the buffer immediately after the key;
+ *	it does not add a terminating null byte!
+ */
+
+char *
+BCollatorAddOn::PutPrimaryKey(const char *string, char *buffer, int32 length,
+	bool ignorePunctuation)
+{
+	input_context context(ignorePunctuation);
+
+	uint32 c;
+	for (int32 i = 0; (c = GetNextChar(&string, context)) != 0 && i < length; i++) {
+		if (c < 0x80)
+			*buffer++ = tolower(c);
+		else
+			BUnicodeChar::ToUTF8(getPrimaryChar(c), &buffer);
+	}
+
+	return buffer;
+}
+
+
+size_t 
+BCollatorAddOn::PrimaryKeyLength(size_t length)
+{
+	return length * 2;
+		// the primary key needs to make space for doubled characters (like 'ß')
+}
+
+
 void 
 BCollatorAddOn::GetSortKey(const char *string, BString *key, int8 strength,
 	bool ignorePunctuation)
 {
-	if (strength == B_COLLATE_QUATERNARY) {
+	if (strength >= B_COLLATE_QUATERNARY) {
 		// the difference between tertiary and quaternary collation strength
 		// are usually a different handling of punctuation characters
 		ignorePunctuation = false;
 	}
 
-	int32 length = strlen(string);
+	size_t length = strlen(string);
 
 	switch (strength) {
 		case B_COLLATE_PRIMARY:
 		{
-			char *begin = key->LockBuffer(length * 2);
-				// the primary key needs to make space for doubled characters (like 'ß')
+			char *begin = key->LockBuffer(PrimaryKeyLength(length));
 
-			char *end = putPrimarySortKey(string, begin, length, ignorePunctuation);
+			char *end = PutPrimaryKey(string, begin, length, ignorePunctuation);
 			*end = '\0';
 
 			key->UnlockBuffer(end - begin);
@@ -310,16 +316,16 @@ BCollatorAddOn::GetSortKey(const char *string, BString *key, int8 strength,
 
 		case B_COLLATE_SECONDARY:
 		{
-			char *begin = key->LockBuffer(length * 3 + 1);
+			char *begin = key->LockBuffer(PrimaryKeyLength(length) + length + 1);
 				// the primary key + the secondary key + separator char
 
-			char *buffer = putPrimarySortKey(string, begin, length, ignorePunctuation);
+			char *buffer = PutPrimaryKey(string, begin, length, ignorePunctuation);
 			*buffer++ = '\01';
 				// separator
 
 			input_context context(ignorePunctuation);
 			uint32 c;
-			for (int32 i = 0; (c = getNextChar(&string, context)) && i < length; i++) {
+			for (int32 i = 0; (c = GetNextChar(&string, context)) && i < length; i++) {
 				if (c < 0x80)
 					*buffer++ = tolower(c);
 				else
@@ -334,16 +340,16 @@ BCollatorAddOn::GetSortKey(const char *string, BString *key, int8 strength,
 		case B_COLLATE_TERTIARY:
 		case B_COLLATE_QUATERNARY:
 		{
-			char *begin = key->LockBuffer(length * 3 + 1);
+			char *begin = key->LockBuffer(PrimaryKeyLength(length) + length + 1);
 				// the primary key + the tertiary key + separator char
 
-			char *buffer = putPrimarySortKey(string, begin, length, ignorePunctuation);
+			char *buffer = PutPrimaryKey(string, begin, length, ignorePunctuation);
 			*buffer++ = '\01';
 				// separator
 
 			input_context context(ignorePunctuation);
 			uint32 c;
-			for (int32 i = 0; (c = getNextChar(&string, context)) && i < length; i++) {
+			for (int32 i = 0; (c = GetNextChar(&string, context)) && i < length; i++) {
 				BUnicodeChar::ToUTF8(c, &buffer);
 			}
 			*buffer = '\0';
@@ -364,7 +370,7 @@ int
 BCollatorAddOn::Compare(const char *a, const char *b, int32 length, int8 strength,
 	bool ignorePunctuation)
 {
-	if (strength == B_COLLATE_QUATERNARY) {
+	if (strength >= B_COLLATE_QUATERNARY) {
 		// the difference between tertiary and quaternary collation strength
 		// are usually a different handling of punctuation characters
 		ignorePunctuation = false;
@@ -377,8 +383,8 @@ BCollatorAddOn::Compare(const char *a, const char *b, int32 length, int8 strengt
 		case B_COLLATE_PRIMARY:
 		{
 			for (int32 i = 0; i < length; i++) {
-				uint32 charA = getNextChar(&a, contextA);
-				uint32 charB = getNextChar(&b, contextB);
+				uint32 charA = GetNextChar(&a, contextA);
+				uint32 charB = GetNextChar(&b, contextB);
 				if (charA == 0)
 					return charB == 0 ? 0 : -(int32)charB;
 				else if (charB == 0)
@@ -401,8 +407,8 @@ BCollatorAddOn::Compare(const char *a, const char *b, int32 length, int8 strengt
 				return compare;
 
 			for (int32 i = 0; i < length; i++) {
-				uint32 charA = BUnicodeChar::ToLower(getNextChar(&a, contextA));
-				uint32 charB = BUnicodeChar::ToLower(getNextChar(&b, contextB));
+				uint32 charA = BUnicodeChar::ToLower(GetNextChar(&a, contextA));
+				uint32 charB = BUnicodeChar::ToLower(GetNextChar(&b, contextB));
 
 				// the two strings does have the same size when we get here
 				if (charA == 0)
@@ -423,8 +429,8 @@ BCollatorAddOn::Compare(const char *a, const char *b, int32 length, int8 strengt
 				return compare;
 
 			for (int32 i = 0; i < length; i++) {
-				uint32 charA = getNextChar(&a, contextA);
-				uint32 charB = getNextChar(&b, contextB);
+				uint32 charA = GetNextChar(&a, contextA);
+				uint32 charB = GetNextChar(&b, contextB);
 
 				// the two strings does have the same size when we get here
 				if (charA == 0)
