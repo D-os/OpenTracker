@@ -54,7 +54,7 @@ BNumberFormatParameters::SetUseGrouping(bool useGrouping)
 bool
 BNumberFormatParameters::UseGrouping() const
 {
-	if (fFlags && USE_GROUPING_SET)
+	if (fFlags & USE_GROUPING_SET)
 		return fUseGrouping;
 	if (fParent)
 		return fParent->UseGrouping();
@@ -73,7 +73,7 @@ BNumberFormatParameters::SetSignPolicy(number_format_sign_policy policy)
 number_format_sign_policy
 BNumberFormatParameters::SignPolicy() const
 {
-	if (fFlags && SIGN_POLICY_SET)
+	if (fFlags & SIGN_POLICY_SET)
 		return fSignPolicy;
 	if (fParent)
 		return fParent->SignPolicy();
@@ -92,7 +92,7 @@ BNumberFormatParameters::SetBase(number_format_base base)
 number_format_base
 BNumberFormatParameters::Base() const
 {
-	if (fFlags && BASE_SET)
+	if (fFlags & BASE_SET)
 		return fBase;
 	if (fParent)
 		return fParent->Base();
@@ -111,7 +111,7 @@ BNumberFormatParameters::SetUseBasePrefix(bool useBasePrefix)
 bool
 BNumberFormatParameters::UseBasePrefix() const
 {
-	if (fFlags && USE_BASE_PREFIX_SET)
+	if (fFlags & USE_BASE_PREFIX_SET)
 		return fUseBasePrefix;
 	if (fParent)
 		return fParent->UseBasePrefix();
@@ -130,7 +130,7 @@ BNumberFormatParameters::SetMinimalIntegerDigits(size_t minIntegerDigits)
 size_t
 BNumberFormatParameters::MinimalIntegerDigits() const
 {
-	if (fFlags && MINIMAL_INTEGER_DIGITS_SET)
+	if (fFlags & MINIMAL_INTEGER_DIGITS_SET)
 		return fMinimalIntegerDigits;
 	if (fParent)
 		return fParent->MinimalIntegerDigits();
