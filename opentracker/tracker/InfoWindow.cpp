@@ -179,10 +179,9 @@ BInfoWindow::BInfoWindow(Model *model, int32 group_index, LockingList<BWindow> *
 
 	AddShortcut('E', 0, new BMessage(kEditItem));
 	AddShortcut('O', 0, new BMessage(kOpenSelection));
-	AddShortcut('T', 0, new BMessage(kMoveToTrash));
 	AddShortcut('U', 0, new BMessage(kUnmountVolume));
 	AddShortcut('P', 0, new BMessage(kPermissionsSelected));
-	
+
 	Run();
 }
 
@@ -433,42 +432,21 @@ BInfoWindow::MessageReceived(BMessage *message)
 
 		case kUnmountVolume:
 			// Sanity check that this isn't the boot volume
-			// (The unmount menu item should have been disabled anyways)
+			// (The unmount menu item has been disabled in this
+			// case, but the shortcut is still active)
 			if (fModel->IsVolume()) {
 				BVolume boot;
 				BVolumeRoster().GetBootVolume(&boot);
 				BVolume volume(fModel->NodeRef()->device);
 				if (volume != boot) {
 					dynamic_cast<TTracker*>(be_app)->SaveAllPoseLocations();
-	
+
 					BMessage unmountMessage(kUnmountVolume);
 					unmountMessage.AddInt32("device_id", volume.Device());
 					be_app->PostMessage(&unmountMessage);
 				}
 			}
 			break;
-
-		case kDelete:
-		{
-			// ToDo: this could probably be removed completely!
-			BEntry entry(fModel->EntryRef());
-			if (entry.InitCheck() && ConfirmChangeIfWellKnownDirectory(&entry, "delete"))
-				FSDelete(new entry_ref(*fModel->EntryRef()), true);
-			break;
-		}
-
-		case kMoveToTrash:
-		{
-			BEntry entry(fModel->EntryRef());
-			if (entry.InitCheck() == B_OK
-				&& ConfirmChangeIfWellKnownDirectory(&entry, "remove")) {
-				if (modifiers() & B_SHIFT_KEY)
-					FSDelete(new entry_ref(*fModel->EntryRef()), true);
-				else
-					FSMoveEntryToTrash(&entry, NULL);
-			}
-			break;
-		}
 
 		case kEmptyTrash: 
 			FSEmptyTrash();
@@ -1835,12 +1813,12 @@ AttributeView::WindowActivated(bool isFocus)
 	if (!isFocus) {
 		if (fTitleEditView != NULL)
 			FinishEditingTitle(true);
-			
+
 		if (fPathWindow->Lock()) {
 			fPathWindow->Quit();
 			fPathWindow = NULL;
 		}
-		
+
 		if (fLinkWindow->Lock()) {
 			fLinkWindow->Quit();
 			fLinkWindow = NULL;
@@ -1914,8 +1892,8 @@ AttributeView::BuildContextMenu(BMenu *parent)
 
 	if (!FSIsTrashDir(&entry)) {
 		parent->AddItem(new BMenuItem("Edit Name", new BMessage(kEditItem), 'E'));
+		parent->AddSeparatorItem();
 		if (fModel->IsVolume()) {
-			parent->AddSeparatorItem();
 			BMenuItem *item;
 			parent->AddItem(item = new BMenuItem("Unmount", new BMessage(kUnmountVolume), 'U'));
 			// volume model, enable/disable the Unmount item
@@ -1925,12 +1903,8 @@ AttributeView::BuildContextMenu(BMenu *parent)
 			volume.SetTo(fModel->NodeRef()->device);
 			if (volume == boot)
 				item->SetEnabled(false);
-			
-		} else {
-			parent->AddItem(new BMenuItem("Move to Trash", new BMessage(kMoveToTrash), 'T'));
-			parent->AddSeparatorItem();
+		} else
 			parent->AddItem(new BMenuItem("Identify", new BMessage(kIdentifyEntry)));
-		}
 	} else if (FSIsTrashDir(&entry)) 
 		parent->AddItem(new BMenuItem("Empty Trash", new BMessage(kEmptyTrash)));
 	
