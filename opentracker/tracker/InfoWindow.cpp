@@ -272,7 +272,7 @@ BInfoWindow::MessageReceived(BMessage *message)
 		case kRestoreState: 
 			Show();
 			break;
-		
+
 		case kOpenSelection:
 		{
 			BMessage refsMessage(B_REFS_RECEIVED);
@@ -284,7 +284,7 @@ BInfoWindow::MessageReceived(BMessage *message)
 			be_app->PostMessage(&refsMessage);
 			break;
 		}
-		
+
 		case kEditItem:
 		{
 			BEntry entry(fModel->EntryRef());
@@ -292,7 +292,7 @@ BInfoWindow::MessageReceived(BMessage *message)
 				fAttributeView->BeginEditingTitle();
 			break;
 		}
-		
+
 		case kIdentifyEntry:
 		{
 			bool force = (modifiers() & B_OPTION_KEY) != 0;
@@ -304,7 +304,7 @@ BInfoWindow::MessageReceived(BMessage *message)
 			}
 			break;
 		}
-		
+
 		case kRecalculateSize:
 		{
 			fStopCalc = true;
@@ -322,12 +322,18 @@ BInfoWindow::MessageReceived(BMessage *message)
 			
 			break;
 		}
-		
+
 		case kSetLinkTarget: 
 			OpenFilePanel(fModel->EntryRef());
 			break;
 
-		
+		// An item was dropped into the window
+		case B_SIMPLE_DATA:
+			// If we are not a SymLink, just ignore the request
+			if (!fModel->IsSymLink()) 
+				break;
+			// supposed to fall through
+
 		// An item was selected from the file panel
 		case kNewTargetSelected:
 		{
@@ -335,7 +341,7 @@ BInfoWindow::MessageReceived(BMessage *message)
 			BEntry targetEntry;
 			entry_ref ref;
 			BPath path;
-			
+
 			if (message->FindRef("refs", &ref) == B_OK
 				&& targetEntry.SetTo(&ref, true) == B_OK
 				&& targetEntry.Exists()) {
@@ -343,9 +349,9 @@ BInfoWindow::MessageReceived(BMessage *message)
 				// there's no way to change the target of an existing symlink.
 				// So we have to delete the old one and create a new one.
 				// First, stop watching the broken node (we don't want this window
-				// to quit with the node is removed.)
+				// to quit when the node is removed.)
 				stop_watching(this);
-				
+
 				// Get the parent
 				BDirectory parent;
 				BEntry tmpEntry(TargetModel()->EntryRef());
@@ -368,25 +374,25 @@ BInfoWindow::MessageReceived(BMessage *message)
 					AttributeStreamFileNode original(TargetModel()->Node());
 					memoryNode << original;
 				}
-				
+
 				// Delete the broken node.
 				BEntry oldEntry(TargetModel()->EntryRef());
 				oldEntry.Remove();
-				
+
 				// Create new node
 				BSymLink link;
 				parent.CreateSymLink(name.String(), targetPath.Path(), &link);
-				
+
 				// Update our Model()
 				BEntry symEntry(&parent, name.String());
 				fModel->SetTo(&symEntry);
 
 				BModelWriteOpener opener(TargetModel());
-				
+
 				// Copy the attributes back
 				AttributeStreamFileNode newNode(TargetModel()->Node());
 				newNode << memoryNode;
-				
+
 				// Start watching this again					
 				TTracker::WatchNode(TargetModel()->NodeRef(), B_WATCH_ALL | B_WATCH_MOUNT, this);
 
