@@ -3016,7 +3016,7 @@ MostUsedNames::LoadList()
 
 	char line[B_FILE_NAME_LENGTH + 5];
 	while (fgets(line,sizeof(line),file) != NULL) {
-		int32 length = strlen(line) - 1;
+		int32 length = (int32)strlen(line) - 1;
 		if (length >= 0 && line[length] == '\n')
 			line[length] = '\0';
 
