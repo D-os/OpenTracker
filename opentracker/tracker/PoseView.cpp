@@ -1104,8 +1104,8 @@ class AutoLockingMessenger {
 	//
 	// Also, this class represents the entire BMessenger, not just it's
 	// autolocker (unlike MessengerAutoLocker)
-public:
-	AutoLockingMessenger(const BMessenger &target, bool lockLater = false)
+	public:
+		AutoLockingMessenger(const BMessenger &target, bool lockLater = false)
 		:	messenger(target),
 			hasLock(false)
 		{
@@ -1113,7 +1113,7 @@ public:
 				hasLock = messenger.LockTarget();
 		}
 
-	~AutoLockingMessenger()
+		~AutoLockingMessenger()
 		{
 			if (hasLock) {
 				BLooper *looper;
@@ -1122,19 +1122,21 @@ public:
 				looper->Unlock();
 			}
 		}
-	
-	bool Lock()
+
+		bool Lock()
 		{
 			if (!hasLock)
 				hasLock = messenger.LockTarget();
 
 			return hasLock;				
 		}
-		
-	bool IsLocked() const
-		{ return hasLock; }
-		
-	void Unlock()
+
+		bool IsLocked() const
+		{
+			return hasLock;
+		}
+
+		void Unlock()
 		{
 			if (hasLock) {
 				BLooper *looper;
@@ -1144,26 +1146,28 @@ public:
 				hasLock = false;
 			}
 		}
-	
-	BLooper *Looper() const
+
+		BLooper *Looper() const
 		{
 			BLooper *looper;
 			messenger.Target(&looper);
 			return looper;
 		}
 
-	BHandler *Handler() const
+		BHandler *Handler() const
 		{
 			ASSERT(hasLock);
 			return messenger.Target(0);
 		}
 
-	BMessenger Target() const
-		{ return messenger; }
-		
-private:
-	BMessenger messenger;
-	bool hasLock;
+		BMessenger Target() const
+		{
+			return messenger;
+		}
+
+	private:
+		BMessenger messenger;
+		bool hasLock;
 };
 
 
@@ -2855,7 +2859,7 @@ BPoseView::NewFileFromTemplate(const BMessage *message)
 
 	entry_ref destEntryRef;
 	node_ref destNodeRef;
-	
+
 	BDirectory destDir(TargetModel()->NodeRef());
 	if (destDir.InitCheck() != B_OK)
 		return;
@@ -2863,7 +2867,7 @@ BPoseView::NewFileFromTemplate(const BMessage *message)
 	char fileName[B_FILE_NAME_LENGTH] = "New ";
 	strcat(fileName, message->FindString("name"));
 	FSMakeOriginalName(fileName, &destDir, " copy");
-	
+
 	entry_ref srcRef;
 	message->FindRef("refs_template", &srcRef);
 	
@@ -2878,13 +2882,13 @@ BPoseView::NewFileFromTemplate(const BMessage *message)
 	} else {
 		BFile srcFile(&srcRef, B_READ_ONLY);
 		BFile destFile(&destDir, fileName, B_READ_WRITE | B_CREATE_FILE);
-	
+
 		// copy the data from the template file
 		char *buffer = new char[1024];
 		ssize_t result;
 		do {
 			result = srcFile.Read(buffer, 1024);
-		
+
 			if (result > 0) {
 				ssize_t written = destFile.Write(buffer, (size_t)result);
 				if (written != result)
@@ -2894,17 +2898,19 @@ BPoseView::NewFileFromTemplate(const BMessage *message)
 		delete[] buffer;
 	}
 
+	// todo: create an UndoItem
+
 	// copy the attributes from the template file
 	BNode srcNode(&srcRef);
 	BNode destNode(&destDir, fileName);
 	FSCopyAttributesAndStats(&srcNode, &destNode);
-	
+
 	BEntry entry(&destDir, fileName);
 	entry.GetRef(&destEntryRef);
 
 	// try to place new item at click point or under mouse if possible
 	PlaceFolder(&destEntryRef, message);
-	
+
 	if (dir.InitCheck() == B_OK) {
 		// special-case directories - start renaming them
 		int32 index;
@@ -2921,11 +2927,11 @@ BPoseView::NewFileFromTemplate(const BMessage *message)
 		// open the corresponding application
 		BMessage openMessage(B_REFS_RECEIVED);
 		openMessage.AddRef("refs", &destEntryRef);
-	
+
 		// add a messenger to the launch message that will be used to
 		// dispatch scripting calls from apps to the PoseView
 		openMessage.AddMessenger("TrackerViewToken", BMessenger(this));
-	
+
 		if (fSelectionHandler)
 			fSelectionHandler->PostMessage(&openMessage);
 	}
@@ -2942,9 +2948,9 @@ BPoseView::NewFolder(const BMessage *message)
 
 	if (FSCreateNewFolderIn(TargetModel()->NodeRef(), &ref, &nodeRef) == B_OK) {
 		// try to place new folder at click point or under mouse if possible
-		
+
 		PlaceFolder(&ref, message);
-		
+
 		int32 index;
 		BPose *pose = EntryCreated(TargetModel()->NodeRef(), &nodeRef, ref.name, &index);
 		if (pose) {					
