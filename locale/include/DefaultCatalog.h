@@ -26,6 +26,10 @@ struct CatKey {
 		//   are identical otherwise (useful for the translator)
 	size_t fHashVal;
 		// the hash-value of fKey
+	uint32 fFlags;
+		// with respect to the catalog-editor, each translation can be
+		// in different states (empty, unchecked, checked, etc.).
+		// This state (and potential other flags) lives in the fFlags member.
 	CatKey(const char *str, const char *ctx, const char *cmt);
 	CatKey(uint32 id);
 	CatKey();
@@ -55,6 +59,8 @@ class DefaultCatalog : public BCatalogAddOn {
 		DefaultCatalog(const char *signature, const char *language,
 			int32 fingerprint);
 				// constructor for normal use
+		DefaultCatalog(entry_ref *appOrAddOnRef);
+				// constructor for embedded catalog
 		DefaultCatalog(const char *path, const char *signature, 
 			const char *language);
 				// constructor for editor-app
@@ -71,9 +77,13 @@ class DefaultCatalog : public BCatalogAddOn {
 		status_t SetString(uint32 id, const char *translated);
 		void UpdateFingerprint();
 
-		// interface for catalog-editor-app:
-		status_t ReadFromDisk(const char *path = NULL);
-		status_t WriteToDisk(const char *path = NULL);
+		// interface for catalog-editor-app (and testing apps):
+		status_t ReadFromFile(const char *path = NULL);
+		status_t ReadFromAttribute(entry_ref *appOrAddOnRef);
+		status_t ReadFromResource(entry_ref *appOrAddOnRef);
+		status_t WriteToFile(const char *path = NULL);
+		status_t WriteToAttribute(entry_ref *appOrAddOnRef);
+		status_t WriteToResource(entry_ref *appOrAddOnRef);
 		//
 		void MakeEmpty();
 		int32 CountItems() const;
@@ -82,17 +92,20 @@ class DefaultCatalog : public BCatalogAddOn {
 		static BCatalogAddOn *Instantiate(const char *signature,
 								const char *language,
 								int32 fingerprint);
+		static BCatalogAddOn *InstantiateEmbedded(entry_ref *appOrAddOnRef);
 		static BCatalogAddOn *Create(const char *signature,
 								const char *language);
 		static const uint8 DefaultCatalog::gDefaultCatalogAddOnPriority;
 
 	private:
+		status_t Flatten(BDataIO *dataIO);
+		status_t Unflatten(BDataIO *dataIO);
 		int32 ComputeFingerprint() const;
 		void UpdateAttributes(BFile& catalogFile);
 
 		typedef hash_map<CatKey, BString> CatMap;
-		CatMap fCatMap;
-		mutable BString fPath;
+		CatMap 				fCatMap;
+		mutable BString 	fPath;
 };
 
 
