@@ -535,7 +535,6 @@ IconCache::GetVolumeIcon(AutoLock<SimpleIconCache> *nodeCacheLocker,
 	// go for the default mime based icon
 	if (!entry || !entry->HaveIconBitmap(NORMAL_ICON_ONLY, size)) {
 		BVolume volume(model->NodeRef()->device);
-		dev_t device = model->NodeRef()->device;
 
 		if (volume.IsShared()) {
 			// Check if it's a network share and give it a special icon
