@@ -12,6 +12,19 @@
 #include <ctype.h>
 
 
+struct input_context {
+	input_context(bool ignorePunctuation)
+		:
+		next_char(0),
+		ignore_punctuation(ignorePunctuation)
+	{
+	}
+
+	uint32	next_char;
+	bool	ignore_punctuation;
+};
+
+
 static const char *kSignature = "application/x-vnd.locale-collator.deutsch-din2";
 
 // conversion array for character ranges 192 - 223 & 224 - 255
@@ -47,6 +60,68 @@ getPrimaryChar(uint32 c)
 
 	return BUnicodeChar::ToLower(c);
 }
+
+
+static inline uint32
+getNextChar(const char **string, input_context &context)
+{
+	uint32 c = context.next_char;
+	if (c != 0) {
+		context.next_char = 0;
+		return c;
+	}
+
+	do {
+		c = BUnicodeChar::FromUTF8(string);
+	} while (context.ignore_punctuation
+		&& (BUnicodeChar::IsPunctuation(c) || BUnicodeChar::IsSpace(c)));
+
+	switch (c) {
+		case 223:	// ÃŸ
+			context.next_char = 's';
+			return 's';
+		case 196:	// Ae
+			context.next_char = 'e';
+			return 'A';
+		case 214:	// Oe
+			context.next_char = 'e';
+			return 'O';
+		case 220:	// Ue
+			context.next_char = 'e';
+			return 'U';
+		case 228:	// ae
+			context.next_char = 'e';
+			return 'a';
+		case 246:	// oe
+			context.next_char = 'e';
+			return 'o';
+		case 252:	// ue
+			context.next_char = 'e';
+			return 'u';
+	}
+
+	return c;
+}
+
+
+static char *
+putPrimarySortKey(const char *string, char *buffer, int32 length, bool ignorePunctuation)
+{
+	input_context context(ignorePunctuation);
+
+	uint32 c;
+	for (int32 i = 0; (c = getNextChar(&string, context)) != 0 && i < length; i++) {
+		if (c < 0x80)
+			*buffer++ = tolower(c);
+		else
+			BUnicodeChar::ToUTF8(getPrimaryChar(c), &buffer);
+	}
+
+	return buffer;
+}
+
+
+//	#pragma mark -
 
 // ToDo: should probably override B_COLLATE_SECONDARY & B_COLLATE_TERTIARY,
 //		and not B_COLLATE_PRIMARY!
@@ -98,36 +173,76 @@ void
 CollatorDeutsch::GetSortKey(const char *string, BString *key, int8 strength,
 	bool ignorePunctuation)
 {
-	if (strength != B_COLLATE_PRIMARY) {
-		BCollatorAddOn::GetSortKey(string, key, strength, ignorePunctuation);
-		return;
+	if (strength == B_COLLATE_QUATERNARY) {
+		// the difference between tertiary and quaternary collation strength
+		// are usually a different handling of punctuation characters
+		ignorePunctuation = false;
 	}
 
 	int32 length = strlen(string);
-	char *buffer = key->LockBuffer(2 * length);
 
-	uint32 c;
-	for (int32 i = 0; (c = BUnicodeChar::FromUTF8(&string)) && i < length; i++) {
-		if (c < 0x80)
-			*buffer++ = tolower(c);
-		else if (c == (uint8)'Ä' || c == (uint8)'ä') {
-			*buffer++ = 'a';
-			*buffer++ = 'e';
-		} else if (c == (uint8)'Ö' || c == (uint8)'ö') {
-			*buffer++ = 'o';
-			*buffer++ = 'e';
-		} else if (c == (uint8)'Ü' || c == (uint8)'ü') {
-			*buffer++ = 'u';
-			*buffer++ = 'e';
-		} else if (c == (uint8)'ß') {
-			*buffer++ = 's';
-			*buffer++ = 's';
-		} else
-			BUnicodeChar::ToUTF8(getPrimaryChar(c), &buffer);
+	switch (strength) {
+		case B_COLLATE_PRIMARY:
+		{
+			char *begin = key->LockBuffer(length * 2);
+				// the primary key needs to make space for doubled characters (like 'ÃŸ')
+
+			char *end = putPrimarySortKey(string, begin, length, ignorePunctuation);
+			*end = '\0';
+
+			key->UnlockBuffer(end - begin);
+			break;
+		}
+
+		case B_COLLATE_SECONDARY:
+		{
+			char *begin = key->LockBuffer(length * 3 + 1);
+				// the primary key + the secondary key + separator char
+
+			char *buffer = putPrimarySortKey(string, begin, length, ignorePunctuation);
+			*buffer++ = '\01';
+				// separator
+
+			input_context context(ignorePunctuation);
+			uint32 c;
+			for (int32 i = 0; (c = getNextChar(&string, context)) && i < length; i++) {
+				if (c < 0x80)
+					*buffer++ = tolower(c);
+				else
+					BUnicodeChar::ToUTF8(BUnicodeChar::ToLower(c), &buffer);
+			}
+			*buffer = '\0';
+
+			key->UnlockBuffer(buffer - begin);
+			break;
+		}
+
+		case B_COLLATE_TERTIARY:
+		case B_COLLATE_QUATERNARY:
+		{
+			char *begin = key->LockBuffer(length * 3 + 1);
+				// the primary key + the tertiary key + separator char
+
+			char *buffer = putPrimarySortKey(string, begin, length, ignorePunctuation);
+			*buffer++ = '\01';
+				// separator
+
+			input_context context(ignorePunctuation);
+			uint32 c;
+			for (int32 i = 0; (c = getNextChar(&string, context)) && i < length; i++) {
+				BUnicodeChar::ToUTF8(c, &buffer);
+			}
+			*buffer = '\0';
+
+			key->UnlockBuffer(buffer + length - begin);
+			break;
+		}
+
+		case B_COLLATE_IDENTICAL:
+		default:
+			key->SetTo(string, length);
+			break;
 	}
-	*buffer = 0;
-
-	key->UnlockBuffer();	
 }
 
 
@@ -138,26 +253,24 @@ CollatorDeutsch::Compare(const char *a, const char *b, int32 length, int8 streng
 	if (strength != B_COLLATE_PRIMARY)
 		return BCollatorAddOn::Compare(a, b, length, strength, ignorePunctuation);
 
-	// ToDo: this is actually a very slow implementation, and should be
-	// realized without calling the GetSortKey() method at all...
-	BString keyA, keyB;
-	GetSortKey(a, &keyA, B_COLLATE_PRIMARY, ignorePunctuation);
-	GetSortKey(b, &keyB, B_COLLATE_PRIMARY, ignorePunctuation);
-
-	a = keyA.String();
-	b = keyB.String();
+	input_context contextA(ignorePunctuation);
+	input_context contextB(ignorePunctuation);
 
 	for (int32 i = 0; i < length; i++) {
-		uint32 charA = BUnicodeChar::FromUTF8(&a);
-		uint32 charB = BUnicodeChar::FromUTF8(&b);
+		uint32 charA = getNextChar(&a, contextA);
+		uint32 charB = getNextChar(&b, contextB);
 		if (charA == 0)
-			return charB == 0 ? 0 : charB;
+			return charB == 0 ? 0 : -(int32)charB;
 		else if (charB == 0)
-			return -(int32)charA;
+			return (int32)charA;
+
+		charA = getPrimaryChar(charA);
+		charB = getPrimaryChar(charB);
 
 		if (charA != charB)
 			return (int32)charA - (int32)charB;
 	}
+
 	return 0;
 }
 
