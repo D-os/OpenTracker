@@ -30,9 +30,25 @@ TYPE= SHARED
 #	if two source files with the same name (source.c or source.cpp)
 #	are included from different directories.  Also note that spaces
 #	in folder names do not work well with this makefile.
-SRCS= UnicodeChar.cpp Collator.cpp PropertyFile.cpp Locale.cpp Language.cpp \
-	Country.cpp LocaleRoster.cpp Catalog.cpp DefaultCatalog.cpp \
-	strfmon.cpp cat.cpp langinfo.cpp Currency.cpp adler32.c
+SRCS= \
+	adler32.c \
+	cat.cpp \
+	Catalog.cpp \
+	Collator.cpp \
+	Country.cpp \
+	Currency.cpp \
+	DefaultCatalog.cpp \
+	Format.cpp \
+	FormatImpl.cpp \
+	langinfo.cpp \
+	Language.cpp \
+	Locale.cpp \
+	LocaleRoster.cpp \
+	NumberFormat.cpp \
+	NumberFormatImpl.cpp \
+	PropertyFile.cpp \
+	strfmon.cpp \
+	UnicodeChar.cpp
 
 #	specify the resource files to use
 #	full path or a relative path to the resource file can be used.
