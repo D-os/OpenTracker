@@ -244,6 +244,7 @@ TTimeView::GetCurrentTime()
 const char *kShortDateFormat = "%m/%d/%y";
 const char *kShortEuroDateFormat = "%d/%m/%y";
 const char *kLongDateFormat = "%a, %B %d, %Y";
+const char *kLongEuroDateFormat = "%a, %d %B, %Y";
 
 void
 TTimeView::GetCurrentDate()
@@ -252,12 +253,9 @@ TTimeView::GetCurrentDate()
 	tm time = *localtime(&fTime);
 
 	if (fFullDate && CanShowFullDate())
-		strftime(tmp, 64, kLongDateFormat, &time);
+		strftime(tmp, 64, fEuroDate ? kLongEuroDateFormat : kLongDateFormat, &time);
 	else
-		if (fEuroDate)
-			strftime(tmp, 64, kShortEuroDateFormat, &time);
-		else
-			strftime(tmp, 64, kShortDateFormat, &time);
+		strftime(tmp, 64, fEuroDate ? kShortEuroDateFormat : kShortDateFormat, &time);
 
 	//	remove leading 0 from date when month is less than 10 (MM/DD/YY)
 	//  or remove leading 0 from date when day is less than 10 (DD/MM/YY)
@@ -320,6 +318,11 @@ TTimeView::Pulse()
 	GetCurrentDate();
 	if (	(!fShowingDate && strcmp(fTimeStr, fLastTimeStr) != 0)
 		|| 	(fShowingDate && strcmp(fDateStr, fLastDateStr) != 0)) {
+		// update bounds when the size of the strings has changed
+		if (	(!fShowingDate && strlen(fTimeStr) != strlen(fLastTimeStr))
+			||	(fShowingDate && strlen(fDateStr) != strlen(fLastDateStr)))
+			Update();
+
 		strcpy(fLastTimeStr, fTimeStr);
 		strcpy(fLastDateStr, fDateStr);
 		fNeedToUpdate = true;
@@ -434,7 +437,7 @@ TTimeView::ShowClockOptions(BPoint point)
 	menu->SetFont(be_plain_font);
 	BMenuItem	*item;
 
-	item = new BMenuItem("Change Time…", new BMessage(msg_changeclock));
+	item = new BMenuItem("Change Time" B_UTF8_ELLIPSIS, new BMessage(msg_changeclock));
 	menu->AddItem(item);
 
 	item = new BMenuItem("Hide Time", new BMessage('time'));
