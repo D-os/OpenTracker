@@ -43,16 +43,17 @@ All rights reserved.
 namespace BPrivate {
 
 class FocusCheckBox : public BCheckBox {
-public:
-	FocusCheckBox(BRect rect, const char *name, const char *label,
-		BMessage *message)
-		:	BCheckBox(rect, name, label, message)
-		{}
-		
-	virtual void Draw(BRect rect )
+	public:
+		FocusCheckBox(BRect rect, const char *name, const char *label,
+			BMessage *message)
+			:	BCheckBox(rect, name, label, message)
+			{
+			}
+
+		virtual void Draw(BRect rect)
 		{
 			BCheckBox::Draw(rect);
-			
+
 			if (IsFocus()) {
 				SetHighColor(0, 0, 255);
 				StrokeRect(BRect(2 , 4, 12, 14));			
@@ -61,38 +62,38 @@ public:
 };
 
 class FilePermissionsView : public BView {
-public:
-	FilePermissionsView(BRect, Model *);
-	
-	void ModelChanged(Model *);
-	
-protected:
-	virtual void MessageReceived(BMessage *);
-	virtual void AttachedToWindow();
+	public:
+		FilePermissionsView(BRect, Model *);
 
-private:
-	Model *fModel;
-	
-	FocusCheckBox *fReadUserCheckBox;
-	FocusCheckBox *fReadGroupCheckBox;
-	FocusCheckBox *fReadOtherCheckBox;
+		void ModelChanged(Model *);
 
-	FocusCheckBox *fWriteUserCheckBox;
-	FocusCheckBox *fWriteGroupCheckBox;
-	FocusCheckBox *fWriteOtherCheckBox;
+	protected:
+		virtual void MessageReceived(BMessage *);
+		virtual void AttachedToWindow();
 
-	FocusCheckBox *fExecuteUserCheckBox;
-	FocusCheckBox *fExecuteGroupCheckBox;
-	FocusCheckBox *fExecuteOtherCheckBox;
-	
-	BTextControl *fOwnerTextControl;
-	BTextControl *fGroupTextControl;
+	private:
+		Model *fModel;
 
-	typedef BView _inherited;
+		FocusCheckBox *fReadUserCheckBox;
+		FocusCheckBox *fReadGroupCheckBox;
+		FocusCheckBox *fReadOtherCheckBox;
+
+		FocusCheckBox *fWriteUserCheckBox;
+		FocusCheckBox *fWriteGroupCheckBox;
+		FocusCheckBox *fWriteOtherCheckBox;
+
+		FocusCheckBox *fExecuteUserCheckBox;
+		FocusCheckBox *fExecuteGroupCheckBox;
+		FocusCheckBox *fExecuteOtherCheckBox;
+
+		BTextControl *fOwnerTextControl;
+		BTextControl *fGroupTextControl;
+
+		typedef BView _inherited;
 };
 
 } // namespace BPrivate
 
 using namespace BPrivate;
 
-#endif // FILE_PERMISSIONS_VIEW_H
+#endif	/* FILE_PERMISSIONS_VIEW_H */

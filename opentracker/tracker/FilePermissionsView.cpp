@@ -51,7 +51,7 @@ FilePermissionsView::FilePermissionsView(BRect rect, Model *model)
 	// Constants for the column labels: "User", "Group" and "Other".
 	const float kColumnLabelMiddle = 77, kColumnLabelTop = 6, kColumnLabelSpacing = 37,
 		kColumnLabelBottom = 20, kColumnLabelWidth = 35, kAttribFontHeight = 10;
-	
+
 	BStringView *strView;
 
 	strView = new BStringView(BRect(kColumnLabelMiddle - kColumnLabelWidth / 2,
@@ -74,18 +74,18 @@ FilePermissionsView::FilePermissionsView(BRect rect, Model *model)
 	AddChild(strView);
 	strView->SetAlignment(B_ALIGN_CENTER);
 	strView->SetFontSize(kAttribFontHeight);
-	
+
 	// Constants for the row labels: "Read", "Write" and "Execute".
 	const float kRowLabelLeft = 10, kRowLabelTop = kColumnLabelTop + 15,
 		kRowLabelVerticalSpacing = 18, kRowLabelRight = kColumnLabelMiddle
 		- kColumnLabelWidth / 2 - 5, kRowLabelHeight = 14;
-	
+
 	strView = new BStringView(BRect(kRowLabelLeft, kRowLabelTop, kRowLabelRight,
 		kRowLabelTop + kRowLabelHeight), "", "Read");
 	AddChild(strView);
 	strView->SetAlignment(B_ALIGN_RIGHT);
 	strView->SetFontSize(kAttribFontHeight);
-	
+
 	strView = new BStringView(BRect(kRowLabelLeft, kRowLabelTop
 		+ kRowLabelVerticalSpacing, kRowLabelRight, kRowLabelTop
 		+ kRowLabelVerticalSpacing + kRowLabelHeight), "", "Write");
@@ -110,7 +110,7 @@ FilePermissionsView::FilePermissionsView(BRect rect, Model *model)
 		{ &fWriteUserCheckBox, &fWriteGroupCheckBox, &fWriteOtherCheckBox },
 		{ &fExecuteUserCheckBox, &fExecuteGroupCheckBox, &fExecuteOtherCheckBox }};
 
-	for (int32 x = 0; x < 3; x++)
+	for (int32 x = 0; x < 3; x++) {
 		for (int32 y = 0; y < 3; y++) {
 			*checkBoxArray[y][x] =
 				new FocusCheckBox(BRect(kLeftMargin + kHorizontalSpacing * x,
@@ -120,42 +120,35 @@ FilePermissionsView::FilePermissionsView(BRect rect, Model *model)
 					"", "",	new BMessage(kPermissionsChanged));
 			AddChild(*checkBoxArray[y][x]);
 		}
+	}
 
 	const float kTextControlLeft = 170, kTextControlRight = 270,
 		kTextControlTop = kColumnLabelTop, kTextControlHeight = 14, kTextControlSpacing = 16;
 
 	strView = new BStringView(BRect(kTextControlLeft, kTextControlTop, kTextControlRight,
 		kTextControlTop + kTextControlHeight), "", "Owner");
-
 	strView->SetAlignment(B_ALIGN_CENTER);
 	strView->SetFontSize(kAttribFontHeight);
-
 	AddChild(strView);
 
 	fOwnerTextControl = new BTextControl(BRect(kTextControlLeft, kTextControlTop - 2
 		+ kTextControlSpacing, kTextControlRight, kTextControlTop + kTextControlHeight - 2
 		+ kTextControlSpacing), "",	"", "", new BMessage(kNewOwnerEntered));
-
 	fOwnerTextControl->SetDivider(0);
-
 	AddChild(fOwnerTextControl);
-	
+
 	strView = new BStringView(BRect(kTextControlLeft, kTextControlTop + 5
 		+ 2 * kTextControlSpacing, kTextControlRight, kTextControlTop + 2
 		+ 2 * kTextControlSpacing + kTextControlHeight), "", "Group");
-
 	strView->SetAlignment(B_ALIGN_CENTER);
 	strView->SetFontSize(kAttribFontHeight);
-	
 	AddChild(strView);
-		
+
 	fGroupTextControl = new BTextControl(BRect(kTextControlLeft, kTextControlTop
 		+ 3 * kTextControlSpacing, kTextControlRight, kTextControlTop
 		+ 3 * kTextControlSpacing + kTextControlHeight), "", "", "",
 		new BMessage(kNewGroupEntered));
-
 	fGroupTextControl->SetDivider(0);
-
 	AddChild(fGroupTextControl);
 
 	SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
@@ -168,7 +161,7 @@ void
 FilePermissionsView::ModelChanged(Model *model)
 {
 	fModel = model;
-	
+
 	bool hideCheckBoxes = false;
 	uid_t nodeOwner = 0;
 	gid_t nodeGroup = 0;
@@ -176,7 +169,7 @@ FilePermissionsView::ModelChanged(Model *model)
 
 	if (fModel != NULL) {
 		BNode node(fModel->EntryRef());
-	
+
 		if (node.InitCheck() == B_OK) {
 			if (fReadUserCheckBox->IsHidden()) {
 				fReadUserCheckBox->Show();
@@ -261,7 +254,7 @@ FilePermissionsView::ModelChanged(Model *model)
 	}
 }
 
-	
+
 void
 FilePermissionsView::MessageReceived(BMessage *message)
 {
@@ -272,7 +265,7 @@ FilePermissionsView::MessageReceived(BMessage *message)
 				newPermissions = (mode_t)((fReadUserCheckBox->Value() ? S_IRUSR : 0)
 					| (fReadGroupCheckBox->Value() ? S_IRGRP : 0)
 					| (fReadOtherCheckBox->Value() ? S_IROTH : 0)
-								 
+
 					| (fWriteUserCheckBox->Value() ? S_IWUSR : 0)
 					| (fWriteGroupCheckBox->Value() ? S_IWGRP : 0)
 					| (fWriteOtherCheckBox->Value() ? S_IWOTH : 0)
@@ -327,7 +320,7 @@ FilePermissionsView::MessageReceived(BMessage *message)
 				}
 			}
 			break;
-			
+
 		default:
 			_inherited::MessageReceived(message);
 			break;
@@ -347,7 +340,7 @@ FilePermissionsView::AttachedToWindow()
 	fExecuteUserCheckBox->SetTarget(this);
 	fExecuteGroupCheckBox->SetTarget(this);
 	fExecuteOtherCheckBox->SetTarget(this);
-	
+
 	fOwnerTextControl->SetTarget(this);
 	fGroupTextControl->SetTarget(this);
 }
