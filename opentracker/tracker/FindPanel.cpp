@@ -2889,6 +2889,11 @@ MostUsedNames::~MostUsedNames()
 			list_entry *entry = static_cast<list_entry *>(fList.ItemAt(i));
 
 			char line[B_FILE_NAME_LENGTH + 5];
+
+			// limit upper bound to react more dynamically to changes
+			if (entry->count > 15)
+				entry->count = 15;
+
 			sprintf(line,"%ld %s\n",entry->count,entry->name);
 			if (file.Write(line,strlen(line)) < B_OK)
 				break;
