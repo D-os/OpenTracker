@@ -39,9 +39,15 @@ All rights reserved.
 
 class TBarView;
 
+enum recent_type {
+	kRecentDocuments = 0,
+	kRecentApplications = 1,
+	kRecentFolders = 2
+};
+
 class TRecentsMenu : public BNavMenu {
 	public:
-		TRecentsMenu(const char* name, TBarView *bar, int32 which);
+		TRecentsMenu(const char *name, TBarView *bar, int32 which);
 
 		void			DetachedFromWindow();
 		void			ResetTargets();
@@ -62,7 +68,7 @@ class TRecentsMenu : public BNavMenu {
 		int32 			fItemIndex;
 		BMessage		fRecentList;
 		
-		TBarView*		fBarView;
+		TBarView		*fBarView;
 };
 
 

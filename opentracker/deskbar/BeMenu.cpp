@@ -474,27 +474,32 @@ TBeMenu::ScreenLocation()
 
 //********************************************************************************
 //	#pragma mark -
-//	which == 0 is documents, which ==1 is applications
 //
 
 
-TRecentsMenu::TRecentsMenu(const char* name, TBarView *bar, int32 which)
+TRecentsMenu::TRecentsMenu(const char *name, TBarView *bar, int32 which)
 	: BNavMenu(name, B_REFS_RECEIVED, BMessenger(kTrackerSig)),
-		fWhich(which),
-		fRecentsCount(0),
-		fItemIndex(0),
-		fBarView(bar)
+	fWhich(which),
+	fRecentsCount(0),
+	fItemIndex(0),
+	fBarView(bar)
 {
-	TBarApp* app = dynamic_cast<TBarApp*>(be_app);
+	TBarApp *app = dynamic_cast<TBarApp *>(be_app);
 	if (app) {
-		if (fWhich == 0)
-			fRecentsCount = app->Settings()->recentDocsCount;
-		else if (fWhich == 1)
-			fRecentsCount = app->Settings()->recentAppsCount;
-		else if (fWhich == 2)
-			fRecentsCount = app->Settings()->recentFoldersCount;
+		switch (which) {
+			case kRecentDocuments:
+				fRecentsCount = app->Settings()->recentDocsCount;
+				break;
+			case kRecentApplications:
+				fRecentsCount = app->Settings()->recentAppsCount;
+				break;
+			case kRecentFolders:
+				fRecentsCount = app->Settings()->recentFoldersCount;
+				break;
+		}
 	}
 }
+
 
 void
 TRecentsMenu::DetachedFromWindow()
@@ -504,6 +509,7 @@ TRecentsMenu::DetachedFromWindow()
 	//	
 	BMenu::DetachedFromWindow();
 }
+
 
 bool 
 TRecentsMenu::StartBuildingItemList()
@@ -516,15 +522,16 @@ TRecentsMenu::StartBuildingItemList()
 		RemoveItem(index);
 		delete item;
 	}
-//
-//	!! note: don't call inherited from here
-//	the navref is not set for this menu
-//	but it still needs to be a draggable navmenu
-//	simply return true so that AddNextItem is called
-//
-//	return BNavMenu::StartBuildingItemList();
+	//
+	//	!! note: don't call inherited from here
+	//	the navref is not set for this menu
+	//	but it still needs to be a draggable navmenu
+	//	simply return true so that AddNextItem is called
+	//
+	//	return BNavMenu::StartBuildingItemList();
 	return true;
 }
+
 
 bool 
 TRecentsMenu::AddNextItem()
@@ -536,6 +543,7 @@ TRecentsMenu::AddNextItem()
 	return false;
 }
 
+
 bool
 TRecentsMenu::AddRecents(int32 count)
 {
@@ -544,13 +552,13 @@ TRecentsMenu::AddRecents(int32 count)
 		BRoster roster;
 		
 		switch(fWhich) {
-			case 0:
+			case kRecentDocuments:
 				roster.GetRecentDocuments(&fRecentList, count);
 				break;
-			case 1:
+			case kRecentApplications:
 				roster.GetRecentApps(&fRecentList, count);
 				break;
-			case 2:
+			case kRecentFolders:
 				roster.GetRecentFolders(&fRecentList, count);
 				break;
 			default:
@@ -560,22 +568,19 @@ TRecentsMenu::AddRecents(int32 count)
 	}
 	for (;;) {
 		entry_ref ref;
-		if (fRecentList.FindRef("refs", fItemIndex++, &ref) != B_OK) {
+		if (fRecentList.FindRef("refs", fItemIndex++, &ref) != B_OK)
 			break;
-		}
+
 		if (ref.name && strlen(ref.name) > 0) {
 			Model model(&ref, true);
-			ModelMenuItem* item
-				= BNavMenu::NewModelItem(&model,
+			ModelMenuItem *item = BNavMenu::NewModelItem(&model,
 					new BMessage(B_REFS_RECEIVED),
 					Target(), false, NULL, TypesList());
 	
 			if (item) {
 				AddItem(item);
-	
-				//
+
 				//	return true so that we know to reenter this list
-				//
 				return true;
 			}
 			
@@ -589,15 +594,17 @@ TRecentsMenu::AddRecents(int32 count)
 	return false;
 }
 
+
 void 
 TRecentsMenu::DoneBuildingItemList()
 {
-//
-//	!! note: don't call inherited here
-//	the object list is not built
-//	and this list does not need to be sorted
-//	BNavMenu::DoneBuildingItemList();
-//
+	//
+	//	!! note: don't call inherited here
+	//	the object list is not built
+	//	and this list does not need to be sorted
+	//	BNavMenu::DoneBuildingItemList();
+	//
+
 	if (CountItems() <= 0) {
 		BMenuItem *item = new BMenuItem("<No Recent Items>", 0);
 		item->SetEnabled(false);
@@ -606,12 +613,14 @@ TRecentsMenu::DoneBuildingItemList()
 		SetTargetForItems(Target());
 }
 
+
 void 
 TRecentsMenu::ClearMenuBuildingState()
 {
 	fMenuBuilt = false;
 	BNavMenu::ClearMenuBuildingState();
 }
+
 
 void
 TRecentsMenu::ResetTargets()
