@@ -38,14 +38,22 @@ SRCS= \
 	Country.cpp \
 	Currency.cpp \
 	DefaultCatalog.cpp \
+	FloatFormat.cpp \
+	FloatFormatImpl.cpp \
+	FloatFormatParameters.cpp \
 	Format.cpp \
 	FormatImpl.cpp \
+	FormatParameters.cpp \
+	IntegerFormat.cpp \
+	IntegerFormatImpl.cpp \
+	IntegerFormatParameters.cpp \
 	langinfo.cpp \
 	Language.cpp \
 	Locale.cpp \
 	LocaleRoster.cpp \
 	NumberFormat.cpp \
 	NumberFormatImpl.cpp \
+	NumberFormatParameters.cpp \
 	PropertyFile.cpp \
 	strfmon.cpp \
 	UnicodeChar.cpp
