@@ -239,7 +239,7 @@ $(TARGET):	$(OBJ_DIR) $(OBJS) $(RAW_RSRCS) $(RSRCS)
 		$(MIMESET) -f $@
 
 install:	$(TARGET)
-		cp $(TARGET) /system
+		copyattr -d $(TARGET) /system
 
 #	rule to create the object file directory if needed
 $(OBJ_DIR)::

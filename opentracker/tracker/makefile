@@ -336,7 +336,7 @@ $(LIB_EXP):
 		$(BUILD_EXP)
  
  install:	$(TARGET) $(TARGET_LIB)
-		cp $(TARGET) /system
+		copyattr -d $(TARGET) /system
 		cp $(TARGET_LIB) /system/lib
 
 
