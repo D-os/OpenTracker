@@ -86,7 +86,7 @@ main()
 
 
 TBarApp::TBarApp()
-	:	BApplication("application/x-vnd.Be-TSKB"),
+	:	BApplication(kDeskbarSignature),
 		fSettingsFile(NULL),
 		fConfigWindow(NULL)
 {
