@@ -174,6 +174,7 @@ BPoseView::BPoseView(Model *model, BRect bounds, uint32 viewMode, uint32 resizeM
 		fCountView(NULL),
 		fUpdateRegion(new BRegion),				// does this need to be allocated ??
 		fDropTarget(NULL),
+		fDropTargetWasSelected(false),
 		fSelectionHandler(be_app),
 		fLastClickPt(LONG_MAX, LONG_MAX),
 		fLastClickTime(0),
@@ -8085,10 +8086,14 @@ BPoseView::HiliteDropTarget(bool hiliteState)
 	if (!fDropTarget)
 		return;
 
-	if (fDropTarget->IsSelected() == hiliteState)
+	// drop target already has the desired state
+	if (fDropTarget->IsSelected() == hiliteState || (!hiliteState && fDropTargetWasSelected)) {
+		fDropTargetWasSelected = hiliteState;
 		return;
+	}
 
 	fDropTarget->Select(hiliteState);
+
 	// scan all visible poses
 	BRect bounds(Bounds());
 

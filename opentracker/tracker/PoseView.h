@@ -607,6 +607,7 @@ protected:
 	float fIconPoseHeight;
 	BRegion *fUpdateRegion;
 	BPose *fDropTarget;
+	bool fDropTargetWasSelected;
 	BLooper *fSelectionHandler;
 	BPoint fLastClickPt;
 	bigtime_t fLastClickTime;
