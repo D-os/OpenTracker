@@ -94,7 +94,7 @@ namespace BPrivate {
 
 class MostUsedNames {
 	public:
-		MostUsedNames(const char *fileName,const char *directory,int32 maxCount = 5);
+		MostUsedNames(const char *fileName, const char *directory, int32 maxCount = 5);
 		~MostUsedNames();
 		
 		bool ObtainList(BList *list);
@@ -1048,7 +1048,7 @@ FindPanel::MessageReceived(BMessage *message)
 		case kMIMETypeItem:
 			{
 				BMenuItem *item;
-				if (message->FindPointer("source",(void **)&item) == B_OK) {
+				if (message->FindPointer("source", (void **)&item) == B_OK) {
 					// don't add the "All files and folders" to the list
 					if (fMimeTypeMenu->IndexOf(item) != 0)
 						gMostUsedMimeTypes.AddName(item->Label());
@@ -1586,7 +1586,7 @@ FindPanel::AddMimeTypesToMenu()
 	BList list;
 	if (gMostUsedMimeTypes.ObtainList(&list) && tracker) {
 		int32 count = 0;
-		for (int32 index = 0;index < list.CountItems();index++) {
+		for (int32 index = 0; index < list.CountItems(); index++) {
 			const char *name = (const char *)list.ItemAt(index);
 
 			const ShortMimeInfo *info;
@@ -1594,9 +1594,9 @@ FindPanel::AddMimeTypesToMenu()
 				continue;
 
 			BMessage *message = new BMessage(kMIMETypeItem);
-			message->AddString("mimetype",info->InternalName());
+			message->AddString("mimetype", info->InternalName());
 
-			MimeTypeMenu()->AddItem(new BMenuItem(name,message));
+			MimeTypeMenu()->AddItem(new BMenuItem(name, message));
 			count++;
 		}
 		if (count != 0)
@@ -2935,10 +2935,10 @@ DraggableQueryIcon::DragStarted(BMessage *dragMessage)
 }
 
 
-//#pragma mark -
+//	#pragma mark -
 
 
-MostUsedNames::MostUsedNames(const char *fileName,const char *directory,int32 maxCount)
+MostUsedNames::MostUsedNames(const char *fileName, const char *directory, int32 maxCount)
 	:
 	fFileName(fileName),
 	fDirectory(directory),
@@ -2950,6 +2950,10 @@ MostUsedNames::MostUsedNames(const char *fileName,const char *directory,int32 ma
 
 MostUsedNames::~MostUsedNames()
 {
+	// only write back settings when we've been used
+	if (!fLoaded)
+		return;
+
 	// write most used list to file
 
 	BPath path;
@@ -2958,27 +2962,32 @@ MostUsedNames::~MostUsedNames()
 
 	path.Append(fDirectory);
 	path.Append(fFileName);
-	BFile file(path.Path(),B_WRITE_ONLY | B_CREATE_FILE);
+	BFile file(path.Path(), B_WRITE_ONLY | B_CREATE_FILE);
 	if (file.InitCheck() == B_OK) {
-		for (int32 i = 0;i < fList.CountItems();i++) {
+		for (int32 i = 0; i < fList.CountItems(); i++) {
 			list_entry *entry = static_cast<list_entry *>(fList.ItemAt(i));
 
 			char line[B_FILE_NAME_LENGTH + 5];
 
 			// limit upper bound to react more dynamically to changes
-			if (entry->count > 15)
-				entry->count = 15;
+			if (--entry->count > 20)
+				entry->count = 20;
 
-			sprintf(line,"%ld %s\n",entry->count,entry->name);
-			if (file.Write(line,strlen(line)) < B_OK)
+			// if the item hasn't been chosen in a while, remove it
+			// (but leave at least one item in the list)
+			if (entry->count < -10 && i > 0)
+				continue;
+
+			sprintf(line, "%ld %s\n", entry->count, entry->name);
+			if (file.Write(line, strlen(line)) < B_OK)
 				break;
 		}
 	}
 	file.Unset();
-		
+
 	// free data
 
-	for (int32 i = fList.CountItems();i-- > 0;) {
+	for (int32 i = fList.CountItems(); i-- > 0;) {
 		list_entry *entry = static_cast<list_entry *>(fList.ItemAt(i));
 		free(entry->name);
 		delete entry;
@@ -2995,7 +3004,7 @@ MostUsedNames::ObtainList(BList *list)
 	if (!fLoaded)
 		UpdateList();
 
-	AutoLock<Benaphore> locker(fLock);
+	fLock.Lock();
 
 	list->MakeEmpty();
 	for (int32 i = 0; i < fCount; i++) {
@@ -3033,7 +3042,7 @@ MostUsedNames::AddName(const char *name)
 		entry = static_cast<list_entry *>(fList.RemoveItem(fList.CountItems() - 1));
 
 		// is this the name we want to add here?
-		if (strcmp(name,entry->name)) {
+		if (strcmp(name, entry->name)) {
 			free(entry->name);
 			delete entry;
 			entry = NULL;
@@ -3042,18 +3051,20 @@ MostUsedNames::AddName(const char *name)
 	}
 
 	if (entry == NULL) {
-		for (int32 i = 0;(entry = static_cast<list_entry *>(fList.ItemAt(i))) != NULL;i++)
-			if (!strcmp(entry->name,name))
+		for (int32 i = 0; (entry = static_cast<list_entry *>(fList.ItemAt(i))) != NULL; i++)
+			if (!strcmp(entry->name, name))
 				break;
 	}
-		
+
 	if (entry == NULL) {
 		entry = new list_entry;		
 		entry->name = strdup(name);
 		entry->count = 1;
 		
 		fList.AddItem(entry);
-	} else
+	} else if (entry->count < 0)
+		entry->count = 1;
+	else
 		entry->count++;
 
 	fLock.Unlock();
