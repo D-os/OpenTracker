@@ -56,12 +56,17 @@ All rights reserved.
 #include "Utilities.h"
 
 
+const uint32 kStartPolling = 'strp';
+const char *kAutoMounterSettings = "automounter_settings";
+
+
 struct OneMountFloppyParams {
 	status_t result;
 };
 
 static bool gSilentAutoMounter;
 static BMessage gSettingsMessage;
+
 
 #if xDEBUG
 static Partition *
@@ -97,10 +102,11 @@ TryMountingEveryOne(Partition *partition, void *castToParams)
 			// Start watching this mount point
 			node_ref nodeRef;
 			result = partition->GetMountPointNodeRef(&nodeRef);
-			if (result == B_OK) 
-				watch_node(&nodeRef, B_WATCH_NAME, BMessenger(0, 
-					dynamic_cast<TTracker*>(be_app)->AutoMounterLoop()));
-			else
+			if (result == B_OK) {
+				TTracker *tracker = dynamic_cast<TTracker *>(be_app);
+				if (tracker != NULL)
+					watch_node(&nodeRef, B_WATCH_NAME, BMessenger(0, tracker->AutoMounterLoop()));
+			} else
 				PRINT(("Couldn't get mount point node ref: %s\n", 	
 					strerror(result)));
 		}
@@ -123,6 +129,7 @@ TryMountingEveryOne(Partition *partition, void *castToParams)
 	}
 	return NULL;
 }
+
 
 static Partition *
 OneTryMountingFloppy(Partition *partition, void *castToParams)
@@ -147,6 +154,7 @@ OneTryMountingFloppy(Partition *partition, void *castToParams)
 	return 0;
 }
 
+
 static Partition *
 OneMatchFloppy(Partition *partition, void *)
 {
@@ -156,6 +164,7 @@ OneMatchFloppy(Partition *partition, void *)
 	return 0;
 }
 
+
 static Partition *
 TryMountingBFSOne(Partition *partition, void *params)
 {	
@@ -164,6 +173,7 @@ TryMountingBFSOne(Partition *partition, void *params)
 
 	return NULL;
 }
+
 
 static Partition *
 TryMountingRestoreOne(Partition *partition, void *params)
@@ -188,6 +198,7 @@ TryMountingRestoreOne(Partition *partition, void *params)
 
 	return NULL;
 }
+
 
 static Partition *
 TryMountingHFSOne(Partition *partition, void *params)
@@ -241,6 +252,7 @@ TryMountVolumeByID(Partition *partition, void *params)
 	return NULL;
 }
 
+
 static Partition *
 AutomountOne(Partition *partition, void *castToParams)
 {
@@ -262,6 +274,7 @@ AutomountOne(Partition *partition, void *castToParams)
 	
 	return NULL;
 }
+
 
 static Partition *
 NotifyFloppyNotMountable(Partition *partition, void *)
@@ -309,7 +322,6 @@ AddMountableItemToMessage(Partition *partition, void *castToParams)
 
 #endif
 
-const uint32 kStartPolling = 'strp';
 
 AutoMounter::AutoMounter(bool _DEVICE_MAP_ONLY(checkRemovableOnly),
 	bool _DEVICE_MAP_ONLY(checkCDs), bool _DEVICE_MAP_ONLY(checkFloppies),
@@ -361,9 +373,11 @@ AutoMounter::AutoMounter(bool _DEVICE_MAP_ONLY(checkRemovableOnly),
 #endif
 }
 
+
 AutoMounter::~AutoMounter()
 {
 }
+
 
 Partition* AutoMounter::FindPartition(dev_t _DEVICE_MAP_ONLY(dev))
 {
@@ -389,6 +403,7 @@ AutoMounter::RescanDevices()
 	fList.EachMountedPartition(TryWatchMountPoint, 0);
 #endif
 }
+
 
 void
 AutoMounter::MessageReceived(BMessage *message)
@@ -589,6 +604,7 @@ AutoMounter::MessageReceived(BMessage *message)
 	}
 }
 
+
 status_t
 AutoMounter::WatchVolumeBinder(void *_DEVICE_MAP_ONLY(castToThis))
 {
@@ -599,6 +615,7 @@ AutoMounter::WatchVolumeBinder(void *_DEVICE_MAP_ONLY(castToThis))
 	return B_UNSUPPORTED;
 #endif
 }
+
 
 void
 AutoMounter::WatchVolumes()
@@ -636,8 +653,6 @@ FindFloppyDevice(Device *_DEVICE_MAP_ONLY(device), void *)
 
 	return 0;
 }
-
-
 
 
 void
@@ -682,6 +697,7 @@ AutoMounter::EachMountableItemAndFloppy(EachPartitionFunction _DEVICE_MAP_ONLY(f
 #endif
 }
 
+
 void
 AutoMounter::EachMountedItem(EachPartitionFunction _DEVICE_MAP_ONLY(func),
 	void *_DEVICE_MAP_ONLY(passThru))
@@ -691,6 +707,7 @@ AutoMounter::EachMountedItem(EachPartitionFunction _DEVICE_MAP_ONLY(func),
 	fList.EachMountedPartition(func, passThru);
 #endif
 }
+
 
 Partition *
 AutoMounter::EachPartition(EachPartitionFunction _DEVICE_MAP_ONLY(func),
@@ -742,6 +759,7 @@ AutoMounter::CheckVolumesNow()
 #endif
 }
 
+
 void 
 AutoMounter::SuspendResume(bool _DEVICE_MAP_ONLY(suspend))
 {
@@ -754,6 +772,7 @@ AutoMounter::SuspendResume(bool _DEVICE_MAP_ONLY(suspend))
 		resume_thread(fScanThread);
 #endif
 }
+
 
 void
 AutoMounter::MountAllNow()
@@ -773,7 +792,6 @@ AutoMounter::MountAllNow()
 	fList.EachPartition(NotifyFloppyNotMountable, 0);
 #endif
 }
-
 
 
 void 
@@ -800,6 +818,7 @@ AutoMounter::TryMountingFloppy()
 #endif
 }
 
+
 bool 
 AutoMounter::IsFloppyMounted()
 {
@@ -811,6 +830,7 @@ AutoMounter::IsFloppyMounted()
 #endif
 }
 
+
 bool 
 AutoMounter::FloppyInList()
 {
@@ -821,6 +841,7 @@ AutoMounter::FloppyInList()
 	return false;
 #endif
 }
+
 
 void
 AutoMounter::MountVolume(BMessage *_DEVICE_MAP_ONLY(message))
@@ -850,10 +871,14 @@ AutoMounter::MountVolume(BMessage *_DEVICE_MAP_ONLY(message))
 #endif
 }
 
+
 status_t 
 AutoMounter::InitialRescanBinder(void *_DEVICE_MAP_ONLY(castToThis))
 {
 #if _INCLUDES_CLASS_DEVICE_MAP
+	// maybe this can help the strange Tracker lock-up at startup
+	snooze(500000LL);	// wait half a second
+
 	AutoMounter *self = static_cast<AutoMounter *>(castToThis);
 	self->InitialRescan();
 
@@ -864,6 +889,7 @@ AutoMounter::InitialRescanBinder(void *_DEVICE_MAP_ONLY(castToThis))
 #endif
 	return B_OK;
 }
+
 
 void 
 AutoMounter::InitialRescan()
@@ -896,6 +922,7 @@ AutoMounter::InitialRescan()
 	}
 #endif
 }
+
 
 struct UnmountDeviceParams {
 	dev_t device;
@@ -953,6 +980,7 @@ UnmountIfMatchingID(Partition *_DEVICE_MAP_ONLY(partition),
 #endif
 	return NULL;
 }
+
 
 void
 AutoMounter::UnmountAndEjectVolume(BMessage *_DEVICE_MAP_ONLY(message))
@@ -1056,7 +1084,6 @@ AutoMounter::QuitRequested()
 	return true;
 }
 
-const char *kAutoMounterSettings = "automounter_settings";
 
 void
 AutoMounter::ReadSettings()
@@ -1167,6 +1194,7 @@ AutoMounter::GetSettings(BMessage *_DEVICE_MAP_ONLY(message))
 #endif
 }
 
+
 void 
 AutoMounter::SetParams(BMessage *_DEVICE_MAP_ONLY(message),
 	bool _DEVICE_MAP_ONLY(rescan))
@@ -1208,3 +1236,4 @@ AutoMounter::SetParams(BMessage *_DEVICE_MAP_ONLY(message),
 		CheckVolumesNow();
 #endif
 }
+
