@@ -56,10 +56,15 @@ CalcFreeSpace(dev_t device)
 		// Philosophy here:
 		// Bars go on all drives with read/write capabilities
 		// Exceptions: Not on CDDA, but on NTFS/Ext2
-		if ((!volume.IsReadOnly() && strcmp(info.fsh_name,"cdda"))
+		// Also note that some volumes may return 0 when
+		// BVolume::Capacity() is called (believe-me... That *DOES*
+		// happen) so we also check for that.
+		off_t capacity = volume.Capacity();
+		if (((!volume.IsReadOnly() && strcmp(info.fsh_name,"cdda"))
 			|| !strcmp(info.fsh_name,"ntfs")
-			|| !strcmp(info.fsh_name,"ext2")) {
-			int32 percent = static_cast<int32>(volume.FreeBytes() / (volume.Capacity() / 100));
+			|| !strcmp(info.fsh_name,"ext2"))
+			&& (capacity > 0)) {
+			int32 percent = static_cast<int32>(volume.FreeBytes() / (capacity / 100));
 
 			// warn below 20 MB of free space (if this is less than 10% of free space)
 			if (volume.FreeBytes() < 20 * 1024 * 1024 && percent < 10)
