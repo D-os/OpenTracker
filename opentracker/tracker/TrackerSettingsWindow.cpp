@@ -34,6 +34,7 @@ All rights reserved.
 
 #include "SettingsViews.h"
 #include "Tracker.h"
+#include "TrackerSettings.h"
 #include "TrackerSettingsWindow.h"
 
 #include <Alert.h>
@@ -46,6 +47,7 @@ const float kSettingsWindowsHeight = 270;
 const uint32 kSettingsViewChanged = 'Svch';
 const uint32 kDefaultsButtonPressed = 'Apbp';
 const uint32 kRevertButtonPressed = 'Rebp';
+
 
 TrackerSettingsWindow::TrackerSettingsWindow()
 	:	BWindow(BRect(kSettingsWindowOffset.x, kSettingsWindowOffset.y,
@@ -130,6 +132,7 @@ TrackerSettingsWindow::TrackerSettingsWindow()
 	fSettingsTypeListView->Select(0);
 }
 
+
 bool
 TrackerSettingsWindow::QuitRequested()
 {
@@ -176,6 +179,7 @@ TrackerSettingsWindow::MessageReceived(BMessage *message)
 	}
 }
 
+
 void
 TrackerSettingsWindow::Show()
 {
@@ -209,6 +213,7 @@ TrackerSettingsWindow::ViewAt(int32 i)
 	return item->View();
 }
 
+
 void
 TrackerSettingsWindow::HandleChangedContents()
 {
@@ -222,10 +227,9 @@ TrackerSettingsWindow::HandleChangedContents()
 	fSettingsTypeListView->Invalidate();	
 	fRevertButton->SetEnabled(revertable);
 
-	TTracker *tracker = dynamic_cast<TTracker*>(be_app);
-	if (tracker)
-		tracker->SaveSettings(false);
+	TrackerSettings().SaveSettings(false);
 }
+
 
 void
 TrackerSettingsWindow::HandlePressedDefaultsButton()
@@ -237,6 +241,7 @@ TrackerSettingsWindow::HandlePressedDefaultsButton()
 
 	HandleChangedContents();
 }
+
 
 void
 TrackerSettingsWindow::HandlePressedRevertButton()
