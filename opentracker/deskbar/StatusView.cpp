@@ -1213,32 +1213,31 @@ TReplicantTray::AcceptAddon(BRect replicantFrame, BMessage *message)
 BPoint
 TReplicantTray::LocForReplicant(int32, int32 index, float width)
 {
-	BPoint loc(kIconGap+1, kGutter+1);
-	
+	BPoint loc(kIconGap + 1, kGutter + 1);
+
 	if (index > 0) {
 		//	get the last replicant added for placement reference
-		BView *view=NULL;		
+		BView *view = NULL;		
 		fShelf->ReplicantAt((index-1), &view);
 		if (view) {
 			// push this rep placement past the last one
 			loc.x = view->Frame().right + kIconGap+1;
 			loc.y = view->Frame().top;
 		}
-			
-		if (fMultiRowMode) {
-			//	if on first row, don't overrun clock
-			//	if on any other row, don't go past right edge
-			if ((loc.x + width + 2 >= kMinimumTrayWidth)
-				|| (fBarView->ShowingClock()
-					&& (loc.x + width + 6 >= kMinimumTrayWidth-fClock->Frame().Width())
-					&& (loc.y == kGutter+1))) {
-				//	make the vertical placement uniform
-				//	based on the maximum height provided for each
-				//	replicant
-				loc.y = view->Frame().top + kMaxReplicantHeight + kIconGap;
-				loc.x = kIconGap+1;
-			}				
+	}
 
+	if (fMultiRowMode) {
+		// if on first row, don't cover the clock
+		// if on any other row, don't go past right edge
+		if ((loc.x + width + 2 >= kMinimumTrayWidth)
+			|| (fBarView->ShowingClock()
+				&& (loc.x + width + 6 >= kMinimumTrayWidth-fClock->Frame().Width())
+				&& (loc.y == kGutter + 1))) {
+			// make the vertical placement uniform
+			// based on the maximum height provided for each
+			// replicant
+			loc.y += kMaxReplicantHeight + kIconGap;
+			loc.x = kIconGap + 1;
 		}
 	}
 	return loc;
