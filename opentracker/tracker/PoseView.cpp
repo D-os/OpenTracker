@@ -3069,7 +3069,7 @@ BPoseView::SelectPoses(int32 start, int32 end)
 				poseRect = pose->CalcRect(loc, this);
 
 			if (bounds.Intersects(poseRect)) {
-				if (EraseWidgetTextBackground(pose))
+				if (EraseWidgetTextBackground())
 					Invalidate(poseRect);
 				else
 					pose->Draw(poseRect, this, false);
@@ -6267,7 +6267,7 @@ BPoseView::SelectPosesIconMode(BRect selectionRect, BList **oldList)
 				newList->AddItem((void *)index);
 
 				if ((selected != pose->IsSelected()) && poseRect.Intersects(bounds))
-					if (pose->IsSelected() || EraseWidgetTextBackground(pose))
+					if (pose->IsSelected() || EraseWidgetTextBackground())
 						pose->Draw(poseRect, this, false);
 					else
 						Invalidate(poseRect);
@@ -6294,7 +6294,7 @@ BPoseView::SelectPosesIconMode(BRect selectionRect, BList **oldList)
 			BRect poseRect(pose->CalcRect(this));
 
 			if (poseRect.Intersects(bounds)) {
-				if (pose->IsSelected() || EraseWidgetTextBackground(pose))
+				if (pose->IsSelected() || EraseWidgetTextBackground())
 					pose->Draw(poseRect, this, false);
 				else
 					Invalidate(poseRect);
@@ -7042,7 +7042,7 @@ BPoseView::ClearSelection()
 					if (pose->IsSelected()) {
 						pose->Select(false);
 						BRect poseRect(pose->CalcRect(this));
-						if (EraseWidgetTextBackground(pose))
+						if (EraseWidgetTextBackground())
 							pose->Draw(poseRect, this, false);
 						else
 							Invalidate(poseRect);
@@ -7104,7 +7104,7 @@ BPoseView::ShowSelection(bool show)
 						if (pose->IsSelected() != show || fShowSelectionWhenInactive) {
 							if (!fShowSelectionWhenInactive)
 								pose->Select(show);
-							if (show && EraseWidgetTextBackground(pose))
+							if (show && EraseWidgetTextBackground())
 								pose->Draw(pose->CalcRect(this), this, false);
 							else
 								Invalidate(pose->CalcRect(this));
@@ -8117,7 +8117,7 @@ BPoseView::HiliteDropTarget(bool hiliteState)
 			BPose *pose = fVSPoseList->ItemAt(index);
 			if (pose) {
 				if (pose == fDropTarget) {
-					if (!hiliteState && !EraseWidgetTextBackground(pose))
+					if (!hiliteState && !EraseWidgetTextBackground())
 						// deselecting an icon with widget drawn over background
 						// have to be a little tricky here - draw just the icon,
 						// invalidate the widget
@@ -8406,11 +8406,8 @@ void BPoseView::AdaptToVolumeChange(BMessage *) {}
 void BPoseView::AdaptToDesktopIntegrationChange(BMessage *) {}
 
 bool 
-BPoseView::EraseWidgetTextBackground(const BPose *pose) const
+BPoseView::EraseWidgetTextBackground() const
 {
-	if (!fEraseWidgetBackground && TTracker::ShowVolumeSpaceBar()
-		&& pose && pose->TargetModel()->IsVolume())
-		return true;
 	return fEraseWidgetBackground;
 }
 

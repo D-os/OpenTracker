@@ -206,7 +206,7 @@ public:
 	rgb_color DeskTextColor() const;
 	rgb_color DeskTextBackColor() const;
 
-	bool EraseWidgetTextBackground(const BPose *pose = NULL) const;
+	bool EraseWidgetTextBackground() const;
 	void SetEraseWidgetTextBackground(bool);
 		// used to not erase when we have a background image and
 		// invalidate instead

@@ -270,6 +270,8 @@ BackgroundImage::WorkspaceActivated(BView *view, int32 workspace, bool state)
 		if (info)
 			Show(info, view);
 		else {
+			if (BPoseView *poseView = dynamic_cast<BPoseView *>(view))
+				poseView->SetEraseWidgetTextBackground(true);
 			view->ClearViewBitmap();
 			view->Invalidate();
 		}
