@@ -138,9 +138,9 @@ const char *kSymLinkReplaceStr = "An item named \"%s\" already exists in this fo
 const char *kNoFreeSpace = "Sorry, there is not enough free space on the destination "
 	"volume to copy the selection.";
 
-const char *kFileErrorString = "Error copying file \"%s\". Would you like to continue?";
-const char *kFolderErrorString = "Error copying folder \"%s\". Would you like to continue?";
-
+const char *kFileErrorString = "Error copying file \"%s\":\n\t%s\n\nWould you like to continue?";
+const char *kFolderErrorString = "Error copying folder \"%s\":\n\t%s\n\nWould you like to continue?";
+const char *kFileDeleteErrorString = "There was an error deleting \"%s\":\n\t%s";
 const char *kReplaceManyStr = "Some items already exist in this folder with "
 	"the same names as the items you are %s.\n \nWould you like to replace them "
 	"with the ones you are %s or be prompted for each one?";
@@ -163,11 +163,11 @@ CopyLoopControl::~CopyLoopControl()
 
 bool 
 TrackerCopyLoopControl::FileError(const char *message, const char *name,
-	bool allowContinue)
+	status_t error, bool allowContinue)
 {
-	char buffer[500];
-	sprintf(buffer, message, name);
-	
+	char buffer[512];
+	sprintf(buffer, message, name, strerror(error));
+
 	if (allowContinue) 
 		return (new BAlert("", buffer, "Cancel", "OK", 0,
 			B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go() != 0;
@@ -861,8 +861,8 @@ CopyFile(BEntry *srcFile, StatStruct *srcStat, BDirectory* destDir,
 
 	// check for free space first
 	if ((srcStat->st_size + kKBSize) >= volume.FreeBytes()) {
-		loopControl->FileError(kNoFreeSpace, "", false);
-		throw (status_t)B_NO_MEMORY;
+		loopControl->FileError(kNoFreeSpace, "", B_DEVICE_FULL, false);
+		throw (status_t)B_DEVICE_FULL;
 	}
 
 	char destName[B_FILE_NAME_LENGTH];
@@ -905,8 +905,7 @@ CopyFile(BEntry *srcFile, StatStruct *srcStat, BDirectory* destDir,
 			throw (status_t)err;
 
 		if (err != B_OK) {
-			PRINT(("file copy error %s\n", strerror(err)));
-			if (!loopControl->FileError(kFileErrorString, destName, true))
+			if (!loopControl->FileError(kFileErrorString, destName, err, true))
 				throw (status_t)err;
 			else
 				// user selected continue in spite of error, update status bar
@@ -983,7 +982,6 @@ LowLevelCopy(BEntry *srcEntry, StatStruct *srcStat, BDirectory *destDir,
 
 	char *buffer = new char[bufsize];
 	try {
-	
 		// copy data portion of file
 		while (true) {
 			if (loopControl->CheckUserCanceled()) {
@@ -1023,10 +1021,8 @@ LowLevelCopy(BEntry *srcEntry, StatStruct *srcStat, BDirectory *destDir,
 				// we are done
 				break;
 		}
-	
-	
-		CopyAttributes(loopControl, &srcFile, &destFile, buffer, bufsize);
 
+		CopyAttributes(loopControl, &srcFile, &destFile, buffer, bufsize);
 	} catch (...) {
 		delete [] buffer;
 		throw;
@@ -1166,10 +1162,9 @@ CopyFolder(BEntry *srcEntry, BDirectory *destDir, CopyLoopControl *loopControl,
 	if (createDirectory) {
 	 	err = destDir->CreateDirectory(destName, &newDir);
 	 	if (err != B_OK) {
-			PRINT(("folder copy error %s\n", strerror(err)));
-			if (!loopControl->FileError(kFolderErrorString, destName, true))
+			if (!loopControl->FileError(kFolderErrorString, destName, err, true))
 				throw err;
-	
+
 			// will allow rest of copy to continue
 			return;
 		}
@@ -1348,21 +1343,15 @@ MoveItem(BEntry *entry, BDirectory *destDir, BPoint *loc, uint32 moveMode,
 			else
 				CopyFile(entry, &statbuf, destDir, &loopControl, loc, makeOriginalName);
 		}
-	}
-
-	catch (status_t error) {
+	} catch (status_t error) {
 		// no alert, was already taken care of before
 		return error;
-	}
-
-	catch (MoveError error) {
+	} catch (MoveError error) {
 		BString errorString;
 		errorString << "Error moving \"" << ref.name << '"';
 		(new BAlert("", errorString.String(), "OK", 0, 0, B_WIDTH_AS_USUAL, B_WARNING_ALERT))->Go();
 		return error.fError;
-	}
-	
-	catch (FailWithAlert error) {
+	} catch (FailWithAlert error) {
 		char buffer[256];
 		if (error.fName)
 			sprintf(buffer, error.fString, error.fName);
@@ -1394,7 +1383,7 @@ FSCopyFolder(BEntry *srcEntry, BDirectory *destDir, CopyLoopControl *loopControl
 	} catch (status_t error) {
 		return error;
 	}
-	
+
 	return B_OK;
 }
 
@@ -1457,7 +1446,7 @@ FSCopyFile(BEntry* srcFile, StatStruct *srcStat, BDirectory* destDir,
 	} catch (status_t error) {
 		return error;
 	}
-	
+
 	return B_OK;
 }
 
@@ -1812,8 +1801,7 @@ FSDeleteFolder(BEntry *dir_entry, CopyLoopControl *loopControl, bool update_stat
 		else if (err == B_OK)
 			dir.Rewind();
 		else 
-			loopControl->FileError("There was an error deleting \"%s\"", 
-				ref.name, false);
+			loopControl->FileError(kFileDeleteErrorString, ref.name, err, false);
 	}
 
 	if (loopControl->CheckUserCanceled())

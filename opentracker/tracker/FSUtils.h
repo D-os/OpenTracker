@@ -61,84 +61,87 @@ class CopyLoopControl {
 	// controls the copy engine; may be overriden to specify how conflicts are
 	// handled, etc.
 	// Installer has it's own subclass
-public:
-	virtual ~CopyLoopControl();
-	virtual bool FileError(const char *message, const char *name, bool allowContinue) = 0;
-		// inform that a file error occurred while copying <name>
-		// returns true if user decided to continue
+	public:
+		virtual ~CopyLoopControl();
+		virtual bool FileError(const char *message, const char *name, status_t error,
+			bool allowContinue) = 0;
+			// inform that a file error occurred while copying <name>
+			// returns true if user decided to continue
 
-	virtual void UpdateStatus(const char *name, entry_ref ref, int32 count, 
-		bool optional = false) = 0;
+		virtual void UpdateStatus(const char *name, entry_ref ref, int32 count, 
+			bool optional = false) = 0;
 
-	virtual bool CheckUserCanceled() = 0;
-		// returns true if canceled
-	
-	enum OverwriteMode {
-		kSkip,				// do not replace, go to next entry
-		kReplace,			// remove entry before copying new one
-		kMerge				// for folders: leave existing folder, update contents leaving
-							//  nonconflicting items
-							// for files: save original attributes on file.
-	};
+		virtual bool CheckUserCanceled() = 0;
+			// returns true if canceled
 
-	virtual OverwriteMode OverwriteOnConflict(const BEntry *srcEntry, 
-		const char *destName, const BDirectory *destDir, bool srcIsDir, 
-		bool dstIsDir) = 0;
-		// override to always overwrite, never overwrite, let user decide, 
-		// compare dates, etc.
-	
-	virtual bool SkipEntry(const BEntry *, bool file) = 0;
-		// override to prevent copying of a given file or directory
+		enum OverwriteMode {
+			kSkip,				// do not replace, go to next entry
+			kReplace,			// remove entry before copying new one
+			kMerge				// for folders: leave existing folder, update contents leaving
+								//  nonconflicting items
+								// for files: save original attributes on file.
+		};
 
-	virtual void ChecksumChunk(const char *block, size_t size);
-		// during a file copy, this is called every time a chunk of data
-		// is copied.  Users may override to keep a running checksum.
-	
-	virtual bool ChecksumFile(const entry_ref *);
-		// This is called when a file is finished copying.  Users of this
-		// class may override to verify that the checksum they've been
-		// computing in ChecksumChunk matches.  If this returns true,
-		// the copy will continue.  If false, if will abort.
+		virtual OverwriteMode OverwriteOnConflict(const BEntry *srcEntry, 
+			const char *destName, const BDirectory *destDir, bool srcIsDir, 
+			bool dstIsDir) = 0;
+			// override to always overwrite, never overwrite, let user decide, 
+			// compare dates, etc.
 
-	virtual bool SkipAttribute(const char *attributeName);
-	virtual bool PreserveAttribute(const char *attributeName);
+		virtual bool SkipEntry(const BEntry *, bool file) = 0;
+			// override to prevent copying of a given file or directory
+
+		virtual void ChecksumChunk(const char *block, size_t size);
+			// during a file copy, this is called every time a chunk of data
+			// is copied.  Users may override to keep a running checksum.
+
+		virtual bool ChecksumFile(const entry_ref *);
+			// This is called when a file is finished copying.  Users of this
+			// class may override to verify that the checksum they've been
+			// computing in ChecksumChunk matches.  If this returns true,
+			// the copy will continue.  If false, if will abort.
+
+		virtual bool SkipAttribute(const char *attributeName);
+		virtual bool PreserveAttribute(const char *attributeName);
 };
 
 
 class TrackerCopyLoopControl : public CopyLoopControl {
 	// this is the Tracker copy - specific version of CopyLoopControl
-public:
-	TrackerCopyLoopControl(thread_id);
-	virtual ~TrackerCopyLoopControl() {}
+	public:
+		TrackerCopyLoopControl(thread_id);
+		virtual ~TrackerCopyLoopControl() {}
 
-	virtual bool FileError(const char *message, const char *name, bool allowContinue);
-		// inform that a file error occurred while copying <name>
-		// returns true if user decided to continue
+		virtual bool FileError(const char *message, const char *name, status_t error,
+			bool allowContinue);
+			// inform that a file error occurred while copying <name>
+			// returns true if user decided to continue
 
-	virtual void UpdateStatus(const char *name, entry_ref ref, int32 count,
-		bool optional = false);
+		virtual void UpdateStatus(const char *name, entry_ref ref, int32 count,
+			bool optional = false);
 
-	virtual bool CheckUserCanceled();
-		// returns true if canceled
-	
-	virtual OverwriteMode OverwriteOnConflict(const BEntry *srcEntry, 
-		const char *destName, const BDirectory *destDir, bool srcIsDir, 
-		bool dstIsDir);
+		virtual bool CheckUserCanceled();
+			// returns true if canceled
 
-	virtual bool SkipEntry(const BEntry *, bool file);
-		// override to prevent copying of a given file or directory
+		virtual OverwriteMode OverwriteOnConflict(const BEntry *srcEntry, 
+			const char *destName, const BDirectory *destDir, bool srcIsDir, 
+			bool dstIsDir);
 
-	virtual bool SkipAttribute(const char *attributeName);
+		virtual bool SkipEntry(const BEntry *, bool file);
+			// override to prevent copying of a given file or directory
 
-private:
-	thread_id fThread;
+		virtual bool SkipAttribute(const char *attributeName);
+
+	private:
+		thread_id fThread;
 };
+
 
 inline 
 TrackerCopyLoopControl::TrackerCopyLoopControl(thread_id thread)
-	:	fThread(thread)
-	{
-	}
+	: fThread(thread)
+{
+}
 
 #define B_DESKTOP_DIR_NAME "Desktop"
 
@@ -182,7 +185,6 @@ _IMPEXP_TRACKER status_t FSLaunchItem(const entry_ref *application, const BMessa
 	
 _IMPEXP_TRACKER status_t FSOpenWith(BMessage *listOfRefs);
 	// runs the Open With window; pas a list of refs
-
 
 _IMPEXP_TRACKER void FSEmptyTrash();
 _IMPEXP_TRACKER status_t FSMoveEntryToTrash(BEntry *, BPoint *);
@@ -263,44 +265,48 @@ const int32 B_BOOT_DISK = 10000000;
 class WellKnowEntryList {
 	// matches up names, id's and node_refs of well known entries in the
 	// system hierarchy
-
-public:
-	struct WellKnownEntry {
-		WellKnownEntry(const node_ref *node, directory_which which, const char *name)
-			:	node(*node),
+	public:
+		struct WellKnownEntry {
+			WellKnownEntry(const node_ref *node, directory_which which, const char *name)
+				:
+				node(*node),
 				which(which),
 				name(name)
-			{}
+			{
+			}
 
-		// mwcc needs these explicitly to use vector
-		WellKnownEntry(const WellKnownEntry &clone)
-			:	node(clone.node),
+			// mwcc needs these explicitly to use vector
+			WellKnownEntry(const WellKnownEntry &clone)
+				:
+				node(clone.node),
 				which(clone.which),
 				name(clone.name)
-			{}
-		
-		WellKnownEntry()
-			{}
-		
-		node_ref node;
-		directory_which which;
-		const char *name;
-	};
-	
-	static directory_which Match(const node_ref *);
-	static const WellKnownEntry *MatchEntry(const node_ref *);
-	static void Quit();
+			{
+			}
 
-private:
-	const WellKnownEntry *MatchEntryCommon(const node_ref *);
-	WellKnowEntryList();
-	void AddOne(directory_which, const char *name);
-	void AddOne(directory_which, const char *path, const char *name);
-	void AddOne(directory_which, directory_which base, const char *extension,
-		const char *name);
-	
-	std::vector<WellKnownEntry> entries;
-	static WellKnowEntryList *self;
+			WellKnownEntry()
+			{
+			}
+
+			node_ref node;
+			directory_which which;
+			const char *name;
+		};
+
+		static directory_which Match(const node_ref *);
+		static const WellKnownEntry *MatchEntry(const node_ref *);
+		static void Quit();
+
+	private:
+		const WellKnownEntry *MatchEntryCommon(const node_ref *);
+		WellKnowEntryList();
+		void AddOne(directory_which, const char *name);
+		void AddOne(directory_which, const char *path, const char *name);
+		void AddOne(directory_which, directory_which base, const char *extension,
+			const char *name);
+
+		std::vector<WellKnownEntry> entries;
+		static WellKnowEntryList *self;
 };
 
 #if B_BEOS_VERSION_DANO
@@ -311,4 +317,4 @@ private:
 
 using namespace BPrivate;
 
-#endif
+#endif	/* FS_UTILS_H */
