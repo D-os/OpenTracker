@@ -159,7 +159,7 @@ public:
 	void SetAutoScroll(bool);
 	void SetPoseEditing(bool);
 
-	void UpdateVolumeIcon(dev_t *device, bool forceUpdate = false);
+	void UpdateVolumeIcon(dev_t device, bool forceUpdate = false);
 	void UpdateVolumeIcons();
 
 	// file change notification handler
@@ -276,7 +276,6 @@ public:
 	void ClearSelection();
 	void ShowSelection(bool);
 	void AddRemovePoseFromSelection(BPose *pose, int32 index, bool select);
-
 
 	BLooper *SelectionHandler();
 	void SetSelectionHandler(BLooper *);

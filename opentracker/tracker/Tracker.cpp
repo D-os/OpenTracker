@@ -1801,11 +1801,19 @@ rgb_color ValueToColor(int32 value)
 	color.green = (value >> 8L) & 0xff;
 	color.blue = value & 0xff;
 
+	// zero alpha is invalid
+	if (color.alpha == 0)
+		color.alpha = 192;
+
 	return color;	
 }
 
 int32 ColorToValue(rgb_color color)
 {
+	// zero alpha is invalid
+	if (color.alpha == 0)
+		color.alpha = 192;
+
 	return	color.alpha << 24L
 			| color.red << 16L
 			| color.green << 8L
@@ -1822,6 +1830,8 @@ TTrackerState::UsedSpaceColor()
 void
 TTrackerState::SetUsedSpaceColor(rgb_color color)
 {
+	if (color.alpha == 0)
+		color.alpha = 192;
 	fUsedSpaceColor->ValueChanged(ColorToValue(color));
 }
 
@@ -1835,6 +1845,8 @@ TTrackerState::FreeSpaceColor()
 void
 TTrackerState::SetFreeSpaceColor(rgb_color color)
 {
+	if (color.alpha == 0)
+		color.alpha = 192;
 	fFreeSpaceColor->ValueChanged(ColorToValue(color));
 }
 
@@ -1848,6 +1860,8 @@ TTrackerState::WarningSpaceColor()
 void
 TTrackerState::SetWarningSpaceColor(rgb_color color)
 {
+	if (color.alpha == 0)
+		color.alpha = 192;
 	fWarningSpaceColor->ValueChanged(ColorToValue(color));
 }
 
@@ -2017,9 +2031,9 @@ TTrackerState::LoadSettingsIfNeeded()
 
 	Add(fShowVolumeSpaceBar = new BooleanValueSetting("ShowVolumeSpaceBar", 0));
 
-	Add(fUsedSpaceColor = new ScalarValueSetting("UsedSpaceColor", 0x0000cb00, "", "", LONG_MIN, LONG_MAX, true));
-	Add(fFreeSpaceColor = new ScalarValueSetting("FreeSpaceColor", 0x00ffffff, "", "", LONG_MIN, LONG_MAX, true));
-	Add(fWarningSpaceColor = new ScalarValueSetting("WarningSpaceColor", 0x00cb0000, "", "", LONG_MIN, LONG_MAX, true));
+	Add(fUsedSpaceColor = new ScalarValueSetting("UsedSpaceColor", 0xc000cb00, "", "", LONG_MIN, LONG_MAX, true));
+	Add(fFreeSpaceColor = new ScalarValueSetting("FreeSpaceColor", 0xc0ffffff, "", "", LONG_MIN, LONG_MAX, true));
+	Add(fWarningSpaceColor = new ScalarValueSetting("WarningSpaceColor", 0xc0cb0000, "", "", LONG_MIN, LONG_MAX, true));
 
 	TryReadingSettings();
 

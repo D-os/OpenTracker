@@ -724,9 +724,7 @@ BPose::DrawBar(BPoint where,BView *view,icon_size kind)
 		barPos = barHeight;
 
 	// the free space bar
-	rgb_color color = TTracker::FreeSpaceColor();
-	color.alpha = 192;
-	view->SetHighColor(color);
+	view->SetHighColor(TTracker::FreeSpaceColor());
 
 	rect.InsetBy(1,1);
 	BRect bar(rect);
@@ -737,12 +735,7 @@ BPose::DrawBar(BPoint where,BView *view,icon_size kind)
 	// the used space bar
 	bar.top = bar.bottom + 1;
 	bar.bottom = rect.bottom;
-	if (fPercent < -1)
-		color = TTracker::WarningSpaceColor();
-	else
-		color = TTracker::UsedSpaceColor();
-	color.alpha = 192;
-	view->SetHighColor(color);
+	view->SetHighColor(fPercent < -1 ? TTracker::WarningSpaceColor() : TTracker::UsedSpaceColor());
 	view->FillRect(bar);
 
 	view->PopState();

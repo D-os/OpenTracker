@@ -2076,7 +2076,7 @@ BPoseView::MessageReceived(BMessage *message)
 						case kUpdateVolumeSpaceBar:
 							dev_t device;
 							message->FindInt32("device", (int32 *)&device);
-							UpdateVolumeIcon(&device);	
+							UpdateVolumeIcon(device);	
 							break;
 					}
 				}		
@@ -4790,7 +4790,7 @@ BPoseView::AttributeChanged(const BMessage *message)
 }
 
 void 
-BPoseView::UpdateVolumeIcon(dev_t *device, bool forceUpdate)
+BPoseView::UpdateVolumeIcon(dev_t device, bool forceUpdate)
 {
 	int32 index;
 	BPose *pose = fPoseList->FindVolumePose(device,&index);
@@ -4815,7 +4815,7 @@ BPoseView::UpdateVolumeIcons()
 		node_ref nodeRef;
 		dir.GetNodeRef(&nodeRef);
 
-		UpdateVolumeIcon(&nodeRef.device, true);
+		UpdateVolumeIcon(nodeRef.device, true);
 	}
 }
 

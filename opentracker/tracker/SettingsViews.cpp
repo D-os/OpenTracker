@@ -1218,9 +1218,9 @@ SpaceBarSettingsView::SetDefaults()
 
 	tracker->SetShowVolumeSpaceBar(false);
 
-	tracker->SetUsedSpaceColor(Color(0,0xcb,0));
-	tracker->SetFreeSpaceColor(Color(0xff,0xff,0xff));
-	tracker->SetWarningSpaceColor(Color(0xcb,0,0));
+	tracker->SetUsedSpaceColor(Color(0,0xcb,0,192));
+	tracker->SetFreeSpaceColor(Color(0xff,0xff,0xff,192));
+	tracker->SetWarningSpaceColor(Color(0xcb,0,0,192));
 
 	ShowCurrentSettings(true);
 		// true -> send notices about the change
