@@ -32,8 +32,8 @@ names are registered trademarks or trademarks of their respective holders.
 All rights reserved.
 */
 
-#ifndef _TRACKER_ICONS_H
-#define _TRACKER_ICONS_H
+#ifndef _TRACKER_PRIVATE_H
+#define _TRACKER_PRIVATE_H
 
 #include <BeBuild.h>
 
@@ -45,8 +45,8 @@ namespace BPrivate {
 #if !B_BEOS_VERSION_DANO
 _IMPEXP_TRACKER
 #endif
-void TrackerInitIconPreloader();
+void InitIconPreloader();
 
 }
 
-#endif
+#endif	/* _TRACKER_PRIVATE_H */
