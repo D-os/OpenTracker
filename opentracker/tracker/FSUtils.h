@@ -148,13 +148,6 @@ TrackerCopyLoopControl::TrackerCopyLoopControl(thread_id thread)
 #if B_BEOS_VERSION_DANO
 #define _IMPEXP_TRACKER
 #endif
-_IMPEXP_TRACKER status_t FSCopyFile(BEntry *, StatStruct *, BDirectory *, CopyLoopControl *, 
-	BPoint * = 0, bool = false);
-_IMPEXP_TRACKER status_t FSCopyFolder(BEntry *, BDirectory *, CopyLoopControl *, BPoint * = 0,
-	bool = false);
-_IMPEXP_TRACKER status_t FSDeleteFolder(BEntry *, CopyLoopControl *, bool updateStatus, 
-	bool deleteTopDir = true, bool upateFileNameInStatus = false);
-
 _IMPEXP_TRACKER status_t FSCopyAttributesAndStats(BNode *, BNode *);
 
 _IMPEXP_TRACKER void FSDuplicate(BObjectList<entry_ref> *srcList, BList *pointList);
@@ -168,9 +161,8 @@ _IMPEXP_TRACKER bool FSIsSystemDir(const BEntry *);
 _IMPEXP_TRACKER bool FSIsBeOSDir(const BEntry *);
 _IMPEXP_TRACKER bool FSIsHomeDir(const BEntry *);
 _IMPEXP_TRACKER void FSMoveToTrash(BObjectList<entry_ref> *srcList, BList *pointList = NULL,
-	bool asynch = true);
+	bool async = true);
 	// Deprecated
-	// only returns actual result if asynch false
 
 void FSDeleteRefList(BObjectList<entry_ref> *, bool, bool confirm = true);
 void FSDelete(entry_ref *, bool, bool confirm = true);
@@ -187,7 +179,6 @@ _IMPEXP_TRACKER status_t FSOpenWith(BMessage *listOfRefs);
 	// runs the Open With window; pas a list of refs
 
 _IMPEXP_TRACKER void FSEmptyTrash();
-_IMPEXP_TRACKER status_t FSMoveEntryToTrash(BEntry *, BPoint *);
 _IMPEXP_TRACKER status_t FSCreateNewFolderIn(const node_ref *destDir, entry_ref *newRef,
 	node_ref *new_node);
 _IMPEXP_TRACKER void FSCreateTrashDirs();
