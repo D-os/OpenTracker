@@ -60,10 +60,11 @@ rule UnarchiveFiles
 	local file ;
 	for file in $(files) {
 		# Decompose the file path into components and compute a grist.
-		local components = [ SplitPath $(file) ] ;
+		local components = [ FSplitPath $(file) ] ;
 		components = [ FReverse $(components[$(firstComponent)-]) ] ;
 		if ! $(components) {
-			Exit ERROR: ExtractAll: Stripped all path components off $(file)! ;
+			Exit "ERROR: UnarchiveFiles: Stripped all path components off"
+				 $(file)! ;
 		}
 		local target = $(components[1]) ;
 		components = [ FReverse $(components[2-]) ] ;
@@ -108,15 +109,73 @@ rule UnarchiveFile
 	# Choose the extraction rule depending on the archive's suffix.
 	switch $(archive:S)
 	{
-		case .zip :	UnZip $(target) : $(archive) ;
-		case .tgz :	UnTarGZ $(target) : $(archive) ;
+		case .zip :	UnZipFile $(target) : $(archive) ;
+		case .tgz :	UnTarGZFile $(target) : $(archive) ;
 		case .gz :
 		{
 			local a = $(archive:S=) ;
 			if $(a:S) = .tar {
-				UnTarGZ $(target) : $(archive) ;
+				UnTarGZFile $(target) : $(archive) ;
 			} else if ! $(a:S) {
-				UnGZ $(target) : $(archive) ;
+				UnGZFile $(target) : $(archive) ;
+			} else {
+				Echo "UnarchiveFile: Unknown suffix on archive" $(archive) ;
+			}
+		}
+		case .bz2 :
+		{
+			local a = $(archive:S=) ;
+			if $(a:S) = .tar {
+				UnTarBZ2File $(target) : $(archive) ;
+			} else if ! $(a:S) {
+				UnBZ2File $(target) : $(archive) ;
+			} else {
+				Echo "UnarchiveFile: Unknown suffix on archive" $(archive) ;
+			}
+		}
+		case * :	ECHO "UnarchiveFile: Unknown suffix on archive" $(archive) ;
+	}
+}
+
+rule Unarchive
+{
+	# Unarchive <targets> : <archive> : <dir> ;
+	#
+	# Unarchives an archive completely. Targets can be specified, which
+	# are created in the process. They will be made dependent on the archive.
+	#
+	# <targets>: The targets created by unarchiving the archive.
+	# <archive>: The archive.
+	# <dir>: The destination dir where to unarchive the archive.
+	#
+	local targets = $(1) ;
+	local archive = $(2) ;
+	local dir = $(3) ;
+
+	NoUpdate $(targets) ;
+
+	# We pick the first target as "main target" and make all other targets
+	# depend on it. The main target in turn is made dependent on the archive
+	# and will be built by the respective extraction rule.
+	local mainTarget = $(targets[1]) ;
+	Depends $(mainTarget) : $(archive) ;
+	for target in $(targets) {
+		if $(target) != $(mainTarget) {
+			Depends $(target) : $(mainTarget) ;
+		}
+	}
+	EXTRACTION_DIR on $(mainTarget) = $(dir) ;
+
+	# Choose the extraction rule depending on the archive's suffix.
+	switch $(archive:S)
+	{
+		case .zip :	UnZip $(mainTarget) : $(archive) ;
+		case .tgz :	UnTarGZ $(mainTarget) : $(archive) ;
+		case .gz :
+		{
+			local a = $(archive:S=) ;
+			if $(a:S) = .tar {
+				UnTarGZ $(mainTarget) : $(archive) ;
 			} else {
 				Echo "Extract: Unknown suffix on archive" $(archive) ;
 			}
@@ -125,9 +184,7 @@ rule UnarchiveFile
 		{
 			local a = $(archive:S=) ;
 			if $(a:S) = .tar {
-				UnTarBZ2 $(target) : $(archive) ;
-			} else if ! $(a:S) {
-				UnBZ2 $(target) : $(archive) ;
+				UnTarBZ2 $(mainTarget) : $(archive) ;
 			} else {
 				Echo "Extract: Unknown suffix on archive" $(archive) ;
 			}
@@ -136,27 +193,43 @@ rule UnarchiveFile
 	}
 }
 
-actions UnZip
+actions UnZipFile
 {
 	unzip -p $(2) $(FILE_TO_EXCTRACT) > $(1)
 }
 
-actions UnTarGZ
+actions UnTarGZFile
 {
 	tar -xvzOf $(2) $(FILE_TO_EXCTRACT) > $(1)
 }
 
-actions UnTarBZ2
+actions UnTarBZ2File
 {
-	bunzip2 -c $(2) | tar -xvzO $(FILE_TO_EXCTRACT) > $(1)
+	bunzip2 -c $(2) | tar -xvO $(FILE_TO_EXCTRACT) > $(1)
 }
 
-actions UnGZ
+actions UnGZFile
 {
 	zcat $(2) > $(1)
 }
 
-actions UnBZ2
+actions UnBZ2File
 {
 	bunzip2 -c $(2) > $(1)
 }
+
+actions UnZip
+{
+	unzip $(2) -d $(EXTRACTION_DIR)
+}
+
+actions UnTarGZ
+{
+	tar -xvzf $(2) -C $(EXTRACTION_DIR) 
+}
+
+actions UnTarBZ2
+{
+	bunzip2 -c $(2) | tar -xv  -C $(EXTRACTION_DIR)
+}
+
