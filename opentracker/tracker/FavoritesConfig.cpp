@@ -275,7 +275,8 @@ TFavoritesConfigWindow::TFavoritesConfigWindow(BRect frame, const char *title,
 
 	AddShortcut(B_UP_ARROW, B_COMMAND_KEY, new BMessage(kTraverseUp));
 
-	be_app->StartWatching(this, kFavoriteCountChanged);
+	BMessenger tracker(kTrackerSignature);
+	StartWatching(tracker, kFavoriteCountChanged);
 }
 
 
@@ -288,7 +289,8 @@ TFavoritesConfigWindow::~TFavoritesConfigWindow()
 		//	kill the filepanel if its still showing
 		fAddPanel->Hide();		
 
-	be_app->StopWatching(this, kFavoriteCountChanged);
+	BMessenger tracker(kTrackerSignature);
+	StopWatching(tracker, kFavoriteCountChanged);
 }
 
 

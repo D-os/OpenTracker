@@ -8938,7 +8938,12 @@ BPoseView::IsWatchingDateFormatChange()
 void
 BPoseView::StartWatchDateFormatChange()
 {
-	be_app->StartWatching(this, kDateFormatChanged); 
+	if (IsFilePanel()) {
+		BMessenger tracker(kTrackerSignature);
+		BHandler::StartWatching(tracker, kDateFormatChanged);
+	} else
+		be_app->StartWatching(this, kDateFormatChanged); 
+
 	fIsWatchingDateFormatChange = true;
 }
 
@@ -8946,7 +8951,12 @@ BPoseView::StartWatchDateFormatChange()
 void
 BPoseView::StopWatchDateFormatChange()
 {
-	be_app->StopWatching(this, kDateFormatChanged);
+	if (IsFilePanel()) {
+		BMessenger tracker(kTrackerSignature);
+		BHandler::StopWatching(tracker, kDateFormatChanged);
+	} else
+		be_app->StopWatching(this, kDateFormatChanged);
+
 	fIsWatchingDateFormatChange = false;
 }
 
