@@ -40,11 +40,13 @@ All rights reserved.
 #include <TextControl.h>
 #include <ColorControl.h>
 
-#include "Tracker.h"
+#include "TrackerSettings.h"
 
 const uint32 kSettingsContentsModified = 'Scmo';
 
 class BMenuField;
+class BStringView;
+
 
 namespace BPrivate {
 
