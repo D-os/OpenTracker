@@ -5,12 +5,12 @@ $(OBJ_DIR)/AutoMounter.o : AutoMounter.cpp ../shared/AutoLock.h AutoMounter.h \
  DeviceMap.h DeviceMapGlue.h AutoMounterSettings.h Commands.h \
  PublicCommands.h DeskWindow.h ContainerWindow.h LockingList.h \
  ../shared/ObjectList.h Model.h IconCache.h OpenHashTable.h \
- Utilities.h SlowContextPopup.h ../shared/NavMenu.h EntryIterator.h \
- NodeWalker.h IconMenuItem.h SlowMenu.h TaskLoop.h FunctionObject.h \
- DesktopPoseView.h PoseView.h AttributeStream.h \
- PendingNodeMonitorCache.h Pose.h TextWidget.h WidgetAttributeText.h \
- Tracker.h SettingsHandler.h ../shared/tracker_private.h PoseList.h \
- TitleView.h ViewState.h FSUtils.h
+ Utilities.h SlowContextPopup.h ../shared/NavMenu.h SlowMenu.h \
+ TaskLoop.h FunctionObject.h DesktopPoseView.h EntryIterator.h \
+ NodeWalker.h PoseView.h AttributeStream.h PendingNodeMonitorCache.h \
+ Pose.h TextWidget.h WidgetAttributeText.h Tracker.h SettingsHandler.h \
+ ../shared/tracker_private.h PoseList.h TitleView.h ViewState.h \
+ FSUtils.h
 $(OBJ_DIR)/AutoMounterSettings.o : AutoMounterSettings.cpp AutoMounter.h \
  DeviceMap.h DeviceMapGlue.h AutoMounterSettings.h
 $(OBJ_DIR)/BackgroundImage.o : BackgroundImage.cpp BackgroundImage.h \
@@ -18,49 +18,49 @@ $(OBJ_DIR)/BackgroundImage.o : BackgroundImage.cpp BackgroundImage.h \
  Commands.h PublicCommands.h PoseView.h AttributeStream.h \
  ContainerWindow.h LockingList.h Model.h IconCache.h \
  ../shared/AutoLock.h OpenHashTable.h Utilities.h SlowContextPopup.h \
- ../shared/NavMenu.h EntryIterator.h NodeWalker.h IconMenuItem.h \
- SlowMenu.h TaskLoop.h FunctionObject.h PendingNodeMonitorCache.h \
- Pose.h TextWidget.h WidgetAttributeText.h Tracker.h SettingsHandler.h \
- ../shared/tracker_private.h PoseList.h TitleView.h ViewState.h
+ ../shared/NavMenu.h SlowMenu.h TaskLoop.h FunctionObject.h \
+ PendingNodeMonitorCache.h Pose.h TextWidget.h WidgetAttributeText.h \
+ Tracker.h SettingsHandler.h ../shared/tracker_private.h PoseList.h \
+ TitleView.h ViewState.h
 $(OBJ_DIR)/Bitmaps.o : Bitmaps.cpp Bitmaps.h TrackerIcons.h Utilities.h
 $(OBJ_DIR)/ContainerWindow.o : ContainerWindow.cpp Attributes.h AttributeStream.h \
  ../shared/ObjectList.h ../shared/AutoLock.h BackgroundImage.h \
  Commands.h PublicCommands.h ContainerWindow.h LockingList.h Model.h \
  IconCache.h OpenHashTable.h Utilities.h SlowContextPopup.h \
- ../shared/NavMenu.h EntryIterator.h NodeWalker.h IconMenuItem.h \
- SlowMenu.h TaskLoop.h FunctionObject.h DeskWindow.h DesktopPoseView.h \
+ ../shared/NavMenu.h SlowMenu.h TaskLoop.h FunctionObject.h \
+ DeskWindow.h DesktopPoseView.h EntryIterator.h NodeWalker.h \
  PoseView.h PendingNodeMonitorCache.h Pose.h TextWidget.h \
  WidgetAttributeText.h Tracker.h SettingsHandler.h \
  ../shared/tracker_private.h PoseList.h TitleView.h ViewState.h \
- FindPanel.h DialogPane.h MimeTypeList.h FSUtils.h OpenWithWindow.h \
- MountMenu.h Navigator.h SelectionWindow.h TrackerString.h RegExp.h \
- Thread.h TemplatesMenu.h
+ FindPanel.h DialogPane.h MimeTypeList.h FSUtils.h IconMenuItem.h \
+ OpenWithWindow.h MountMenu.h Navigator.h SelectionWindow.h \
+ TrackerString.h RegExp.h Thread.h TemplatesMenu.h
 $(OBJ_DIR)/CountView.o : CountView.cpp ../shared/AutoLock.h Bitmaps.h \
  TrackerIcons.h CountView.h ContainerWindow.h LockingList.h \
  ../shared/ObjectList.h Model.h IconCache.h OpenHashTable.h \
- Utilities.h SlowContextPopup.h ../shared/NavMenu.h EntryIterator.h \
- NodeWalker.h IconMenuItem.h SlowMenu.h TaskLoop.h FunctionObject.h \
- DirMenu.h PoseView.h AttributeStream.h PendingNodeMonitorCache.h \
- Pose.h TextWidget.h WidgetAttributeText.h Tracker.h SettingsHandler.h \
- ../shared/tracker_private.h PoseList.h TitleView.h ViewState.h
+ Utilities.h SlowContextPopup.h ../shared/NavMenu.h SlowMenu.h \
+ TaskLoop.h FunctionObject.h DirMenu.h PoseView.h AttributeStream.h \
+ PendingNodeMonitorCache.h Pose.h TextWidget.h WidgetAttributeText.h \
+ Tracker.h SettingsHandler.h ../shared/tracker_private.h PoseList.h \
+ TitleView.h ViewState.h
 $(OBJ_DIR)/DeskWindow.o : DeskWindow.cpp Attributes.h ../shared/AutoLock.h \
  BackgroundImage.h /boot/develop/headers/be/support/String.h \
  ../shared/ObjectList.h Commands.h PublicCommands.h DesktopPoseView.h \
  EntryIterator.h NodeWalker.h PoseView.h AttributeStream.h \
  ContainerWindow.h LockingList.h Model.h IconCache.h OpenHashTable.h \
- Utilities.h SlowContextPopup.h ../shared/NavMenu.h IconMenuItem.h \
- SlowMenu.h TaskLoop.h FunctionObject.h PendingNodeMonitorCache.h \
- Pose.h TextWidget.h WidgetAttributeText.h Tracker.h SettingsHandler.h \
+ Utilities.h SlowContextPopup.h ../shared/NavMenu.h SlowMenu.h \
+ TaskLoop.h FunctionObject.h PendingNodeMonitorCache.h Pose.h \
+ TextWidget.h WidgetAttributeText.h Tracker.h SettingsHandler.h \
  ../shared/tracker_private.h PoseList.h TitleView.h ViewState.h \
- DeskWindow.h FSUtils.h MountMenu.h TemplatesMenu.h DeviceMap.h \
- DeviceMapGlue.h
+ DeskWindow.h FSUtils.h IconMenuItem.h MountMenu.h TemplatesMenu.h \
+ DeviceMap.h DeviceMapGlue.h
 $(OBJ_DIR)/DesktopPoseView.o : DesktopPoseView.cpp Commands.h PublicCommands.h \
  DesktopPoseView.h EntryIterator.h ../shared/ObjectList.h NodeWalker.h \
  PoseView.h AttributeStream.h ContainerWindow.h LockingList.h Model.h \
  IconCache.h ../shared/AutoLock.h OpenHashTable.h Utilities.h \
- SlowContextPopup.h ../shared/NavMenu.h IconMenuItem.h SlowMenu.h \
- TaskLoop.h FunctionObject.h PendingNodeMonitorCache.h Pose.h \
- TextWidget.h WidgetAttributeText.h Tracker.h SettingsHandler.h \
+ SlowContextPopup.h ../shared/NavMenu.h SlowMenu.h TaskLoop.h \
+ FunctionObject.h PendingNodeMonitorCache.h Pose.h TextWidget.h \
+ WidgetAttributeText.h Tracker.h SettingsHandler.h \
  ../shared/tracker_private.h PoseList.h TitleView.h ViewState.h \
  FSUtils.h TrackerString.h RegExp.h
 $(OBJ_DIR)/DialogPane.o : DialogPane.cpp \
@@ -69,19 +69,19 @@ $(OBJ_DIR)/DialogPane.o : DialogPane.cpp \
 $(OBJ_DIR)/DirMenu.o : DirMenu.cpp Attributes.h ContainerWindow.h LockingList.h \
  ../shared/ObjectList.h Model.h IconCache.h ../shared/AutoLock.h \
  OpenHashTable.h Utilities.h SlowContextPopup.h ../shared/NavMenu.h \
- EntryIterator.h NodeWalker.h IconMenuItem.h SlowMenu.h TaskLoop.h \
- FunctionObject.h DirMenu.h FSUtils.h Tracker.h SettingsHandler.h \
+ SlowMenu.h TaskLoop.h FunctionObject.h DirMenu.h FSUtils.h \
+ IconMenuItem.h Tracker.h SettingsHandler.h \
  ../shared/tracker_private.h
 $(OBJ_DIR)/EntryIterator.o : EntryIterator.cpp EntryIterator.h \
  ../shared/ObjectList.h NodeWalker.h
 $(OBJ_DIR)/FBCPadding.o : FBCPadding.cpp FilePanelPriv.h ContainerWindow.h \
  LockingList.h ../shared/ObjectList.h Model.h IconCache.h \
  ../shared/AutoLock.h OpenHashTable.h Utilities.h SlowContextPopup.h \
- ../shared/NavMenu.h EntryIterator.h NodeWalker.h IconMenuItem.h \
- SlowMenu.h TaskLoop.h FunctionObject.h PoseView.h AttributeStream.h \
- PendingNodeMonitorCache.h Pose.h TextWidget.h WidgetAttributeText.h \
- Tracker.h SettingsHandler.h ../shared/tracker_private.h PoseList.h \
- TitleView.h ViewState.h RecentItems.h
+ ../shared/NavMenu.h SlowMenu.h TaskLoop.h FunctionObject.h PoseView.h \
+ AttributeStream.h PendingNodeMonitorCache.h Pose.h TextWidget.h \
+ WidgetAttributeText.h Tracker.h SettingsHandler.h \
+ ../shared/tracker_private.h PoseList.h TitleView.h ViewState.h \
+ RecentItems.h
 $(OBJ_DIR)/FSUtils.o : FSUtils.cpp Attributes.h Bitmaps.h TrackerIcons.h \
  Commands.h PublicCommands.h FSUtils.h Model.h IconCache.h \
  ../shared/AutoLock.h ../shared/ObjectList.h OpenHashTable.h \
@@ -105,32 +105,31 @@ $(OBJ_DIR)/FavoritesMenu.o : FavoritesMenu.cpp EntryIterator.h \
 $(OBJ_DIR)/FilePanel.o : FilePanel.cpp ../shared/AutoLock.h Commands.h \
  PublicCommands.h FilePanelPriv.h ContainerWindow.h LockingList.h \
  ../shared/ObjectList.h Model.h IconCache.h OpenHashTable.h \
- Utilities.h SlowContextPopup.h ../shared/NavMenu.h EntryIterator.h \
- NodeWalker.h IconMenuItem.h SlowMenu.h TaskLoop.h FunctionObject.h \
- PoseView.h AttributeStream.h PendingNodeMonitorCache.h Pose.h \
- TextWidget.h WidgetAttributeText.h Tracker.h SettingsHandler.h \
- ../shared/tracker_private.h PoseList.h TitleView.h ViewState.h
+ Utilities.h SlowContextPopup.h ../shared/NavMenu.h SlowMenu.h \
+ TaskLoop.h FunctionObject.h PoseView.h AttributeStream.h \
+ PendingNodeMonitorCache.h Pose.h TextWidget.h WidgetAttributeText.h \
+ Tracker.h SettingsHandler.h ../shared/tracker_private.h PoseList.h \
+ TitleView.h ViewState.h
 $(OBJ_DIR)/FilePanelPriv.o : FilePanelPriv.cpp Attributes.h AttributeStream.h \
  ../shared/ObjectList.h ../shared/AutoLock.h Commands.h \
  PublicCommands.h DesktopPoseView.h EntryIterator.h NodeWalker.h \
  PoseView.h ContainerWindow.h LockingList.h Model.h IconCache.h \
  OpenHashTable.h Utilities.h SlowContextPopup.h ../shared/NavMenu.h \
- IconMenuItem.h SlowMenu.h TaskLoop.h FunctionObject.h \
- PendingNodeMonitorCache.h Pose.h TextWidget.h WidgetAttributeText.h \
- Tracker.h SettingsHandler.h ../shared/tracker_private.h PoseList.h \
- TitleView.h ViewState.h DirMenu.h ../shared/FavoritesConfig.h \
- FavoritesMenu.h FilePanelPriv.h FSUtils.h MimeTypes.h
+ SlowMenu.h TaskLoop.h FunctionObject.h PendingNodeMonitorCache.h \
+ Pose.h TextWidget.h WidgetAttributeText.h Tracker.h SettingsHandler.h \
+ ../shared/tracker_private.h PoseList.h TitleView.h ViewState.h \
+ DirMenu.h ../shared/FavoritesConfig.h FavoritesMenu.h FilePanelPriv.h \
+ FSUtils.h IconMenuItem.h MimeTypes.h
 $(OBJ_DIR)/FilePermissionsView.o : FilePermissionsView.cpp FilePermissionsView.h \
  Model.h IconCache.h ../shared/AutoLock.h ../shared/ObjectList.h \
  OpenHashTable.h Utilities.h
 $(OBJ_DIR)/FindPanel.o : FindPanel.cpp Attributes.h ../shared/AutoLock.h \
  Commands.h PublicCommands.h ContainerWindow.h LockingList.h \
  ../shared/ObjectList.h Model.h IconCache.h OpenHashTable.h \
- Utilities.h SlowContextPopup.h ../shared/NavMenu.h EntryIterator.h \
- NodeWalker.h IconMenuItem.h SlowMenu.h TaskLoop.h FunctionObject.h \
- FindPanel.h DialogPane.h MimeTypeList.h FSUtils.h MimeTypes.h \
- MiniMenuField.h Tracker.h SettingsHandler.h \
- ../shared/tracker_private.h
+ Utilities.h SlowContextPopup.h ../shared/NavMenu.h SlowMenu.h \
+ TaskLoop.h FunctionObject.h FindPanel.h DialogPane.h MimeTypeList.h \
+ NodeWalker.h FSUtils.h IconMenuItem.h MimeTypes.h MiniMenuField.h \
+ Tracker.h SettingsHandler.h ../shared/tracker_private.h
 $(OBJ_DIR)/IconCache.o : IconCache.cpp Bitmaps.h TrackerIcons.h MimeTypes.h \
  Model.h IconCache.h ../shared/AutoLock.h ../shared/ObjectList.h \
  OpenHashTable.h Utilities.h FSUtils.h Tracker.h LockingList.h \
@@ -143,11 +142,11 @@ $(OBJ_DIR)/InfoWindow.o : InfoWindow.cpp Attributes.h ../shared/AutoLock.h \
  Commands.h PublicCommands.h FSUtils.h Model.h IconCache.h \
  ../shared/ObjectList.h OpenHashTable.h Utilities.h IconMenuItem.h \
  InfoWindow.h DialogPane.h FilePermissionsView.h LockingList.h \
- ../shared/NavMenu.h EntryIterator.h NodeWalker.h SlowMenu.h \
- PoseView.h AttributeStream.h ContainerWindow.h SlowContextPopup.h \
- TaskLoop.h FunctionObject.h PendingNodeMonitorCache.h Pose.h \
- TextWidget.h WidgetAttributeText.h Tracker.h SettingsHandler.h \
- ../shared/tracker_private.h PoseList.h TitleView.h ViewState.h
+ ../shared/NavMenu.h SlowMenu.h PoseView.h AttributeStream.h \
+ ContainerWindow.h SlowContextPopup.h TaskLoop.h FunctionObject.h \
+ PendingNodeMonitorCache.h Pose.h TextWidget.h WidgetAttributeText.h \
+ Tracker.h SettingsHandler.h ../shared/tracker_private.h PoseList.h \
+ TitleView.h ViewState.h
 $(OBJ_DIR)/MimeTypeList.o : MimeTypeList.cpp ../shared/AutoLock.h MimeTypeList.h \
  ../shared/ObjectList.h Utilities.h Thread.h FunctionObject.h
 $(OBJ_DIR)/MiniMenuField.o : MiniMenuField.cpp MiniMenuField.h Utilities.h
@@ -165,19 +164,17 @@ $(OBJ_DIR)/Navigator.o : Navigator.cpp Bitmaps.h TrackerIcons.h Commands.h \
  PublicCommands.h ContainerWindow.h LockingList.h \
  ../shared/ObjectList.h Model.h IconCache.h ../shared/AutoLock.h \
  OpenHashTable.h Utilities.h SlowContextPopup.h ../shared/NavMenu.h \
- EntryIterator.h NodeWalker.h IconMenuItem.h SlowMenu.h TaskLoop.h \
- FunctionObject.h FSUtils.h Navigator.h Tracker.h SettingsHandler.h \
- ../shared/tracker_private.h
+ SlowMenu.h TaskLoop.h FunctionObject.h FSUtils.h Navigator.h \
+ Tracker.h SettingsHandler.h ../shared/tracker_private.h
 $(OBJ_DIR)/NavMenu.o : NavMenu.cpp Attributes.h Commands.h PublicCommands.h \
  ContainerWindow.h LockingList.h ../shared/ObjectList.h Model.h \
  IconCache.h ../shared/AutoLock.h OpenHashTable.h Utilities.h \
- SlowContextPopup.h ../shared/NavMenu.h EntryIterator.h NodeWalker.h \
- IconMenuItem.h SlowMenu.h TaskLoop.h FunctionObject.h \
- DesktopPoseView.h PoseView.h AttributeStream.h \
- PendingNodeMonitorCache.h Pose.h TextWidget.h WidgetAttributeText.h \
- Tracker.h SettingsHandler.h ../shared/tracker_private.h PoseList.h \
- TitleView.h ViewState.h FSUtils.h MimeTypes.h Thread.h \
- QueryPoseView.h
+ SlowContextPopup.h ../shared/NavMenu.h SlowMenu.h TaskLoop.h \
+ FunctionObject.h DesktopPoseView.h EntryIterator.h NodeWalker.h \
+ PoseView.h AttributeStream.h PendingNodeMonitorCache.h Pose.h \
+ TextWidget.h WidgetAttributeText.h Tracker.h SettingsHandler.h \
+ ../shared/tracker_private.h PoseList.h TitleView.h ViewState.h \
+ FSUtils.h IconMenuItem.h MimeTypes.h Thread.h QueryPoseView.h
 $(OBJ_DIR)/NodePreloader.o : NodePreloader.cpp ../shared/AutoLock.h IconCache.h \
  ../shared/ObjectList.h OpenHashTable.h Utilities.h NodePreloader.h \
  Model.h Thread.h FunctionObject.h Tracker.h LockingList.h \
@@ -187,8 +184,8 @@ $(OBJ_DIR)/OpenWithWindow.o : OpenWithWindow.cpp Attributes.h ../shared/AutoLock
  Commands.h PublicCommands.h FSUtils.h Model.h IconCache.h \
  ../shared/ObjectList.h OpenHashTable.h Utilities.h IconMenuItem.h \
  OpenWithWindow.h ContainerWindow.h LockingList.h SlowContextPopup.h \
- ../shared/NavMenu.h EntryIterator.h NodeWalker.h SlowMenu.h \
- TaskLoop.h FunctionObject.h PoseView.h AttributeStream.h \
+ ../shared/NavMenu.h SlowMenu.h TaskLoop.h FunctionObject.h \
+ EntryIterator.h NodeWalker.h PoseView.h AttributeStream.h \
  PendingNodeMonitorCache.h Pose.h TextWidget.h WidgetAttributeText.h \
  Tracker.h SettingsHandler.h ../shared/tracker_private.h PoseList.h \
  TitleView.h ViewState.h MimeTypes.h \
@@ -198,33 +195,30 @@ $(OBJ_DIR)/PendingNodeMonitorCache.o : PendingNodeMonitorCache.cpp \
  PendingNodeMonitorCache.h ../shared/ObjectList.h PoseView.h \
  AttributeStream.h ContainerWindow.h LockingList.h Model.h IconCache.h \
  ../shared/AutoLock.h OpenHashTable.h Utilities.h SlowContextPopup.h \
- ../shared/NavMenu.h EntryIterator.h NodeWalker.h IconMenuItem.h \
- SlowMenu.h TaskLoop.h FunctionObject.h Pose.h TextWidget.h \
- WidgetAttributeText.h Tracker.h SettingsHandler.h \
+ ../shared/NavMenu.h SlowMenu.h TaskLoop.h FunctionObject.h Pose.h \
+ TextWidget.h WidgetAttributeText.h Tracker.h SettingsHandler.h \
  ../shared/tracker_private.h PoseList.h TitleView.h ViewState.h
 $(OBJ_DIR)/Pose.o : Pose.cpp Attributes.h Commands.h PublicCommands.h IconCache.h \
  ../shared/AutoLock.h ../shared/ObjectList.h OpenHashTable.h \
  Utilities.h PoseView.h AttributeStream.h ContainerWindow.h \
  LockingList.h Model.h SlowContextPopup.h ../shared/NavMenu.h \
- EntryIterator.h NodeWalker.h IconMenuItem.h SlowMenu.h TaskLoop.h \
- FunctionObject.h PendingNodeMonitorCache.h Pose.h TextWidget.h \
- WidgetAttributeText.h Tracker.h SettingsHandler.h \
+ SlowMenu.h TaskLoop.h FunctionObject.h PendingNodeMonitorCache.h \
+ Pose.h TextWidget.h WidgetAttributeText.h Tracker.h SettingsHandler.h \
  ../shared/tracker_private.h PoseList.h TitleView.h ViewState.h
 $(OBJ_DIR)/PoseList.o : PoseList.cpp PoseView.h AttributeStream.h \
  ../shared/ObjectList.h ContainerWindow.h LockingList.h Model.h \
  IconCache.h ../shared/AutoLock.h OpenHashTable.h Utilities.h \
- SlowContextPopup.h ../shared/NavMenu.h EntryIterator.h NodeWalker.h \
- IconMenuItem.h SlowMenu.h TaskLoop.h FunctionObject.h \
- PendingNodeMonitorCache.h Pose.h TextWidget.h WidgetAttributeText.h \
- Tracker.h SettingsHandler.h ../shared/tracker_private.h PoseList.h \
- TitleView.h ViewState.h
+ SlowContextPopup.h ../shared/NavMenu.h SlowMenu.h TaskLoop.h \
+ FunctionObject.h PendingNodeMonitorCache.h Pose.h TextWidget.h \
+ WidgetAttributeText.h Tracker.h SettingsHandler.h \
+ ../shared/tracker_private.h PoseList.h TitleView.h ViewState.h
 $(OBJ_DIR)/PoseView.o : PoseView.cpp Attributes.h AttributeStream.h \
  ../shared/ObjectList.h ../shared/AutoLock.h BackgroundImage.h \
  Bitmaps.h TrackerIcons.h Commands.h PublicCommands.h \
  ContainerWindow.h LockingList.h Model.h IconCache.h OpenHashTable.h \
- Utilities.h SlowContextPopup.h ../shared/NavMenu.h EntryIterator.h \
- NodeWalker.h IconMenuItem.h SlowMenu.h TaskLoop.h FunctionObject.h \
- CountView.h DeskWindow.h DesktopPoseView.h PoseView.h \
+ Utilities.h SlowContextPopup.h ../shared/NavMenu.h SlowMenu.h \
+ TaskLoop.h FunctionObject.h CountView.h DeskWindow.h \
+ DesktopPoseView.h EntryIterator.h NodeWalker.h PoseView.h \
  PendingNodeMonitorCache.h Pose.h TextWidget.h WidgetAttributeText.h \
  Tracker.h SettingsHandler.h ../shared/tracker_private.h PoseList.h \
  TitleView.h ViewState.h DirMenu.h FilePanelPriv.h FSUtils.h \
@@ -235,16 +229,15 @@ $(OBJ_DIR)/PoseViewScripting.o : PoseViewScripting.cpp Tracker.h LockingList.h \
  ../shared/ObjectList.h SettingsHandler.h Utilities.h \
  ../shared/tracker_private.h PoseView.h AttributeStream.h \
  ContainerWindow.h Model.h IconCache.h ../shared/AutoLock.h \
- OpenHashTable.h SlowContextPopup.h ../shared/NavMenu.h \
- EntryIterator.h NodeWalker.h IconMenuItem.h SlowMenu.h TaskLoop.h \
- FunctionObject.h PendingNodeMonitorCache.h Pose.h TextWidget.h \
- WidgetAttributeText.h PoseList.h TitleView.h ViewState.h
+ OpenHashTable.h SlowContextPopup.h ../shared/NavMenu.h SlowMenu.h \
+ TaskLoop.h FunctionObject.h PendingNodeMonitorCache.h Pose.h \
+ TextWidget.h WidgetAttributeText.h PoseList.h TitleView.h ViewState.h
 $(OBJ_DIR)/QueryContainerWindow.o : QueryContainerWindow.cpp Attributes.h \
  Commands.h PublicCommands.h QueryContainerWindow.h ContainerWindow.h \
  LockingList.h ../shared/ObjectList.h Model.h IconCache.h \
  ../shared/AutoLock.h OpenHashTable.h Utilities.h SlowContextPopup.h \
- ../shared/NavMenu.h EntryIterator.h NodeWalker.h IconMenuItem.h \
- SlowMenu.h TaskLoop.h FunctionObject.h QueryPoseView.h PoseView.h \
+ ../shared/NavMenu.h SlowMenu.h TaskLoop.h FunctionObject.h \
+ QueryPoseView.h EntryIterator.h NodeWalker.h PoseView.h \
  AttributeStream.h PendingNodeMonitorCache.h Pose.h TextWidget.h \
  WidgetAttributeText.h Tracker.h SettingsHandler.h \
  ../shared/tracker_private.h PoseList.h TitleView.h ViewState.h
@@ -254,53 +247,52 @@ $(OBJ_DIR)/QueryPoseView.o : QueryPoseView.cpp Attributes.h AttributeStream.h \
  NodeWalker.h FSUtils.h Model.h IconCache.h OpenHashTable.h \
  MimeTypes.h QueryPoseView.h EntryIterator.h PoseView.h \
  ContainerWindow.h LockingList.h SlowContextPopup.h \
- ../shared/NavMenu.h IconMenuItem.h SlowMenu.h TaskLoop.h \
- FunctionObject.h PendingNodeMonitorCache.h Pose.h TextWidget.h \
- WidgetAttributeText.h Tracker.h SettingsHandler.h \
- ../shared/tracker_private.h PoseList.h TitleView.h ViewState.h
+ ../shared/NavMenu.h SlowMenu.h TaskLoop.h FunctionObject.h \
+ PendingNodeMonitorCache.h Pose.h TextWidget.h WidgetAttributeText.h \
+ Tracker.h SettingsHandler.h ../shared/tracker_private.h PoseList.h \
+ TitleView.h ViewState.h
 $(OBJ_DIR)/RecentItems.o : RecentItems.cpp Attributes.h IconMenuItem.h Model.h \
  IconCache.h ../shared/AutoLock.h ../shared/ObjectList.h \
- OpenHashTable.h Utilities.h ../shared/NavMenu.h EntryIterator.h \
- NodeWalker.h SlowMenu.h PoseView.h AttributeStream.h \
- ContainerWindow.h LockingList.h SlowContextPopup.h TaskLoop.h \
- FunctionObject.h PendingNodeMonitorCache.h Pose.h TextWidget.h \
- WidgetAttributeText.h Tracker.h SettingsHandler.h \
+ OpenHashTable.h Utilities.h ../shared/NavMenu.h SlowMenu.h PoseView.h \
+ AttributeStream.h ContainerWindow.h LockingList.h SlowContextPopup.h \
+ TaskLoop.h FunctionObject.h PendingNodeMonitorCache.h Pose.h \
+ TextWidget.h WidgetAttributeText.h Tracker.h SettingsHandler.h \
  ../shared/tracker_private.h PoseList.h TitleView.h ViewState.h \
  RecentItems.h
 $(OBJ_DIR)/RegExp.o : RegExp.cpp RegExp.h
 $(OBJ_DIR)/SelectionWindow.o : SelectionWindow.cpp ../shared/AutoLock.h \
  ContainerWindow.h LockingList.h ../shared/ObjectList.h Model.h \
  IconCache.h OpenHashTable.h Utilities.h SlowContextPopup.h \
- ../shared/NavMenu.h EntryIterator.h NodeWalker.h IconMenuItem.h \
- SlowMenu.h TaskLoop.h FunctionObject.h Commands.h PublicCommands.h \
- /boot/develop/headers/be/interface/Screen.h SelectionWindow.h \
- TrackerString.h RegExp.h
+ ../shared/NavMenu.h SlowMenu.h TaskLoop.h FunctionObject.h Commands.h \
+ PublicCommands.h /boot/develop/headers/be/interface/Screen.h \
+ SelectionWindow.h TrackerString.h RegExp.h
 $(OBJ_DIR)/SettingsHandler.o : SettingsHandler.cpp SettingsHandler.h
 $(OBJ_DIR)/SettingsViews.o : SettingsViews.cpp Commands.h PublicCommands.h \
  DeskWindow.h ContainerWindow.h LockingList.h ../shared/ObjectList.h \
  Model.h IconCache.h ../shared/AutoLock.h OpenHashTable.h Utilities.h \
- SlowContextPopup.h ../shared/NavMenu.h EntryIterator.h NodeWalker.h \
- IconMenuItem.h SlowMenu.h TaskLoop.h FunctionObject.h \
- DesktopPoseView.h PoseView.h AttributeStream.h \
- PendingNodeMonitorCache.h Pose.h TextWidget.h WidgetAttributeText.h \
- Tracker.h SettingsHandler.h ../shared/tracker_private.h PoseList.h \
- TitleView.h ViewState.h SettingsViews.h
+ SlowContextPopup.h ../shared/NavMenu.h SlowMenu.h TaskLoop.h \
+ FunctionObject.h DesktopPoseView.h EntryIterator.h NodeWalker.h \
+ PoseView.h AttributeStream.h PendingNodeMonitorCache.h Pose.h \
+ TextWidget.h WidgetAttributeText.h Tracker.h SettingsHandler.h \
+ ../shared/tracker_private.h PoseList.h TitleView.h ViewState.h \
+ SettingsViews.h
 $(OBJ_DIR)/SlowContextPopup.o : SlowContextPopup.cpp Attributes.h Commands.h \
  PublicCommands.h ContainerWindow.h LockingList.h \
  ../shared/ObjectList.h Model.h IconCache.h ../shared/AutoLock.h \
  OpenHashTable.h Utilities.h SlowContextPopup.h ../shared/NavMenu.h \
- EntryIterator.h NodeWalker.h IconMenuItem.h SlowMenu.h TaskLoop.h \
- FunctionObject.h DesktopPoseView.h PoseView.h AttributeStream.h \
+ SlowMenu.h TaskLoop.h FunctionObject.h DesktopPoseView.h \
+ EntryIterator.h NodeWalker.h PoseView.h AttributeStream.h \
  PendingNodeMonitorCache.h Pose.h TextWidget.h WidgetAttributeText.h \
  Tracker.h SettingsHandler.h ../shared/tracker_private.h PoseList.h \
- TitleView.h ViewState.h FSUtils.h QueryPoseView.h Thread.h
-$(OBJ_DIR)/SlowMenu.o : SlowMenu.cpp SlowMenu.h ../shared/ObjectList.h
+ TitleView.h ViewState.h FSUtils.h IconMenuItem.h QueryPoseView.h \
+ Thread.h
+$(OBJ_DIR)/SlowMenu.o : SlowMenu.cpp SlowMenu.h
 $(OBJ_DIR)/StatusWindow.o : StatusWindow.cpp ../shared/AutoLock.h Bitmaps.h \
  TrackerIcons.h Commands.h PublicCommands.h StatusWindow.h \
  ../shared/ObjectList.h DeskWindow.h ContainerWindow.h LockingList.h \
  Model.h IconCache.h OpenHashTable.h Utilities.h SlowContextPopup.h \
- ../shared/NavMenu.h EntryIterator.h NodeWalker.h IconMenuItem.h \
- SlowMenu.h TaskLoop.h FunctionObject.h DesktopPoseView.h PoseView.h \
+ ../shared/NavMenu.h SlowMenu.h TaskLoop.h FunctionObject.h \
+ DesktopPoseView.h EntryIterator.h NodeWalker.h PoseView.h \
  AttributeStream.h PendingNodeMonitorCache.h Pose.h TextWidget.h \
  WidgetAttributeText.h Tracker.h SettingsHandler.h \
  ../shared/tracker_private.h PoseList.h TitleView.h ViewState.h
@@ -314,29 +306,29 @@ $(OBJ_DIR)/Tests.o : Tests.cpp
 $(OBJ_DIR)/TextWidget.o : TextWidget.cpp Attributes.h ContainerWindow.h \
  LockingList.h ../shared/ObjectList.h Model.h IconCache.h \
  ../shared/AutoLock.h OpenHashTable.h Utilities.h SlowContextPopup.h \
- ../shared/NavMenu.h EntryIterator.h NodeWalker.h IconMenuItem.h \
- SlowMenu.h TaskLoop.h FunctionObject.h Commands.h PublicCommands.h \
- FSUtils.h PoseView.h AttributeStream.h PendingNodeMonitorCache.h \
- Pose.h TextWidget.h WidgetAttributeText.h Tracker.h SettingsHandler.h \
- ../shared/tracker_private.h PoseList.h TitleView.h ViewState.h
+ ../shared/NavMenu.h SlowMenu.h TaskLoop.h FunctionObject.h Commands.h \
+ PublicCommands.h FSUtils.h PoseView.h AttributeStream.h \
+ PendingNodeMonitorCache.h Pose.h TextWidget.h WidgetAttributeText.h \
+ Tracker.h SettingsHandler.h ../shared/tracker_private.h PoseList.h \
+ TitleView.h ViewState.h
 $(OBJ_DIR)/Thread.o : Thread.cpp Thread.h ../shared/ObjectList.h FunctionObject.h \
  Utilities.h
 $(OBJ_DIR)/TitleView.o : TitleView.cpp TitleView.h ../shared/ObjectList.h \
  Commands.h PublicCommands.h ContainerWindow.h LockingList.h Model.h \
  IconCache.h ../shared/AutoLock.h OpenHashTable.h Utilities.h \
- SlowContextPopup.h ../shared/NavMenu.h EntryIterator.h NodeWalker.h \
- IconMenuItem.h SlowMenu.h TaskLoop.h FunctionObject.h PoseView.h \
- AttributeStream.h PendingNodeMonitorCache.h Pose.h TextWidget.h \
- WidgetAttributeText.h Tracker.h SettingsHandler.h \
- ../shared/tracker_private.h PoseList.h ViewState.h
+ SlowContextPopup.h ../shared/NavMenu.h SlowMenu.h TaskLoop.h \
+ FunctionObject.h PoseView.h AttributeStream.h \
+ PendingNodeMonitorCache.h Pose.h TextWidget.h WidgetAttributeText.h \
+ Tracker.h SettingsHandler.h ../shared/tracker_private.h PoseList.h \
+ ViewState.h
 $(OBJ_DIR)/Tracker.o : Tracker.cpp Attributes.h ../shared/AutoLock.h AutoMounter.h \
  DeviceMap.h DeviceMapGlue.h AutoMounterSettings.h BackgroundImage.h \
  /boot/develop/headers/be/support/String.h ../shared/ObjectList.h \
  Bitmaps.h TrackerIcons.h Commands.h PublicCommands.h \
  ContainerWindow.h LockingList.h Model.h IconCache.h OpenHashTable.h \
- Utilities.h SlowContextPopup.h ../shared/NavMenu.h EntryIterator.h \
- NodeWalker.h IconMenuItem.h SlowMenu.h TaskLoop.h FunctionObject.h \
- DeskWindow.h DesktopPoseView.h PoseView.h AttributeStream.h \
+ Utilities.h SlowContextPopup.h ../shared/NavMenu.h SlowMenu.h \
+ TaskLoop.h FunctionObject.h DeskWindow.h DesktopPoseView.h \
+ EntryIterator.h NodeWalker.h PoseView.h AttributeStream.h \
  PendingNodeMonitorCache.h Pose.h TextWidget.h WidgetAttributeText.h \
  Tracker.h SettingsHandler.h ../shared/tracker_private.h PoseList.h \
  TitleView.h ViewState.h FindPanel.h DialogPane.h MimeTypeList.h \
@@ -350,9 +342,9 @@ $(OBJ_DIR)/TrackerInitialState.o : TrackerInitialState.cpp ../shared/pr_server.h
  BackgroundImage.h Bitmaps.h TrackerIcons.h ContainerWindow.h \
  LockingList.h Model.h IconCache.h ../shared/AutoLock.h \
  OpenHashTable.h Utilities.h SlowContextPopup.h ../shared/NavMenu.h \
- EntryIterator.h NodeWalker.h IconMenuItem.h SlowMenu.h TaskLoop.h \
- FunctionObject.h MimeTypes.h FSUtils.h QueryContainerWindow.h \
- Tracker.h SettingsHandler.h ../shared/tracker_private.h
+ SlowMenu.h TaskLoop.h FunctionObject.h MimeTypes.h FSUtils.h \
+ QueryContainerWindow.h Tracker.h SettingsHandler.h \
+ ../shared/tracker_private.h
 $(OBJ_DIR)/TrackerScripting.o : TrackerScripting.cpp Tracker.h LockingList.h \
  ../shared/ObjectList.h SettingsHandler.h Utilities.h \
  ../shared/tracker_private.h FSUtils.h Model.h IconCache.h \
@@ -375,25 +367,24 @@ $(OBJ_DIR)/ViewState.o : ViewState.cpp Attributes.h Commands.h PublicCommands.h 
  PoseView.h AttributeStream.h ../shared/ObjectList.h ContainerWindow.h \
  LockingList.h Model.h IconCache.h ../shared/AutoLock.h \
  OpenHashTable.h Utilities.h SlowContextPopup.h ../shared/NavMenu.h \
- EntryIterator.h NodeWalker.h IconMenuItem.h SlowMenu.h TaskLoop.h \
- FunctionObject.h PendingNodeMonitorCache.h Pose.h TextWidget.h \
- WidgetAttributeText.h Tracker.h SettingsHandler.h \
+ SlowMenu.h TaskLoop.h FunctionObject.h PendingNodeMonitorCache.h \
+ Pose.h TextWidget.h WidgetAttributeText.h Tracker.h SettingsHandler.h \
  ../shared/tracker_private.h PoseList.h TitleView.h ViewState.h
 $(OBJ_DIR)/VolumeWindow.o : VolumeWindow.cpp Commands.h PublicCommands.h \
  VolumeWindow.h ContainerWindow.h LockingList.h ../shared/ObjectList.h \
  Model.h IconCache.h ../shared/AutoLock.h OpenHashTable.h Utilities.h \
- SlowContextPopup.h ../shared/NavMenu.h EntryIterator.h NodeWalker.h \
- IconMenuItem.h SlowMenu.h TaskLoop.h FunctionObject.h PoseView.h \
- AttributeStream.h PendingNodeMonitorCache.h Pose.h TextWidget.h \
- WidgetAttributeText.h Tracker.h SettingsHandler.h \
- ../shared/tracker_private.h PoseList.h TitleView.h ViewState.h
+ SlowContextPopup.h ../shared/NavMenu.h SlowMenu.h TaskLoop.h \
+ FunctionObject.h PoseView.h AttributeStream.h \
+ PendingNodeMonitorCache.h Pose.h TextWidget.h WidgetAttributeText.h \
+ Tracker.h SettingsHandler.h ../shared/tracker_private.h PoseList.h \
+ TitleView.h ViewState.h
 $(OBJ_DIR)/WidgetAttributeText.o : WidgetAttributeText.cpp Attributes.h \
  FindPanel.h DialogPane.h ../shared/ObjectList.h MimeTypeList.h \
  Utilities.h NodeWalker.h FSUtils.h Model.h IconCache.h \
  ../shared/AutoLock.h OpenHashTable.h OpenWithWindow.h \
  ContainerWindow.h LockingList.h SlowContextPopup.h \
- ../shared/NavMenu.h EntryIterator.h IconMenuItem.h SlowMenu.h \
- TaskLoop.h FunctionObject.h PoseView.h AttributeStream.h \
+ ../shared/NavMenu.h SlowMenu.h TaskLoop.h FunctionObject.h \
+ EntryIterator.h PoseView.h AttributeStream.h \
  PendingNodeMonitorCache.h Pose.h TextWidget.h WidgetAttributeText.h \
  Tracker.h SettingsHandler.h ../shared/tracker_private.h PoseList.h \
  TitleView.h ViewState.h MimeTypes.h SettingsViews.h

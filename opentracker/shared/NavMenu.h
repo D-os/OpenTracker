@@ -40,15 +40,13 @@ All rights reserved.
 
 
 #include <Messenger.h>
-#include <Menu.h>
-#include <MenuItem.h>
-#include <PopUpMenu.h>
 #include <StorageDefs.h>
 #include <Entry.h>
 
 #include "SlowMenu.h"
 
 template<class T> class BObjectList;
+class BMenuItem;
 
 namespace BPrivate {
 

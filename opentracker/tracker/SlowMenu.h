@@ -37,7 +37,7 @@ All rights reserved.
 
 #include <Menu.h>
 #include <MenuItem.h>
-#include "ObjectList.h"
+#include <Debug.h>
 
 // SlowMenu is a convenience class that makes it easier to
 // use the AddDynamicItem callback to implement a menu that can
