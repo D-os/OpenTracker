@@ -100,5 +100,7 @@ enum {
 	R_ResUpNavInactive = 1047,
 	R_ResBackNavActiveSel = 1048,
 	R_ResForwNavActiveSel = 1049,
-	R_ResUpNavActiveSel = 1050
+	R_ResUpNavActiveSel = 1050,
+	R_ShareIcon = 1051,
+	R_MICN_ShareIcon = 1051
 };
