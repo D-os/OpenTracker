@@ -426,16 +426,16 @@ static const struct {
 	uint32	code;
 	uint8	generalCategory;
 } controlProps[] = {
-	/* TAB */   0x9, B_UNICODE_SPACE_SEPARATOR,
-	/* VT */    0xb, B_UNICODE_SPACE_SEPARATOR,
-	/* LF */    0xa, B_UNICODE_PARAGRAPH_SEPARATOR,
-	/* FF */    0xc, B_UNICODE_LINE_SEPARATOR,
-	/* CR */    0xd, B_UNICODE_PARAGRAPH_SEPARATOR,
-	/* FS */    0x1c, B_UNICODE_PARAGRAPH_SEPARATOR,
-	/* GS */    0x1d, B_UNICODE_PARAGRAPH_SEPARATOR,
-	/* RS */    0x1e, B_UNICODE_PARAGRAPH_SEPARATOR,
-	/* US */    0x1f, B_UNICODE_SPACE_SEPARATOR,
-	/* NL */    0x85, B_UNICODE_PARAGRAPH_SEPARATOR
+	/* TAB */	{ 0x9, B_UNICODE_SPACE_SEPARATOR },
+	/* VT */	{ 0xb, B_UNICODE_SPACE_SEPARATOR },
+	/* LF */	{ 0xa, B_UNICODE_PARAGRAPH_SEPARATOR },
+	/* FF */	{ 0xc, B_UNICODE_LINE_SEPARATOR },
+	/* CR */	{ 0xd, B_UNICODE_PARAGRAPH_SEPARATOR },
+	/* FS */	{ 0x1c, B_UNICODE_PARAGRAPH_SEPARATOR },
+	/* GS */	{ 0x1d, B_UNICODE_PARAGRAPH_SEPARATOR },
+	/* RS */	{ 0x1e, B_UNICODE_PARAGRAPH_SEPARATOR },
+	/* US */	{ 0x1f, B_UNICODE_SPACE_SEPARATOR },
+	/* NL */	{ 0x85, B_UNICODE_PARAGRAPH_SEPARATOR }
 };
 
 static struct {
@@ -453,7 +453,6 @@ unicodeDataLineFn(void *context,char *fields[][2],int32 fieldCount)
 	Props props;
 	char *end;
 	uint32 value;
-	int i;
 
 	// reset the properties
 	memset(&props, 0, sizeof(Props));
@@ -469,7 +468,7 @@ unicodeDataLineFn(void *context,char *fields[][2],int32 fieldCount)
 
 	// get general category, field 2
 	*fields[2][1] = 0;
-	for(i = 1;;) {
+	for (int i = 1;;) {
 		if (!strcmp(fields[2][0], genCategoryNames[i])) {
 			props.generalCategory = (uint8)i;
 			break;
@@ -489,7 +488,7 @@ unicodeDataLineFn(void *context,char *fields[][2],int32 fieldCount)
 
 	// get BiDi category, field 4
 	*fields[4][1] = 0;
-	for(i = 0;;) {
+	for (int i = 0;;) {
 		if (!strcmp(fields[4][0], bidiNames[i])) {
 			props.bidi = (uint8)i;
 			break;
@@ -588,7 +587,7 @@ unicodeDataLineFn(void *context,char *fields[][2],int32 fieldCount)
 
 	// override properties for some common control characters
 	if (props.generalCategory == B_UNICODE_CONTROL_CHAR) {
-		for (i = 0;i < sizeof(controlProps) / sizeof(controlProps[0]);i++) {
+		for (uint32 i = 0; i < sizeof(controlProps) / sizeof(controlProps[0]); i++) {
 			if (controlProps[i].code == props.code)
 				props.generalCategory = controlProps[i].generalCategory;
 		}

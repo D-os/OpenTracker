@@ -42,7 +42,7 @@ class CatalogSpeed {
 void
 CatalogSpeed::TestCreation()
 {
-	for (int i = 0; i < kNumStrings; i++) {
+	for (uint32 i = 0; i < kNumStrings; i++) {
 		strs[i] << "native-string#" << 1000000+i;
 		ctxs[i] << TR_CONTEXT;
 		trls[i] << "translation#" << 4000000+i;
@@ -59,11 +59,11 @@ CatalogSpeed::TestCreation()
 	assert(cat1.InitCheck() == B_OK);
 
 	// ...and populate the catalog with some data:
-	for (int i = 0; i < kNumStrings; i++) {
+	for (uint32 i = 0; i < kNumStrings; i++) {
 		cat1.SetString(strs[i].String(), trls[i].String(), ctxs[i].String());
 	}
 	watch.Suspend();
-	printf("\tadded %d strings in           %9Ld usecs\n", 
+	printf("\tadded %ld strings in           %9Ld usecs\n", 
 		cat1.CountItems(), watch.ElapsedTime());
 
 	watch.Reset();
@@ -71,7 +71,7 @@ CatalogSpeed::TestCreation()
 	res = cat1.WriteToFile("./locale/catalogs/"catSig"/klingon.catalog");
 	assert(res == B_OK);
 	watch.Suspend();
-	printf("\t%d strings written to disk in %9Ld usecs\n", 
+	printf("\t%ld strings written to disk in %9Ld usecs\n", 
 		cat1.CountItems(), watch.ElapsedTime());
 }
 
@@ -86,16 +86,16 @@ CatalogSpeed::TestLookup()
 	assert(cat != NULL);
 	assert(cat->InitCheck() == B_OK);
 	watch.Suspend();
-	printf("\t%d strings read from disk in  %9Ld usecs\n", 
+	printf("\t%ld strings read from disk in  %9Ld usecs\n", 
 		cat->CountItems(), watch.ElapsedTime());
 
 	watch.Reset();
 	watch.Resume();
-	for (int i = 0; i < kNumStrings; i++) {
+	for (uint32 i = 0; i < kNumStrings; i++) {
 		translated = TR(strs[i].String());
 	}
 	watch.Suspend();
-	printf("\tlooked up %d strings in       %9Ld usecs\n", 
+	printf("\tlooked up %lu strings in       %9Ld usecs\n", 
 		kNumStrings, watch.ElapsedTime());
 
 	delete cat;
@@ -111,7 +111,7 @@ CatalogSpeed::TestIdCreation()
 	status_t res;
 	BString s("string");
 	s << "\x01" << typeid(*this).name() << "\x01";
-	size_t hashVal = __stl_hash_string(s.String());
+	//size_t hashVal = __stl_hash_string(s.String());
 	assert(be_locale != NULL);
 	system("mkdir -p ./locale/catalogs/"catSig);
 
@@ -120,16 +120,16 @@ CatalogSpeed::TestIdCreation()
 	assert(cat1.InitCheck() == B_OK);
 
 	// ...and populate the catalog with some data:
-	for (int i = 0; i < kNumStrings; i++) {
+	for (uint32 i = 0; i < kNumStrings; i++) {
 		trls[i] = BString("id_translation#") << 6000000+i;
 	}
 	watch.Reset();
 	watch.Resume();
-	for (int i = 0; i < kNumStrings; i++) {
+	for (uint32 i = 0; i < kNumStrings; i++) {
 		cat1.SetString(i, trls[i].String());
 	}
 	watch.Suspend();
-	printf("\tadded %d strings by id in     %9Ld usecs\n", 
+	printf("\tadded %ld strings by id in     %9Ld usecs\n", 
 		cat1.CountItems(), watch.ElapsedTime());
 
 	watch.Reset();
@@ -137,7 +137,7 @@ CatalogSpeed::TestIdCreation()
 	res = cat1.WriteToFile("./locale/catalogs/"catSig"/klingon.catalog");
 	assert( res == B_OK);
 	watch.Suspend();
-	printf("\t%d strings written to disk in %9Ld usecs\n", 
+	printf("\t%ld strings written to disk in %9Ld usecs\n", 
 		cat1.CountItems(), watch.ElapsedTime());
 }
 
@@ -152,16 +152,16 @@ CatalogSpeed::TestIdLookup()
 	assert(cat != NULL);
 	assert(cat->InitCheck() == B_OK);
 	watch.Suspend();
-	printf("\t%d strings read from disk in  %9Ld usecs\n", 
+	printf("\t%ld strings read from disk in  %9Ld usecs\n", 
 		cat->CountItems(), watch.ElapsedTime());
 
 	watch.Reset();
 	watch.Resume();
-	for (int i = 0; i < kNumStrings; i++) {
+	for (uint32 i = 0; i < kNumStrings; i++) {
 		translated = TR_ID(i);
 	}
 	watch.Suspend();
-	printf("\tlooked up %d strings in       %9Ld usecs\n", 
+	printf("\tlooked up %lu strings in       %9Ld usecs\n", 
 		kNumStrings, watch.ElapsedTime());
 
 	delete cat;
@@ -171,8 +171,6 @@ CatalogSpeed::TestIdLookup()
 int
 main(int argc, char **argv)
 {
-	status_t res;
-
 	BApplication* testApp 
 		= new BApplication("application/"catSig);
 
@@ -181,10 +179,10 @@ main(int argc, char **argv)
 	be_app->GetAppInfo(&appInfo);
 	BEntry appEntry(&appInfo.ref);
 	BEntry appFolder;
-	appEntry.GetParent( &appFolder);
+	appEntry.GetParent(&appFolder);
 	BPath appPath;
-	appFolder.GetPath( &appPath);
-	chdir( appPath.Path());
+	appFolder.GetPath(&appPath);
+	chdir(appPath.Path());
 
 	CatalogSpeed catSpeed;
 	printf("\t------------------------------------------------\n");
