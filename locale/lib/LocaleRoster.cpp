@@ -17,15 +17,12 @@
 #include <Directory.h>
 #include <Entry.h>
 #include <FindDirectory.h>
-#include <fs_index.h> 
 #include <Language.h>
 #include <Locale.h>
 #include <LocaleRoster.h>
 #include <Node.h>
 #include <Path.h>
 #include <String.h>
-#include <Volume.h>
-#include <VolumeRoster.h>
 
 static const char *kPriorityAttr = "ADDON:priority";
 
@@ -39,30 +36,6 @@ typedef BCatalogAddOn *(*InstantiateEmbeddedCatalogFunc)(entry_ref *appOrAddOnRe
 
 static BLocaleRoster gLocaleRoster;
 BLocaleRoster *be_locale_roster = &gLocaleRoster;
-
-
-// helper function that make sure an attribute-index exists:
-// ToDo: maybe this should be put into a util-file?
-static void EnsureIndexExists(const char *attrName) {
-	BVolume bootVol;
-	BVolumeRoster volRoster;
-	if (volRoster.GetBootVolume(&bootVol) != B_OK)
-		return;
-	struct index_info idxInfo;
-	if (fs_stat_index(bootVol.Device(), attrName, &idxInfo) != 0) {
-		status_t res = fs_create_index(bootVol.Device(), attrName, 
-			B_STRING_TYPE, 0);
-		if (res == 0) {
-			log_team(LOG_INFO, 
-				"successfully created the required index for attribute %s",
-				attrName);
-		} else {
-			log_team(LOG_ERR, 
-				"failed to create the required index for attribute %s (%s)",
-				attrName, strerror(res));
-		}
-	}
-}
 
 
 /*
@@ -117,7 +90,8 @@ BCatalogAddOnInfo::~BCatalogAddOnInfo()
 	
 
 bool
-BCatalogAddOnInfo::MakeSureItsLoaded() {
+BCatalogAddOnInfo::MakeSureItsLoaded() 
+{
 	if (!fIsEmbedded && fAddOnImage < B_OK) {
 		// add-on has not been loaded yet, so we try to load it:
 		BString fullAddOnPath(fPath);
@@ -143,7 +117,8 @@ BCatalogAddOnInfo::MakeSureItsLoaded() {
 
 
 void
-BCatalogAddOnInfo::UnloadIfPossible() {
+BCatalogAddOnInfo::UnloadIfPossible() 
+{
 	if (!fIsEmbedded && fLoadedCatalogs.IsEmpty()) {
 		unload_add_on(fAddOnImage);
 		fAddOnImage = B_NO_INIT;
@@ -187,10 +162,6 @@ RosterData::RosterData()
 	setlogmask_team(LOG_UPTO(LOG_WARNING));
 #endif
 
-	// make sure the indices required for catalog-traversal are there:
-	EnsureIndexExists(BLocaleRoster::kCatLangAttr);
-	EnsureIndexExists(BLocaleRoster::kCatSigAttr);
-
 	InitializeCatalogAddOns();
 
 	// ToDo: change this to fetch preferred languages from prefs
@@ -230,7 +201,7 @@ RosterData::InitializeCatalogAddOns()
 	// add info about embedded default catalog:
 	BCatalogAddOnInfo *defaultCatalogAddOnInfo
 		= new BCatalogAddOnInfo("Default", "", 
-			 DefaultCatalog::gDefaultCatalogAddOnPriority);
+			 DefaultCatalog::kDefaultCatalogAddOnPriority);
 	defaultCatalogAddOnInfo->fInstantiateFunc = DefaultCatalog::Instantiate;
 	defaultCatalogAddOnInfo->fInstantiateEmbeddedFunc 
 		= DefaultCatalog::InstantiateEmbedded;
@@ -322,6 +293,9 @@ RosterData::InitializeCatalogAddOns()
 }
 
 
+/*
+ * unloads all catalog-add-ons (which will throw away all loaded catalogs, too)
+ */
 void
 RosterData::CleanupCatalogAddOns() 
 {
@@ -346,6 +320,13 @@ const char *BLocaleRoster::kCatSigAttr = "BEOS:LOCALE_SIGNATURE";
 	// catalog signature, lives in every catalog file
 const char *BLocaleRoster::kCatFingerprintAttr = "BEOS:LOCALE_FINGERPRINT";
 	// catalog fingerprint, may live in catalog file
+
+const char *BLocaleRoster::kCatManagerMimeType 
+	= "application/x-vnd.Be.locale.catalog-manager";
+	// signature of catalog managing app
+const char *BLocaleRoster::kCatEditorMimeType 
+	= "application/x-vnd.Be.locale.catalog-editor";
+	// signature of catalog editor app
 
 const char *BLocaleRoster::kEmbeddedCatAttr = "BEOS:LOCALE_EMBEDDED_CATALOG";
 	// attribute which contains flattened data of embedded catalog

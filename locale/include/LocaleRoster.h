@@ -10,6 +10,10 @@ class BCountry;
 class BCatalog;
 class BCatalogAddOn;
 
+namespace BPrivate {
+	class EditableCatalog;
+};
+
 enum {
 	B_LOCALE_CHANGED	= '_LCC',
 };
@@ -51,6 +55,10 @@ class BLocaleRoster {
 		static const char *kCatLangAttr;
 		static const char *kCatSigAttr;
 		static const char *kCatFingerprintAttr;
+		//
+		static const char *kCatManagerMimeType;
+		static const char *kCatEditorMimeType;
+		//
 		static const char *kEmbeddedCatAttr;
 		static int32 kEmbeddedCatResId;
 
@@ -67,6 +75,7 @@ class BLocaleRoster {
 							const char *language);
 
 		friend class BCatalog;
+		friend class BPrivate::EditableCatalog;
 		friend status_t get_add_on_catalog(BCatalog*, const char *);
 };
 
