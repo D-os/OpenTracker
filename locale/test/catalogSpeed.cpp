@@ -45,7 +45,18 @@ main(int argc, char **argv)
 				cmts[i].String());
 		}
 		watch.Suspend();
-		printf("\tadded %d strings in %9Ld usecs\n", catalog.size(), 
+		printf("\tadded %d strings in %9Ld usecs\n", catalog.CountItems(), 
+			watch.ElapsedTime());
+
+		watch.Reset();
+		watch.Resume();
+		const char* translated;
+		for (int i = 0; i < kNumStrings; i++) {
+			translated = catalog.GetString(strs[i].String(), ctxs[i].String(),
+				cmts[i].String());
+		}
+		watch.Suspend();
+		printf("\tlooked up %d strings in %9Ld usecs\n", kNumStrings, 
 			watch.ElapsedTime());
 
 		for (int i = 0; i < kNumStrings; i++) {
@@ -58,7 +69,7 @@ main(int argc, char **argv)
 				cmts[i].String());
 		}
 		watch.Suspend();
-		printf("\tchanged %d strings in %9Ld usecs\n", catalog.size(), 
+		printf("\tchanged %d strings in %9Ld usecs\n", catalog.CountItems(), 
 			watch.ElapsedTime());
 
 		watch.Reset();
@@ -66,7 +77,7 @@ main(int argc, char **argv)
 		res = catalog.WriteToDisk();
 		assert( res == B_OK);
 		watch.Suspend();
-		printf("\t%d strings written to disk in %9Ld usecs\n", catalog.size(),
+		printf("\t%d strings written to disk in %9Ld usecs\n", catalog.CountItems(),
 			watch.ElapsedTime());
 
 		catalog.MakeEmpty();
@@ -75,7 +86,7 @@ main(int argc, char **argv)
 		res = catalog.ReadFromDisk("./TestCat.catalog");
 		assert( res == B_OK);
 		watch.Suspend();
-		printf("\t%d strings read from disk in %9Ld usecs\n", catalog.size(),
+		printf("\t%d strings read from disk in %9Ld usecs\n", catalog.CountItems(),
 			watch.ElapsedTime());
 
 		catalog.MakeEmpty();
@@ -86,7 +97,16 @@ main(int argc, char **argv)
 		}
 		watch.Suspend();
 		printf("\tadded %d strings (without context and comment) in %9Ld usecs\n", 
-			catalog.size(), watch.ElapsedTime());
+			catalog.CountItems(), watch.ElapsedTime());
+
+		watch.Reset();
+		watch.Resume();
+		for (int i = 0; i < kNumStrings; i++) {
+			translated = catalog.GetString(strs[i].String());
+		}
+		watch.Suspend();
+		printf("\tlooked up %d strings (without context and comment) in %9Ld usecs\n", 
+			kNumStrings, watch.ElapsedTime());
 
 		watch.Reset();
 		watch.Resume();
@@ -95,7 +115,7 @@ main(int argc, char **argv)
 		}
 		watch.Suspend();
 		printf("\tchanged %d strings (without context and comment) in %9Ld usecs\n", 
-			catalog.size(), watch.ElapsedTime());
+			catalog.CountItems(), watch.ElapsedTime());
 
 		catalog.MakeEmpty();
 		for (int i = 0; i < kNumStrings; i++) {
@@ -107,7 +127,16 @@ main(int argc, char **argv)
 			catalog.SetString(i, trls[i].String());
 		}
 		watch.Suspend();
-		printf("\tadded %d strings by id in %9Ld usecs\n", catalog.size(), 
+		printf("\tadded %d strings by id in %9Ld usecs\n", catalog.CountItems(), 
+			watch.ElapsedTime());
+
+		watch.Reset();
+		watch.Resume();
+		for (int i = 0; i < kNumStrings; i++) {
+			translated = catalog.GetString(i);
+		}
+		watch.Suspend();
+		printf("\tlooked up %d strings by id in %9Ld usecs\n", kNumStrings, 
 			watch.ElapsedTime());
 
 		for (int i = 0; i < kNumStrings; i++) {
@@ -119,7 +148,7 @@ main(int argc, char **argv)
 			catalog.SetString(i, trls[i].String());
 		}
 		watch.Suspend();
-		printf("\tchanged %d strings by id in %9Ld usecs\n", catalog.size(), 
+		printf("\tchanged %d strings by id in %9Ld usecs\n", catalog.CountItems(), 
 			watch.ElapsedTime());
 
 	}
