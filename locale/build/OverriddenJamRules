@@ -148,14 +148,12 @@ rule Object
 
 rule ObjectHdrs
 {
-	# Add to HDRS for HdrScan's benefit.
-	# must reformat CCHDRS according to headers
-
-	local s = [ FGristFiles $(<:S=$(SUFOBJ)) ] ;
-
-	HDRS on $(s) += $(>) ;
-	CCHDRS on $(<) = [ on $(<) FIncludes $(HDRS) ]
-		$(HDRS_INCLUDES_SEPARATOR) [ on $(<) FSysIncludes $(SYSHDRS) ] ;
+	local s ;
+	for s in [ FGristFiles $(<:S=$(SUFOBJ)) ] {
+		HDRS on $(s) += $(>) ;
+		CCHDRS on $(s) = [ on $(s) FIncludes $(HDRS) ]
+			$(HDRS_INCLUDES_SEPARATOR) [ on $(s) FSysIncludes $(SYSHDRS) ] ;
+	}
 }
 
 # Override Jam 2.5rc3 MakeLocate and MkDir to deal more intelligently
