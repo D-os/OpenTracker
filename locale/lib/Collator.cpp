@@ -27,7 +27,7 @@ struct input_context {
 
 
 // conversion array for character ranges 192 - 223 & 224 - 255
-static uint8 gNoDiacrits[] = {
+static const uint8 kNoDiacrits[] = {
 	'a','a','a','a','a','a','a',
 	'c',
 	'e','e','e','e',
@@ -51,11 +51,11 @@ getPrimaryChar(uint32 c)
 
 	// this automatically returns lowercase letters
 	if (c >= 192 && c < 223)
-		return gNoDiacrits[c - 192];
+		return kNoDiacrits[c - 192];
 	if (c == 223)	// ß
 		return 's';
 	if (c >= 224 && c < 256)
-		return gNoDiacrits[c - 224];
+		return kNoDiacrits[c - 224];
 
 	return BUnicodeChar::ToLower(c);
 }
