@@ -41,6 +41,7 @@ All rights reserved.
 #include <Debug.h>
 #include <FindDirectory.h>
 #include <fs_attr.h>
+#include <fs_info.h>
 #include <image.h>
 #include <MenuItem.h>
 #include <NodeInfo.h>
@@ -97,6 +98,9 @@ extern "C" _IMPEXP_ROOT int _kset_mon_limit_(int num);
 const int32 DEFAULT_MON_NUM = 4096;
 	// copied from fsil.c
 
+const int8 kOpenWindowMinimized = 1;
+const int8 kOpenWindowHasState = 2;
+
 TTrackerState gTrackerState;
 
 
@@ -135,10 +139,32 @@ TTracker::~TTracker()
 {
 }
 
+int32
+GetVolumeFlags(Model *model)
+{
+	fs_info info;
+	if (model->IsVolume()) {
+		// search for the correct volume
+		int32 cookie = 0;
+		dev_t device;
+		while ((device = next_dev(&cookie)) >= B_OK) {
+			if (fs_stat_dev(device,&info))
+				continue;
+
+			if (!strcmp(info.volume_name,model->Name()))
+				return info.flags;
+		}
+		return B_FS_HAS_ATTR;
+	}
+	if (!fs_stat_dev(model->NodeRef()->device,&info))
+		return info.flags;
+	
+	return B_FS_HAS_ATTR;
+}
+
 bool
 TTracker::QuitRequested()
 {
-
 	// don't allow user quitting
 	if (CurrentMessage() && CurrentMessage()->FindBool("shortcut"))
 		return false;
@@ -146,8 +172,8 @@ TTracker::QuitRequested()
 	gStatusWindow->AttemptToQuit();
 		// try quitting the copy/move/empty trash threads
 		
-	BVolume boot_vol;
-	DEBUG_ONLY(status_t err =) BVolumeRoster().GetBootVolume(&boot_vol);
+	BVolume bootVolume;
+	DEBUG_ONLY(status_t err =) BVolumeRoster().GetBootVolume(&bootVolume);
 	ASSERT(err == B_OK);
 	BMessage message;
 	AutoLock<WindowList> lock(&fWindowList);
@@ -157,40 +183,58 @@ TTracker::QuitRequested()
 		BContainerWindow *window = dynamic_cast<BContainerWindow *>
 			(fWindowList.ItemAt(i));
 
-		if (window && window->TargetModel()) {
+		if (window && window->TargetModel() && !window->PoseView()->IsDesktopWindow()) {
 			if (window->TargetModel()->IsRoot())
 				message.AddBool("open_disks_window", true);
-			else if (window->TargetModel()->IsVolume())
-				message.AddBool("open_root_directory", true);
 			else {
 				BEntry entry;
 				BPath path;
-				if (entry.SetTo(window->TargetModel()->EntryRef()) == B_OK
-					&& entry.GetPath(&path) == B_OK) {
-					if (window != FindContainerWindow(window->TargetModel()->EntryRef())) {
+				const entry_ref *ref = window->TargetModel()->EntryRef();
+				if (entry.SetTo(ref) == B_OK && entry.GetPath(&path) == B_OK) {
+					int8 flags = window->IsMinimized() ? kOpenWindowMinimized : 0;
+					uint32 deviceFlags = GetVolumeFlags(window->TargetModel());
+
+					// save state for every window which is
+					//	a) already open on another workspace
+					//	b) on a volume not capable of writing attributes
+					if (window != FindContainerWindow(ref)
+						|| (deviceFlags & (B_FS_HAS_ATTR | B_FS_IS_READONLY)) != B_FS_HAS_ATTR) {
 						BMessage stateMessage;
 						window->SaveState(stateMessage);
 						window->SetSaveStateEnabled(false);
 							// This is to prevent its state to be saved to the node when closed.
 						message.AddMessage("window state", &stateMessage);
+						flags |= kOpenWindowHasState;
 					}
-					message.AddString("paths", path.Path());
-					message.AddBool(path.Path(), window->IsMinimized());	
+					const char *target;
+					bool pathAlreadyExists = false;
+					for (int32 index = 0;message.FindString("paths", index, &target) == B_OK;index++) {
+						if (!strcmp(target,path.Path())) {
+							pathAlreadyExists = true;
+							break;
+						}
+					}
+					if (!pathAlreadyExists)
+						message.AddString("paths", path.Path());
+					message.AddInt8(path.Path(), flags);
 				}
 			}	
 		}
 	}
 	lock.Unlock();
 
+	// write windows to open on disk
 	BDirectory deskDir;
-	if (!BootedInSafeMode()
-		&& message.CountNames(B_ANY_TYPE) 
-		&& FSGetDeskDir(&deskDir, boot_vol.Device()) == B_OK) {
-		size_t size = (size_t)message.FlattenedSize();
-		char *buffer = new char[size];
-		message.Flatten(buffer, (ssize_t)size);
-		deskDir.WriteAttr(kAttrOpenWindows, B_MESSAGE_TYPE, 0, buffer, size);
-		delete [] buffer;
+	if (!BootedInSafeMode() && FSGetDeskDir(&deskDir, bootVolume.Device()) == B_OK) {
+		// if message is empty, delete the corresponding attribute
+		if (message.CountNames(B_ANY_TYPE)) {
+			size_t size = (size_t)message.FlattenedSize();
+			char *buffer = new char[size];
+			message.Flatten(buffer, (ssize_t)size);
+			deskDir.WriteAttr(kAttrOpenWindows, B_MESSAGE_TYPE, 0, buffer, size);
+			delete [] buffer;
+		} else
+			deskDir.RemoveAttr(kAttrOpenWindows);
 	}
 
 	for (int32 count = 0; count == 50; count++) {
@@ -1078,6 +1122,7 @@ TTracker::ReadyToRun()
 	BVolumeRoster().GetBootVolume(&bootVol);
 	BDirectory deskDir;
 	if (FSGetDeskDir(&deskDir, bootVol.Device()) == B_OK) {
+		// create desktop
 		BEntry entry;
 		deskDir.GetEntry(&entry);
 		Model *model = new Model(&entry);
@@ -1103,58 +1148,36 @@ TTracker::ReadyToRun()
 				node_ref nodeRef;
 				deskDir.GetNodeRef(&nodeRef);
 	
+				int32 stateMessageCounter = 0;
 				const char *path;
-				bool hideWindow = false;
-				int32 messageCounter=0;
-				for (int32 index = 0; message.FindString("paths", index, &path) == B_OK;
-					index++) {
-					message.FindBool(path, &hideWindow);
-					BEntry entry(path, true);
-					if (entry.InitCheck() == B_OK) {
-						entry_ref ref;
-						entry.GetRef(&ref);
-						
-						BContainerWindow *window = FindContainerWindow(&ref);
-						
-						bool retrieveStateMessage = window != NULL
-							&& ! window->PoseView()->IsDesktopWindow();
-							
-						Model *model = new Model(&entry);
-						if (model->InitCheck() == B_OK && model->IsContainer()) {
-							BMessage state;
-							bool restoreStateFromMessage = false;
-							if (retrieveStateMessage)
-								if (message.FindMessage("window state", messageCounter++, &state)
-									== B_OK)
+				for (int32 outer = 0;message.FindString("paths", outer, &path) == B_OK;outer++) {
+					int8 flags = 0;
+					for (int32 inner = 0;message.FindInt8(path, inner, &flags) == B_OK;inner++) {
+						BEntry entry(path, true);
+						if (entry.InitCheck() == B_OK) {
+							Model *model = new Model(&entry);
+							if (model->InitCheck() == B_OK && model->IsContainer()) {
+								BMessage state;
+								bool restoreStateFromMessage = false;
+								if ((flags & kOpenWindowHasState) != 0
+									&& message.FindMessage("window state", stateMessageCounter++, &state) == B_OK)
 									restoreStateFromMessage = true;
 
-							if (restoreStateFromMessage)
-								OpenContainerWindow(model, 0, kOpen, 
-									kRestoreWorkspace | (hideWindow ? kIsHidden : 0U),
-									false, &state);
-							else
-								OpenContainerWindow(model, 0, kOpen, 
-									kRestoreWorkspace | (hideWindow ? kIsHidden : 0U));
-						} else
-							delete model;
+								if (restoreStateFromMessage)
+									OpenContainerWindow(model, 0, kOpen, 
+										kRestoreWorkspace | (flags & kOpenWindowMinimized ? kIsHidden : 0U),
+										false, &state);
+								else
+									OpenContainerWindow(model, 0, kOpen, 
+										kRestoreWorkspace | (flags & kOpenWindowMinimized ? kIsHidden : 0U));
+							} else
+								delete model;
+						}
 					}
 				}
 	
 				if (message.HasBool("open_disks_window"))
 					openDisksWindow = true;
-	
-				if (message.HasBool("open_root_directory")) {
-					BDirectory rootDir;
-					if (BVolume(nodeRef.device).GetRootDirectory(&rootDir) == B_OK) {
-						BEntry entry;
-						rootDir.GetEntry(&entry);
-						Model *model = new Model(&entry);
-						if (model->InitCheck() == B_OK)
-							OpenContainerWindow(model, 0, kOpen, kRestoreWorkspace);
-						else
-							delete model;
-					}
-				}
 			}
 			free(buffer);
 		}
