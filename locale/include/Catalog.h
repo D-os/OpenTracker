@@ -15,7 +15,7 @@ class BCatalog {
 		BCatalog();
 		BCatalog(const char *signature, const char *language = NULL,
 			int32 fingerprint = 0);
-		~BCatalog();
+		virtual ~BCatalog();
 
 		const char *GetString(const char *string, const char *context=NULL,
 						const char *comment=NULL);
@@ -29,21 +29,21 @@ class BCatalog {
 		status_t GetFingerprint(int32 *fp);
 
 		status_t InitCheck() const;
+		int32 CountItems() const;
 
-	private:
-		BCatalog(const char *type, const char *signature, const char *language);
-		static status_t GetAppCatalog(BCatalog*);
+		BCatalogAddOn *CatalogAddOn();
 
-		BCatalogAddOn *fCatalog;
-
+	protected:
 		BCatalog(const BCatalog&);
 		const BCatalog& operator= (const BCatalog&);
 			// hide assignment and copy-constructor
 
+		static status_t GetAppCatalog(BCatalog*);
+
+		BCatalogAddOn *fCatalog;
+
+	private:
 		friend class BLocale;
-		friend class CatalogSpeed;
-		friend class CatalogTest;
-		friend class CatalogTestAddOn;
 		friend status_t get_add_on_catalog(BCatalog*, const char *);
 };
 
@@ -58,14 +58,25 @@ extern BCatalog* be_app_catalog;
 // you don't want these:
 
 #undef TR_CONTEXT
-	// In a single application, several strings mightAs it is possible thatThe translators to easily find out
-	//		what the context means.
-	// define this with the context you'd like to use in a source file.
+	// In a single application, several strings (e.g. 'Ok') will be used 
+	// more than once, in different contexts. 
+	// As the application programmer can not know if all translations of
+	// this string will be the same for all languages, each occurrence of
+	// the string must be translated on its own.
+	// Specifying the context explicitly with each string allows the person
+	// translating a catalog to separate these different occurrences of the
+	// same string and tell which strings appears in what context of the 
+	// application.
+	// In order to give the translator a useful hint, the application
+	// programmer needs to define TR_CONTEXT with the context he'd like 
+	// to be associated with the strings used in this specifc source file.
 	// example:
 	//		#define TR_CONTEXT "Folder-Window"
 	// Tip: Use a descriptive name of the class implemented in that 
 	//		source-file. 
 
+
+// Translation macros which may be used to shorten translation requests:
 #undef TR
 #define TR(str) \
 	be_catalog->GetString((str), TR_CONTEXT)
@@ -82,6 +93,46 @@ extern BCatalog* be_app_catalog;
 #define TR_ID(id) \
 	be_catalog->GetString((id))
 
+
+// Translation markers which can be used to mark static strings/IDs which
+// are used as key for translation requests (at other places in the code):
+/* example:
+		#define TR_CONTEXT "MyDecentApp-Menu"
+
+		static const char *choices[] = {
+			TR_MARK("left"),
+			TR_MARK("right"),
+			TR_MARK("up"),
+			TR_MARK("down")
+		};
+
+		void MyClass::AddChoices(BMenu *menu) {
+			for (char **ch = choices; *ch; ch++) {
+				menu->AddItem(
+					new BMenuItem(
+						TR(*ch), 
+						new BMessage(...)
+					)
+				)
+			}
+		}
+*/
+#undef TR_MARK
+#define TR_MARK(str) \
+	BCatalogAddOn::MarkForTranslation((str), TR_CONTEXT, "")
+
+#undef TR_MARK_CMT
+#define TR_MARK_CMT(str,cmt) \
+	BCatalogAddOn::MarkForTranslation((str), TR_CONTEXT, (cmt))
+
+#undef TR_MARK_ALL
+#define TR_MARK_ALL(str,ctx,cmt) \
+	BCatalogAddOn::MarkForTranslation((str), (ctx), (cmt))
+	
+#undef TR_MARK_ID
+#define TR_MARK_ID(id) \
+	BCatalogAddOn::MarkForTranslation((id))
+	
 #endif	/* B_AVOID_TRANSLATION_MACROS */
 
 
@@ -100,23 +151,43 @@ class BCatalogAddOn {
 								const char *comment=NULL) = 0;
 		virtual const char *GetString(uint32 id) = 0;
 
-		virtual bool CanWriteData() const;
+		status_t InitCheck() const;
+		BCatalogAddOn *Next();
+
+		// the following could be used to localize non-textual data (e.g. icons),
+		// but these will only be implemented if there's demand for such a 
+		// feature:
+		virtual bool CanHaveData() const;
+		virtual status_t GetData(const char *name, BMessage *msg);
+		virtual status_t GetData(uint32 id, BMessage *msg);
+
+		// interface for catalog-editor-app and testing apps:
 		virtual status_t SetString(const char *string, 
 							const char *translated,
 							const char *context=NULL,
 							const char *comment=NULL);
 		virtual status_t SetString(int32 id, const char *translated);
-
-		status_t InitCheck() const;
-
-		// the following could be used to localize non-textual data (e.g. icons),
-		// but these will only be implemented if there's demand for such a 
-		// feature:
-		virtual status_t GetData(const char *name, BMessage *msg);
-		virtual status_t GetData(uint32 id, BMessage *msg);
-		virtual bool CanHaveData() const;
+		//
+		virtual bool CanWriteData() const;
 		virtual status_t SetData(const char *name, BMessage *msg);
 		virtual status_t SetData(uint32 id, BMessage *msg);
+		//
+		virtual status_t ReadFromFile(const char *path = NULL);
+		virtual status_t ReadFromAttribute(entry_ref *appOrAddOnRef);
+		virtual status_t ReadFromResource(entry_ref *appOrAddOnRef);
+		virtual status_t WriteToFile(const char *path = NULL);
+		virtual status_t WriteToAttribute(entry_ref *appOrAddOnRef);
+		virtual status_t WriteToResource(entry_ref *appOrAddOnRef);
+		//
+		virtual void MakeEmpty();
+		virtual int32 CountItems() const;
+
+		// magic marker functions which are used to mark a string/id
+		// which will be translated elsewhere in the code (where it can
+		// not be found since it is references by a variable):
+		static const char *MarkForTranslation(const char *str, const char *ctx, 
+								const char *cmt);
+		static int32 MarkForTranslation(int32 id);
 
 	protected:
 		virtual void UpdateFingerprint();
@@ -146,7 +217,8 @@ extern uint8 gCatalogAddOnPriority;
  * BCatalog - inlines for trivial accessors:
  */
 inline status_t
-BCatalog::GetSignature(BString *sig) {
+BCatalog::GetSignature(BString *sig) 
+{
 	if (!sig)
 		return B_BAD_VALUE;
 	if (!fCatalog)
@@ -157,7 +229,8 @@ BCatalog::GetSignature(BString *sig) {
 
 
 inline status_t 
-BCatalog::GetLanguage(BString *lang) {
+BCatalog::GetLanguage(BString *lang) 
+{
 	if (!lang)
 		return B_BAD_VALUE;
 	if (!fCatalog)
@@ -168,7 +241,8 @@ BCatalog::GetLanguage(BString *lang) {
 
 
 inline status_t 
-BCatalog::GetFingerprint(int32 *fp) {
+BCatalog::GetFingerprint(int32 *fp) 
+{
 	if (!fp)
 		return B_BAD_VALUE;
 	if (!fCatalog)
@@ -186,5 +260,87 @@ BCatalog::InitCheck() const
 				: B_NO_INIT;
 }
 
+
+inline int32 
+BCatalog::CountItems() const
+{
+	if (!fCatalog)
+		return 0;
+	return fCatalog->CountItems();
+}
+
+
+inline BCatalogAddOn *
+BCatalog::CatalogAddOn() 
+{
+	return fCatalog;
+}
+
+
+/*
+ * BCatalogAddOn - inlines for trivial accessors:
+ */
+inline BCatalogAddOn *
+BCatalogAddOn::Next() 
+{
+	return fNext;
+}
+
+
+inline const char *
+BCatalogAddOn::MarkForTranslation(const char *str, const char *ctx, 
+	const char *cmt) 
+{
+	return str;
+}
+
+
+inline int32
+BCatalogAddOn::MarkForTranslation(int32 id) 
+{
+	return id;
+}
+
+
+namespace BPrivate {
+
+/*
+ * EditableCatalog
+ */
+class EditableCatalog : public BCatalog {
+
+	public:
+		EditableCatalog(const char *type, const char *signature, 
+			const char *language);
+		~EditableCatalog();
+
+		status_t SetString(const char *string, 
+					const char *translated,
+					const char *context=NULL,
+					const char *comment=NULL);
+		status_t SetString(int32 id, const char *translated);
+		//
+		bool CanWriteData() const;
+		status_t SetData(const char *name, BMessage *msg);
+		status_t SetData(uint32 id, BMessage *msg);
+		//
+		status_t ReadFromFile(const char *path = NULL);
+		status_t ReadFromAttribute(entry_ref *appOrAddOnRef);
+		status_t ReadFromResource(entry_ref *appOrAddOnRef);
+		status_t WriteToFile(const char *path = NULL);
+		status_t WriteToAttribute(entry_ref *appOrAddOnRef);
+		status_t WriteToResource(entry_ref *appOrAddOnRef);
+		//
+		void MakeEmpty();
+
+	private:
+		EditableCatalog();
+		EditableCatalog(const EditableCatalog&);
+		const EditableCatalog& operator= (const EditableCatalog&);
+			// hide assignment, default- and copy-constructor
+
+};
+
+} // namespace BPrivate
 
 #endif	/* _CATALOG_H_ */
