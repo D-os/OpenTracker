@@ -44,11 +44,14 @@ All rights reserved.
 #include "Commands.h"
 #include "VolumeWindow.h"
 #include "PoseView.h"
+#include "MountMenu.h"
+
 
 BVolumeWindow::BVolumeWindow(LockingList<BWindow> *windowList, uint32 openFlags)
 	:	BContainerWindow(windowList, openFlags)
 {
 }
+
 
 void
 BVolumeWindow::MenusBeginning()
@@ -81,6 +84,7 @@ BVolumeWindow::MenusBeginning()
 		item->SetEnabled(ejectableVolumeSelected);
 }
 
+
 void
 BVolumeWindow::AddFileMenu(BMenu *menu)
 {
@@ -104,32 +108,35 @@ BVolumeWindow::AddFileMenu(BMenu *menu)
 	menu->SetTargetForItems(PoseView());
 }
 
-void
-BVolumeWindow::SetupMoveCopyMenus(const entry_ref *, BMenu *)
-{
-	// intentionally do nothing here so we don't get "Move To"
-	// or "Copy To" items in the volume window menus
-}
 
 void 
 BVolumeWindow::AddWindowContextMenus(BMenu *menu)
 {
+	if (fPoseView != NULL && fPoseView->TargetModel() != NULL
+		&& !fPoseView->TargetModel()->IsRoot()) {
+		_inherited::AddWindowContextMenus(menu);
+		return;
+	}
+
 	menu->AddItem(new BMenuItem("Icon View", new BMessage(kIconMode)));
 	menu->AddItem(new BMenuItem("Mini Icon View", new BMessage(kMiniIconMode)));
 	menu->AddItem(new BMenuItem("List View", new BMessage(kListMode)));
 	menu->AddSeparatorItem();
-	BMenuItem *resizeItem = new BMenuItem("Resize to Fit",
-		new BMessage(kResizeToFit), 'Y');
+
+	BMenuItem *resizeItem = new BMenuItem("Resize to Fit",new BMessage(kResizeToFit), 'Y');
 	menu->AddItem(resizeItem);
 	menu->AddItem(new BMenuItem("Clean Up", new BMessage(kCleanup), 'K'));
 	menu->AddItem(new BMenuItem("Select"B_UTF8_ELLIPSIS, new BMessage(kShowSelectionWindow), 'A', B_SHIFT_KEY));
 	menu->AddItem(new BMenuItem("Select All", new BMessage(B_SELECT_ALL), 'A'));
 	menu->AddItem(new BMenuItem("Invert Selection", new BMessage(kInvertSelection), 'S'));
 	
-	BMenuItem *closeItem = new BMenuItem("Close",
-		new BMessage(B_CLOSE_REQUESTED), 'W');
+	BMenuItem *closeItem = new BMenuItem("Close",new BMessage(B_CLOSE_REQUESTED), 'W');
 	menu->AddItem(closeItem);
 	menu->AddSeparatorItem();
+
+	menu->AddItem(new MountMenu("Mount"));
+	menu->AddSeparatorItem();
+
 	menu->AddItem(new BMenu(kAddOnsMenuName));
 
 	// target items as needed

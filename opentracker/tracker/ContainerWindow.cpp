@@ -390,10 +390,12 @@ BContainerWindow::RepopulateMenus()
 
 	delete fFileContextMenu;
 	fFileContextMenu = new BPopUpMenu("FileContext", false, false);
+	fFileContextMenu->SetFont(be_plain_font);
 	AddFileContextMenus(fFileContextMenu);
 
 	delete fWindowContextMenu;
 	fWindowContextMenu = new BPopUpMenu("WindowContext", false, false);
+	fWindowContextMenu->SetFont(be_plain_font);
 	AddWindowContextMenus(fWindowContextMenu);
 
 	fMenuBar->RemoveItem(fFileMenu);
@@ -951,13 +953,13 @@ BContainerWindow::MessageReceived(BMessage *message)
 				entry_ref ref;
 				if (message->FindRef("refs", &ref) != B_OK)
 					break;
-				
+
 				BRoster().AddToRecentFolders(&ref);
 
 				Model model(&ref);
 				if (model.InitCheck() != B_OK)
 					break;
-	
+
 				PoseView()->MoveSelectionInto(&model, this, false);
 				break;
 			}
@@ -987,11 +989,11 @@ BContainerWindow::MessageReceived(BMessage *message)
 		case kShowSelectionWindow:
 			ShowSelectionWindow();
 			break;
-		
+
 		case kSelectMatchingEntries:
 			PoseView()->SelectMatchingEntries(message);
 			break;
-					
+
 		case kFindButton:
 			(new FindWindow())->Show();
 			break;
@@ -1003,7 +1005,7 @@ BContainerWindow::MessageReceived(BMessage *message)
 		case kRestoreBackgroundImage:
 			UpdateBackgroundImage();
 			break;
-		
+
 		case kSwitchDirectory:
 			{
 				entry_ref ref;
@@ -1014,20 +1016,22 @@ BContainerWindow::MessageReceived(BMessage *message)
 							SaveState(false);
 
 						bool wasInTrash = IsTrash() || InTrash();
+						bool isRoot = PoseView()->TargetModel()->IsRoot();
 
 						// Switch dir and apply new state
 						WindowStateNodeOpener opener(this, false);
 						opener.SetTo(&entry, false);
-						
+
 						// Update PoseView
 						PoseView()->SwitchDir(&ref, opener.StreamNode());
-		
+
 						fIsTrash = FSIsTrashDir(&entry);
 						fInTrash = FSInTrashDir(&ref);
-						
-						if (wasInTrash ^ (IsTrash() || InTrash()))
+
+						if (wasInTrash ^ (IsTrash() || InTrash())
+							|| isRoot != PoseView()->TargetModel()->IsRoot())
 							RepopulateMenus();
-		
+
 						// Update Navigation bar
 						if (Navigator()) {
 							int32 action = kActionSet;

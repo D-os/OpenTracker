@@ -43,18 +43,17 @@ class BVolumeWindow : public BContainerWindow {
 	// The volume window displays the virtual file system root with
 	// all mounted volumes. Does not show up unless the corresponding Tracker
 	// setting is enabled
-public:
-	BVolumeWindow(LockingList<BWindow> *windowList, uint32 containerWindowFlags);
+	public:
+		BVolumeWindow(LockingList<BWindow> *windowList, uint32 containerWindowFlags);
 
-protected:
-	virtual	void AddFileMenu(BMenu *menu);
-	virtual	void AddWindowContextMenus(BMenu *);
-	
-	virtual	void SetupMoveCopyMenus(const entry_ref *, BMenu *);
-	virtual void MenusBeginning();
+	protected:
+		virtual	void AddFileMenu(BMenu *menu);
+		virtual	void AddWindowContextMenus(BMenu *);
 
-private:
-	typedef BContainerWindow _inherited;
+		virtual void MenusBeginning();
+
+	private:
+		typedef BContainerWindow _inherited;
 };
 
 } // namespace BPrivate
