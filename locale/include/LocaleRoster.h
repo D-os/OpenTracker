@@ -51,12 +51,15 @@ class BLocaleRoster {
 		static const char *kCatLangAttr;
 		static const char *kCatSigAttr;
 		static const char *kCatFingerprintAttr;
+		static const char *kEmbeddedCatAttr;
+		static int32 kEmbeddedCatResId;
 
 	private:
 
 		BCatalogAddOn* LoadCatalog(const char *signature, 
 							const char *language = NULL,
 							int32 fingerprint = 0);
+		BCatalogAddOn* LoadEmbeddedCatalog(entry_ref *appOrAddOnRef);
 		status_t UnloadCatalog(BCatalogAddOn *addOn);
 		//
 		BCatalogAddOn* CreateCatalog(const char *type,
@@ -64,7 +67,7 @@ class BLocaleRoster {
 							const char *language);
 
 		friend class BCatalog;
-		friend status_t get_add_on_catalog(BCatalog*, const char*, int32);
+		friend status_t get_add_on_catalog(BCatalog*, const char *);
 };
 
 #endif	/* _LOCALE_ROSTER_H_ */
