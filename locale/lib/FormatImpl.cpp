@@ -2,7 +2,7 @@
 
 // constructor
 BFormatImpl::BFormatImpl()
-	: fReferences(0)
+	: fParameters()
 {
 }
 
@@ -11,39 +11,17 @@ BFormatImpl::~BFormatImpl()
 {
 }
 
-// RegisterReference
-void
-BFormatImpl::RegisterReference()
+// DefaultFormatParameters
+BFormatParameters *
+BFormatImpl::DefaultFormatParameters()
 {
-	atomic_add(&fReferences, 1);
+	return &fParameters;
 }
 
-// UnregisterReference
-void
-BFormatImpl::UnregisterReference()
+// DefaultFormatParameters
+const BFormatParameters *
+BFormatImpl::DefaultFormatParameters() const
 {
-	int32 references = atomic_add(&fReferences, -1);
-	if (references == 1)
-		delete this;
-}
-
-// ExclusiveReference
-BFormatImpl *
-BFormatImpl::ExclusiveReference()
-{
-	if (fReferences > 1) {
-		BFormatImpl *clone = Clone();
-		if (clone)
-			UnregisterReference();
-		return clone;
-	}
-	return this;
-}
-
-// =
-BFormatImpl &
-BFormatImpl::operator=(const BFormatImpl &other)
-{
-	return *this;
+	return &fParameters;
 }
 

@@ -1,10 +1,9 @@
 #include <NumberFormatImpl.h>
 
-static const bool kDefaultUseGrouping = false;
-
 // constructor
 BNumberFormatImpl::BNumberFormatImpl()
-	: fGroupingUsed(kDefaultUseGrouping)
+	: BFormatImpl(),
+	  fParameters()
 {
 }
 
@@ -13,25 +12,17 @@ BNumberFormatImpl::~BNumberFormatImpl()
 {
 }
 
-// SetGroupingUsed
-status_t
-BNumberFormatImpl::SetGroupingUsed(bool useGrouping)
+// DefaultNumberFormatParameters
+BNumberFormatParameters *
+BNumberFormatImpl::DefaultNumberFormatParameters()
 {
-	fGroupingUsed = useGrouping;
+	return &fParameters;
 }
 
-// IsGroupingUsed
-bool
-BNumberFormatImpl::IsGroupingUsed() const
+// DefaultNumberFormatParameters
+const BNumberFormatParameters *
+BNumberFormatImpl::DefaultNumberFormatParameters() const
 {
-	return fGroupingUsed;
-}
-
-// =
-BNumberFormatImpl &
-BNumberFormatImpl::operator=(const BNumberFormatImpl &other)
-{
-	BFormatImpl::operator=(other);
-	fGroupingUsed = other.fGroupingUsed;
+	return &fParameters;
 }
 

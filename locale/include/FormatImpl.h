@@ -1,6 +1,7 @@
 #ifndef _B_FORMAT_IMPL_H_
 #define _B_FORMAT_IMPL_H_
 
+#include <FormatParameters.h>
 #include <SupportDefs.h>
 
 class BFormatImpl {
@@ -8,17 +9,11 @@ class BFormatImpl {
 		BFormatImpl();
 		virtual ~BFormatImpl();
 
-		void RegisterReference();
-		void UnregisterReference();
-		BFormatImpl *ExclusiveReference();
-
-		virtual BFormatImpl *Clone() const = 0;
-
-	protected:
-		BFormatImpl &operator=(const BFormatImpl &other);
+		BFormatParameters *DefaultFormatParameters();
+		const BFormatParameters *DefaultFormatParameters() const;
 
 	private:
-		vint32	fReferences;
+		BFormatParameters	fParameters;
 };
 
 #endif	// _B_FORMAT_IMPL_H_

@@ -1,6 +1,7 @@
 #ifndef _B_FORMAT_H_
 #define _B_FORMAT_H_
 
+#include <FormatParameters.h>
 #include <SupportDefs.h>
 
 // types of fields contained in formatted strings
@@ -31,7 +32,7 @@ struct format_field_position {
 
 class BFormatImpl;
 
-class BFormat {
+class BFormat : public BFormatParameters {
 	public:
 		BFormat(const BFormat &other);
 		~BFormat();
@@ -41,8 +42,6 @@ class BFormat {
 		BFormat(BFormatImpl *impl);		// conceptually private
 
 	protected:
-		status_t PrepareWriteAccess();
-
 		BFormatImpl	*fImpl;
 };
 
