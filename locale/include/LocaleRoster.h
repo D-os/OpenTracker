@@ -4,6 +4,7 @@
 
 #include <SupportDefs.h>
 #include <List.h>
+#include <Locker.h>
 
 class BLanguage;
 class BLocale;
@@ -30,26 +31,22 @@ class BLocaleRoster {
 
 //		status_t GetLocaleFor(const char *langCode,const char *countryCode);
 
-		status_t GetDefaultCollator(BCollator **);
-		status_t GetDefaultLanguage(BLanguage **);
-		status_t GetDefaultCountry(BCountry **);
+		status_t GetDefaultCollator(BCollator **) const;
+		status_t GetDefaultLanguage(BLanguage **) const;
+		status_t GetDefaultCountry(BCountry **) const;
 		
-		status_t GetPreferredLanguages(BList *);
-//		status_t SetPreferredLanguages(BList *);
+		status_t GetPreferredLanguages(BList *) const;
+		status_t SetPreferredLanguages(BList *);
 
 //		status_t GetDefaultLanguage(BLanguage *);
 //		status_t SetDefaultLanguage(BLanguage *);
 
 	private:
-		BCatalogAddOn* LoadCatalog(const char* signature, 
-								const char* language = NULL);
-		status_t UnloadCatalog(BCatalogAddOn* addOn);
 
-		void InitializeCatalogAddOns();
-		void CleanupCatalogAddOns();
+		BCatalogAddOn* LoadCatalog(const char *signature, 
+							const char *language = NULL);
+		status_t UnloadCatalog(BCatalogAddOn *addOn);
 
-		BList fCatalogAddOnInfos;
-		BList fPreferredLanguages;
 };
 
 #endif	/* _LOCALE_ROSTER_H_ */
