@@ -41,6 +41,15 @@ All rights reserved.
 #include "Commands.h"
 #include "FilePanelPriv.h"
 
+// prototypes for some private kernel calls that will some day be public
+#if B_BEOS_VERSION_DANO
+#define _IMPEXP_ROOT
+#endif
+extern "C" _IMPEXP_ROOT int _kset_fd_limit_(int num);
+#if B_BEOS_VERSION_DANO
+#undef _IMPEXP_ROOT
+#endif
+
 void
 run_open_panel()
 {
@@ -59,6 +68,9 @@ BFilePanel::BFilePanel(file_panel_mode mode, BMessenger *target,
 	BMessage *message, BRefFilter *filter, bool modal,
 	bool hideWhenDone)
 {
+	// boost file descriptor limit so file panels in other apps don't have
+	// problems
+	_kset_fd_limit_ (512);
 	BEntry startDir(ref);
 	fWindow = new TFilePanel(mode, target, &startDir, nodeFlavors, 
 		multipleSelection, message, filter, 0, B_DOCUMENT_WINDOW_LOOK,

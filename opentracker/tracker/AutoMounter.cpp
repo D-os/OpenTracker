@@ -60,8 +60,8 @@ struct OneMountFloppyParams {
 	status_t result;
 };
 
-static bool silentAutoMounter;
-static BMessage settingsMessage;
+static bool gSilentAutoMounter;
+static BMessage gSettingsMessage;
 
 #if xDEBUG
 static Partition *
@@ -89,7 +89,7 @@ TryMountingEveryOne(Partition *partition, void *castToParams)
 	MountPartitionParams *params = (MountPartitionParams *)castToParams;
 
 	if (partition->Mounted() == kMounted) {
-		if (!silentAutoMounter)
+		if (!gSilentAutoMounter)
 			PRINT(("%s already mounted\n", partition->VolumeName()));
 	} else {
 		status_t result = partition->Mount();
@@ -109,7 +109,7 @@ TryMountingEveryOne(Partition *partition, void *castToParams)
 			// return error if caller asked for it
 			params->result = result;
 
-		if (!silentAutoMounter) {
+		if (!gSilentAutoMounter) {
 			if (result == B_OK)
 				PRINT(("%s mounted OK\n", partition->VolumeName()));
 			else
@@ -182,7 +182,7 @@ TryMountingRestoreOne(Partition *partition, void *params)
 	// Find the name of the current device/volume in the saved settings
 	// and open if found.
 	const char *volumename;
-	if (settingsMessage.FindString(path, &volumename) == B_OK
+	if (gSettingsMessage.FindString(path, &volumename) == B_OK
 		&& strcmp(volumename, partition->VolumeName()) == 0)
 		return TryMountingEveryOne(partition, params);
 
@@ -338,8 +338,7 @@ AutoMounter::AutoMounter(bool _DEVICE_MAP_ONLY(checkRemovableOnly),
 	fAutomountParams.mountHFS = autoMountAllHFS;
 	fAutomountParams.mountRemovableDisksOnly = autoMountRemovablesOnly;
 
-
-	silentAutoMounter = true;
+	gSilentAutoMounter = true;
 	
 	if (!BootedInSafeMode()) {
 		ReadSettings();
@@ -1197,7 +1196,7 @@ AutoMounter::SetParams(BMessage *_DEVICE_MAP_ONLY(message),
 	if (message->FindBool("initialMountRestore", &result) == B_OK) {
 		fInitialMountRestore = result;
 		if (fInitialMountRestore)
-			settingsMessage = *message;
+			gSettingsMessage = *message;
 	}
 	if (message->FindBool("initialMountAllHFS", &result) == B_OK)
 		fInitialMountAllHFS = result;
