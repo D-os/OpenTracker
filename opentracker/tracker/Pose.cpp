@@ -526,7 +526,7 @@ BPose::Draw(BRect rect, BPoseView *poseView, BView *drawView, bool fullDraw,
 
 		DrawIcon(iconOrigin, drawView, poseView->ViewMode() == kIconMode ?
 			B_LARGE_ICON : B_MINI_ICON, directDraw,
-			!windowActive && !showSelectionWhenInactive);
+			!windowActive && !showSelectionWhenInactive && !poseView->IsDesktopWindow());
 		
 		BColumn *column = poseView->FirstColumn();
 		if (!column)
@@ -575,8 +575,8 @@ BPose::DeselectWithoutErasingBackground(BRect, BPoseView *poseView)
 
 	// draw icon directly
 	if (fPercent == -1)
-	DrawIcon(fLocation, poseView, poseView->ViewMode() == kIconMode ?
-		B_LARGE_ICON : B_MINI_ICON, true);
+		DrawIcon(fLocation, poseView, poseView->ViewMode() == kIconMode ?
+				B_LARGE_ICON : B_MINI_ICON, true);
 	else
 		UpdateIcon(fLocation,poseView);
 
