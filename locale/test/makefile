@@ -6,6 +6,8 @@ INCPATHS = -I../include
 CFLAGS = -g # -fcheck-memory-usage -D_NO_INLINE_ASM
 
 
+default: all
+
 all:	localeTest collatorTest collatorSpeed catalogTest
 
 clean:

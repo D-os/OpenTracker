@@ -3,6 +3,8 @@
 
 LANGUAGE_DIR=/etc/locale/languages
 
+default: all
+
 all:
 # do nothing
 

@@ -14,6 +14,7 @@ endef
 
 COLLATORS = $(COLLATOR_SOURCES_TO_COLLATORS)
 
+default: all
 
 all:		$(COLLATORS)
 
