@@ -5,7 +5,6 @@
 #include <String.h>
 
 class BCatalogAddOn;
-class BCatalogAddOnInfo;
 class BLocale;
 class BMessage;
 
@@ -38,8 +37,7 @@ class BCatalog {
 class BCatalogAddOn {
 		friend class BLocaleRoster;
 	public:
-		BCatalogAddOn(const char *signature, const char *language,
-			BCatalogAddOnInfo* info);
+		BCatalogAddOn(const char *signature, const char *language);
 		virtual ~BCatalogAddOn();
 
 		virtual const char *GetString(const char *string, 
@@ -68,7 +66,6 @@ class BCatalogAddOn {
 
 	protected:
 		BString 			fSignature;
-		BCatalogAddOnInfo 	*fAddOnInfo;
 		BString 			fLanguageName;
 		BCatalogAddOn 		*fNext;
 		status_t 			fInitCheck;
@@ -83,7 +80,7 @@ BCatalogAddOn::InitCheck() const
 // every catalog-add-on should export two symbols...
 // ...the function that instantiates a catalog for this add-on-type...
 extern "C" BCatalogAddOn *instantiate_catalog(const char* signature,
-							const char* language, BCatalogAddOnInfo* info);
+							const char* language);
 // ...and the priority which will be used to order the catalog-add-ons:
 extern uint8 gCatalogAddOnPriority;
 

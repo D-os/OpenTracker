@@ -65,15 +65,15 @@ BCatalog::InitCheck() const
 //	#pragma mark -
 
 
-BCatalogAddOn::BCatalogAddOn(const char *signature, const char *language,
-	BCatalogAddOnInfo* info)
+BCatalogAddOn::BCatalogAddOn(const char *signature, const char *language)
 	:
-	fSignature( signature),
-	fLanguageName( language),
-	fAddOnInfo( info),
-	fNext( NULL),
-	fInitCheck( B_NO_INIT)
+	fSignature(signature),
+	fLanguageName(language),
+	fNext(NULL),
+	fInitCheck(B_NO_INIT)
 {
+	fLanguageName.ToLower();
+		// canonicalize language-name to lowercase
 }
 
 
