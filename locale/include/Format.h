@@ -1,6 +1,8 @@
 #ifndef _B_FORMAT_H_
 #define _B_FORMAT_H_
 
+#include <SupportDefs.h>
+
 // types of fields contained in formatted strings
 enum {
 	// number format fields
@@ -27,14 +29,21 @@ struct format_field_position {
 	int32	length;
 };
 
+class BFormatImpl;
+
 class BFormat {
 	public:
-		BFormat();
-		virtual ~BFormat();
+		BFormat(const BFormat &other);
+		~BFormat();
 
-		// Will be convenient, if the subclasses are not thread-safe.
-		// And they won't be how I plan their interfaces.
-		virtual BFormat *Clone() const = 0;
+		BFormat &operator=(const BFormat &other);
+
+		BFormat(BFormatImpl *impl);		// conceptually private
+
+	protected:
+		status_t PrepareWriteAccess();
+
+		BFormatImpl	*fImpl;
 };
 
 #endif	// _B_FORMAT_H_
