@@ -12,6 +12,31 @@ if $(OSPLAT) = PPC {
 # Use copyattr for copying.
 CP = copyattr --data ;
 
+# Specify how to get beres.
+{
+	local archive = tools.tgz ;
+	MakeLocate $(archive) : $(LOCALE_DOWNLOADS_DIR) ;
+	local url ;
+	local pathPrefix ;
+	if $(OSPLAT) = X86 {
+		url = http://opentracker.sourceforge.net/downloads/x86/tools-x86.tgz ;
+		pathPrefix = bin/x86 ;
+	} else {
+		url = http://opentracker.sourceforge.net/downloads/ppc/tools-ppc.tgz ;
+		pathPrefix = bin/ppc ;
+	}
+	Download $(archive) : $(url) ;
+	local targetDir = [ FDirName $(LOCALE_DOWNLOADS_DIR) tools ] ;
+	local files = beres lib/libreseditor.so lib/libresparser.so ;
+	UnarchiveFiles $(archive) : $(pathPrefix)/$(files) : $(targetDir) : beres
+		: 3 : beres ;
+	MakeLocate beres : [ FDirName $(targetDir) ] ;
+	MODE on beres = $(EXEMODE) ;
+	Chmod beres ;
+	RESCOMP = beres ;
+}
+
+
 # Add the locale includes to the system include dirs.
 SYSHDRS += $(LOCALE_INCLUDE_DIR) $(LOCALE_POSIX_INCLUDE_DIR) ;
 
