@@ -22,7 +22,8 @@
 #define DO16(buf)   DO8(buf,0); DO8(buf,8);
 
 /* ========================================================================= */
-uint32 adler32(uint32 adler, const uint8 *buf, uint32 len) {
+uint32 adler32(uint32 adler, const uint8 *buf, uint32 len) 
+{
 	uint32 s1 = adler & 0xffff;
 	uint32 s2 = (adler >> 16) & 0xffff;
 	int k;

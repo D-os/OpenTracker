@@ -32,7 +32,8 @@ BCatalog *be_catalog = NULL;
  * utility function which determines the entry-ref for "this" add-on:
  */
 static status_t
-get_add_on_ref(entry_ref *ref) {
+get_add_on_ref(entry_ref *ref) 
+{
 	if (!ref)
 		return B_BAD_VALUE;
 
@@ -66,7 +67,8 @@ get_add_on_ref(entry_ref *ref) {
  *      one is loaded, too.
  */
 status_t 
-get_add_on_catalog(BCatalog* cat, const char *givenSig) {
+get_add_on_catalog(BCatalog* cat, const char *givenSig) 
+{
 	if (!cat)
 		return B_BAD_VALUE;
 
