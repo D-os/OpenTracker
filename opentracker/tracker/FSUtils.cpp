@@ -45,7 +45,6 @@ All rights reserved.
 // 	low level FS calls.
 
 #include <ctype.h>
-#include <fs_attr.h>
 #include <string.h>
 #include <errno.h>
 
@@ -63,6 +62,9 @@ All rights reserved.
 #include <SymLink.h>
 #include <Volume.h>
 #include <VolumeRoster.h>
+
+#include <fs_attr.h>
+#include <fs_info.h>
 
 #include "Attributes.h"
 #include "Bitmaps.h"
@@ -100,7 +102,7 @@ namespace BPrivate {
 static status_t FSDeleteFolder(BEntry *, CopyLoopControl *, bool updateStatus, 
 	bool deleteTopDir = true, bool upateFileNameInStatus = false);
 static status_t MoveEntryToTrash(BEntry *, BPoint *, Undo &undo);
-void LowLevelCopy(BEntry *, StatStruct *, BDirectory *, const char *,
+static void LowLevelCopy(BEntry *, StatStruct *, BDirectory *, char *destName,
 	CopyLoopControl *, BPoint *);
 status_t DuplicateTask(BObjectList<entry_ref> *srcList);
 static status_t MoveTask(BObjectList<entry_ref> *, BEntry *, BList *, uint32);
@@ -931,9 +933,47 @@ CopyFile(BEntry *srcFile, StatStruct *srcStat, BDirectory *destDir,
 }
 
 
-void
+#ifdef _SILENTLY_CORRECT_FILE_NAMES
+static bool
+CreateFileSystemCompatibleName(const BDirectory *destDir, char *destName)
+{
+	// Is it a FAT32 file system? (this is the only one we currently now about)
+
+	BEntry target;
+	destDir->GetEntry(&target);
+	entry_ref targetRef;
+	fs_info info;
+	if (target.GetRef(&targetRef) == B_OK
+		&& fs_stat_dev(targetRef.device, &info) == B_OK
+		&& !strcmp(info.fsh_name, "dos")) {
+		bool wasInvalid = false;
+
+		// it's a FAT32 file system, now check the name
+
+		int32 length = strlen(destName) - 1;
+		while (destName[length] == '.') {
+			// invalid name, just cut off the dot at the end
+			destName[length--] = '\0';
+			wasInvalid = true;
+		}
+
+		char *invalid = destName;
+		while ((invalid = strpbrk(invalid, "?<>\\:\"")) != NULL) {
+			invalid[0] = '_';
+			wasInvalid = true;
+		}
+
+		return wasInvalid;
+	}
+
+	return false;
+}
+#endif
+
+
+static void
 LowLevelCopy(BEntry *srcEntry, StatStruct *srcStat, BDirectory *destDir,
-	const char *dest_name, CopyLoopControl *loopControl, BPoint *loc)
+	char *destName, CopyLoopControl *loopControl, BPoint *loc)
 {
 	entry_ref ref;
 	ThrowOnError(srcEntry->GetRef(&ref));
@@ -947,7 +987,7 @@ LowLevelCopy(BEntry *srcEntry, StatStruct *srcStat, BDirectory *destDir,
 		ThrowOnError(srcLink.SetTo(srcEntry));
 		ThrowIfNotSize(srcLink.ReadLink(linkpath, MAXPATHLEN-1));
 
-		ThrowOnError(destDir->CreateSymLink(dest_name, linkpath, &newLink));
+		ThrowOnError(destDir->CreateSymLink(destName, linkpath, &newLink));
 
 		node_ref destNodeRef;
 		destDir->GetNodeRef(&destNodeRef);
@@ -973,8 +1013,8 @@ LowLevelCopy(BEntry *srcEntry, StatStruct *srcStat, BDirectory *destDir,
 	const size_t kMinBufferSize = 1024 * 128; 
 	const size_t kMaxBufferSize = 1024 * 1024; 
  
-	size_t bufsize = kMinBufferSize; 
-	if (bufsize < srcStat->st_size) { 
+	size_t bufsize = kMinBufferSize;
+	if (bufsize < srcStat->st_size) {
 		//	File bigger than the buffer size: determine an optimal buffer size 
 		system_info sinfo; 
 		get_system_info(&sinfo); 
@@ -987,7 +1027,13 @@ LowLevelCopy(BEntry *srcEntry, StatStruct *srcStat, BDirectory *destDir,
 			bufsize = kMaxBufferSize; 
 	} 
 
-	BFile destFile(destDir, dest_name, O_RDWR | O_CREAT);
+	BFile destFile(destDir, destName, O_RDWR | O_CREAT);
+#ifdef _SILENTLY_CORRECT_FILE_NAMES
+	if ((destFile.InitCheck() == B_BAD_VALUE || destFile.InitCheck() == B_NOT_ALLOWED)
+		&& CreateFileSystemCompatibleName(destDir, destName))
+		destFile.SetTo(destDir, destName, B_CREATE_FILE | B_READ_WRITE);
+#endif
+
 	ThrowOnInitCheckError(&destFile);
 
 	node_ref destNodeRef;
@@ -1005,7 +1051,7 @@ LowLevelCopy(BEntry *srcEntry, StatStruct *srcStat, BDirectory *destDir,
 				destFile.Unset();
 	
 				BEntry destEntry;
-				if (destDir->FindEntry(dest_name, &destEntry) == B_OK)
+				if (destDir->FindEntry(destName, &destEntry) == B_OK)
 					destEntry.Remove();
 
 				throw (status_t)kCopyCanceled;
@@ -1057,7 +1103,7 @@ LowLevelCopy(BEntry *srcEntry, StatStruct *srcStat, BDirectory *destDir,
 		destFile.Unset();
 
 		BEntry destEntry;
-		if (destDir->FindEntry(dest_name, &destEntry) == B_OK)
+		if (destDir->FindEntry(destName, &destEntry) == B_OK)
 			destEntry.Remove();
 		throw (status_t)kUserCanceled;
 	}
@@ -1179,6 +1225,13 @@ CopyFolder(BEntry *srcEntry, BDirectory *destDir, CopyLoopControl *loopControl,
 	// create a new folder inside of destination folder
 	if (createDirectory) {
 	 	err = destDir->CreateDirectory(destName, &newDir);
+#ifdef _SILENTLY_CORRECT_FILE_NAMES
+	 	if (err == B_BAD_VALUE) {
+	 		// check if it's an invalid name on a FAT32 file system
+	 		if (CreateFileSystemCompatibleName(destDir, destName))
+	 			err = destDir->CreateDirectory(destName, &newDir);
+	 	}
+#endif
 	 	if (err != B_OK) {
 			if (!loopControl->FileError(kFolderErrorString, destName, err, true))
 				throw err;
