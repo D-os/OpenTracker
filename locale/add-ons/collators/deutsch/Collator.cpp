@@ -27,69 +27,36 @@ class CollatorDeutsch : public BCollatorAddOn {
 		CollatorDeutsch(BMessage *archive);
 		~CollatorDeutsch();
 		
-		virtual void GetSortKey(const char *string, BString *key, int8 strength,
-							bool ignorePunctuation);
-		virtual int Compare(const char *a, const char *b, int32 length, int8 strength,
-							bool ignorePunctuation);
-
 		// (un-)archiving API
 		virtual status_t Archive(BMessage *archive, bool deep);
 		static BArchivable *Instantiate(BMessage *archive);
-};
 
-
-struct input_context {
-	input_context(bool ignorePunctuation)
-		:
-		next_char(0),
-		ignore_punctuation(ignorePunctuation)
-	{
-	}
-
-	uint32	next_char;
-	bool	ignore_punctuation;
+	protected:
+		virtual uint32 GetNextChar(const char **string, input_context &context);
 };
 
 
 static const char *kSignature = "application/x-vnd.locale-collator.deutsch-din2";
 
-// conversion array for character ranges 192 - 223 & 224 - 255
-static const uint8 kNoDiacrits[] = {
-	'a','a','a','a','a','a','a',
-	'c',
-	'e','e','e','e',
-	'i','i','i','i',
-	240,	// eth
-	'n',
-	'o','o','o','o','o',
-	247,	//
-	'o',
-	'u','u','u','u',
-	'y',
-	254,	// thorn
-	'y'
-};
 
-
-static inline uint32
-getPrimaryChar(uint32 c)
+CollatorDeutsch::CollatorDeutsch()
 {
-	if (c < 0x80)
-		return tolower(c);
-
-	if (c >= 192 && c < 223)
-		return kNoDiacrits[c - 192];
-	if (c == 223)
-		return 's';
-	if (c >= 224 && c < 256)
-		return kNoDiacrits[c - 224];
-
-	return BUnicodeChar::ToLower(c);
 }
 
 
-static inline uint32
-getNextChar(const char **string, input_context &context)
+CollatorDeutsch::CollatorDeutsch(BMessage *archive)
+	: BCollatorAddOn(archive)
+{
+}
+
+
+CollatorDeutsch::~CollatorDeutsch()
+{
+}
+
+
+uint32
+CollatorDeutsch::GetNextChar(const char **string, input_context &context)
 {
 	uint32 c = context.next_char;
 	if (c != 0) {
@@ -127,148 +94,6 @@ getNextChar(const char **string, input_context &context)
 	}
 
 	return c;
-}
-
-
-static char *
-putPrimarySortKey(const char *string, char *buffer, int32 length, bool ignorePunctuation)
-{
-	input_context context(ignorePunctuation);
-
-	uint32 c;
-	for (int32 i = 0; (c = getNextChar(&string, context)) != 0 && i < length; i++) {
-		if (c < 0x80)
-			*buffer++ = tolower(c);
-		else
-			BUnicodeChar::ToUTF8(getPrimaryChar(c), &buffer);
-	}
-
-	return buffer;
-}
-
-
-//	#pragma mark -
-
-
-CollatorDeutsch::CollatorDeutsch()
-{
-}
-
-
-CollatorDeutsch::CollatorDeutsch(BMessage *archive)
-	: BCollatorAddOn(archive)
-{
-}
-
-
-CollatorDeutsch::~CollatorDeutsch()
-{
-}
-
-
-void 
-CollatorDeutsch::GetSortKey(const char *string, BString *key, int8 strength,
-	bool ignorePunctuation)
-{
-	if (strength == B_COLLATE_QUATERNARY) {
-		// the difference between tertiary and quaternary collation strength
-		// are usually a different handling of punctuation characters
-		ignorePunctuation = false;
-	}
-
-	int32 length = strlen(string);
-
-	switch (strength) {
-		case B_COLLATE_PRIMARY:
-		{
-			char *begin = key->LockBuffer(length * 2);
-				// the primary key needs to make space for doubled characters (like 'ß')
-
-			char *end = putPrimarySortKey(string, begin, length, ignorePunctuation);
-			*end = '\0';
-
-			key->UnlockBuffer(end - begin);
-			break;
-		}
-
-		case B_COLLATE_SECONDARY:
-		{
-			char *begin = key->LockBuffer(length * 3 + 1);
-				// the primary key + the secondary key + separator char
-
-			char *buffer = putPrimarySortKey(string, begin, length, ignorePunctuation);
-			*buffer++ = '\01';
-				// separator
-
-			input_context context(ignorePunctuation);
-			uint32 c;
-			for (int32 i = 0; (c = getNextChar(&string, context)) && i < length; i++) {
-				if (c < 0x80)
-					*buffer++ = tolower(c);
-				else
-					BUnicodeChar::ToUTF8(BUnicodeChar::ToLower(c), &buffer);
-			}
-			*buffer = '\0';
-
-			key->UnlockBuffer(buffer - begin);
-			break;
-		}
-
-		case B_COLLATE_TERTIARY:
-		case B_COLLATE_QUATERNARY:
-		{
-			char *begin = key->LockBuffer(length * 3 + 1);
-				// the primary key + the tertiary key + separator char
-
-			char *buffer = putPrimarySortKey(string, begin, length, ignorePunctuation);
-			*buffer++ = '\01';
-				// separator
-
-			input_context context(ignorePunctuation);
-			uint32 c;
-			for (int32 i = 0; (c = getNextChar(&string, context)) && i < length; i++) {
-				BUnicodeChar::ToUTF8(c, &buffer);
-			}
-			*buffer = '\0';
-
-			key->UnlockBuffer(buffer + length - begin);
-			break;
-		}
-
-		case B_COLLATE_IDENTICAL:
-		default:
-			key->SetTo(string, length);
-			break;
-	}
-}
-
-
-int 
-CollatorDeutsch::Compare(const char *a, const char *b, int32 length, int8 strength,
-	bool ignorePunctuation)
-{
-	if (strength != B_COLLATE_PRIMARY)
-		return BCollatorAddOn::Compare(a, b, length, strength, ignorePunctuation);
-
-	input_context contextA(ignorePunctuation);
-	input_context contextB(ignorePunctuation);
-
-	for (int32 i = 0; i < length; i++) {
-		uint32 charA = getNextChar(&a, contextA);
-		uint32 charB = getNextChar(&b, contextB);
-		if (charA == 0)
-			return charB == 0 ? 0 : -(int32)charB;
-		else if (charB == 0)
-			return (int32)charA;
-
-		charA = getPrimaryChar(charA);
-		charB = getPrimaryChar(charB);
-
-		if (charA != charB)
-			return (int32)charA - (int32)charB;
-	}
-
-	return 0;
 }
 
 
