@@ -476,10 +476,15 @@ BPoseView::DeleteProperty(BMessage *_SCRIPTING_ONLY(specifier),
 		} else
 			return false;
 
-		if (error == B_OK)
-			MoveListToTrash(entryList, false, false);
+		if (error == B_OK) {
+			TrackerSettings settings;
+			if (!settings.DontMoveFilesToTrash()) {
 				// move the list we build into trash, don't make the trashing task
 				// select the next item
+				MoveListToTrash(entryList, false, false);
+			} else
+				Delete(entryList, false, settings.AskBeforeDeleteFile());
+		}
 
 		handled = true;
 	}
