@@ -1249,7 +1249,7 @@ BPoseView::AddPosesTask(void *castToParams)
 
 				dirNode.device = eptr->d_pdev;
 				dirNode.node = eptr->d_pino;
-				itemNode.device = eptr->d_pdev;
+				itemNode.device = eptr->d_dev;
 				itemNode.node = eptr->d_ino;
 
 				BPoseView::WatchNewNode(&itemNode, watchMask, lock.Target());
@@ -1265,6 +1265,7 @@ BPoseView::AddPosesTask(void *castToParams)
 
 			if (!lock.Lock()) {
 				PRINT(("failed to lock\n"));
+				posesResult->fCount = modelChunkIndex + 1;
 				throw failToLock();
 			}
 
@@ -1276,6 +1277,7 @@ BPoseView::AddPosesTask(void *castToParams)
 				view->HideBarberPole();
 				
 				// for now use the same cleanup as failToLock does
+				posesResult->fCount = modelChunkIndex + 1;
 				throw failToLock();
 			}
 	
