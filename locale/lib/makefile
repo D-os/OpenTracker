@@ -44,6 +44,7 @@ SRCS= \
 	Format.cpp \
 	FormatImpl.cpp \
 	FormatParameters.cpp \
+	GenericNumberFormat.cpp \
 	IntegerFormat.cpp \
 	IntegerFormatImpl.cpp \
 	IntegerFormatParameters.cpp \
@@ -122,7 +123,11 @@ SYMBOLS = TRUE
 #	specify debug settings
 #	if TRUE will allow application to be run from a source-level
 #	debugger.  Note that this will disable all optimzation.
-DEBUGGER = FALSE
+ifeq ($(DEBUG_BUILD), true)
+	DEBUGGER = TRUE
+else
+	DEBUGGER = FALSE
+endif
 
 #	specify additional compiler flags for all files
 COMPILER_FLAGS =
