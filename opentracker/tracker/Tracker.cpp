@@ -72,6 +72,7 @@ All rights reserved.
 #include "QueryContainerWindow.h"
 #include "StatusWindow.h"
 #include "Tracker.h"
+#include "TrackerSettings.h"
 #include "TrashWatcher.h"
 #include "FunctionObject.h"
 #include "TrackerSettings.h"
@@ -102,43 +103,37 @@ const int8 kOpenWindowNoFlags = 0;
 const int8 kOpenWindowMinimized = 1;
 const int8 kOpenWindowHasState = 2;
 
-TTrackerState gTrackerState;
+const uint32 PSV_MAKE_PRINTER_ACTIVE_QUIETLY = 'pmaq';
+	// from pr_server.h
 
 
-TTracker::TTracker()
-	:	BApplication(kTrackerSignature),
-		fSettingsWindow(NULL)
+namespace BPrivate {
+
+NodePreloader *gPreloader = NULL;
+
+void 
+InitIconPreloader()
 {
-	// set the cwd to /boot/home, anything that's launched 
-	// from Tracker will automatically inherit this 
-	BPath homePath;
-	
-	if (find_directory(B_USER_DIRECTORY, &homePath) == B_OK)
-		chdir(homePath.Path());
-	
-	_kset_fd_limit_(512);
-		// ask for a bunch more file descriptors so that nested copying
-		// works well
-	
-	fNodeMonitorCount = DEFAULT_MON_NUM;
+	static int32 lock = 0;
 
-	TTrackerState::InitIfNeeded();	
-	gTrackerState.LoadSettingsIfNeeded();
+	if (atomic_add(&lock,1) != 0) {
+		int32 tries = 20;	
+		while (gPreloader == NULL && tries-- > 0)
+			snooze(10000);
+		return;
+	}
 
-	TrackerInitIconPreloader();
+	if (gPreloader != NULL)
+		return;
 
-#ifdef LEAK_CHECKING
-	SetNewLeakChecking(true);
-	SetMallocLeakChecking(true);
-#endif
+	IconCache::iconCache = new IconCache();
+	gPreloader = NodePreloader::InstallNodePreloader("NodePreloader", be_app);
 
-	//This is how often it should update the free space bar on the volume icons
-	SetPulseRate(1000000);
+	atomic_add(&lock,-1);
 }
 
-TTracker::~TTracker()
-{
-}
+}	// namespace BPrivate
+
 
 uint32
 GetVolumeFlags(Model *model)
@@ -162,6 +157,73 @@ GetVolumeFlags(Model *model)
 	
 	return B_FS_HAS_ATTR;
 }
+
+
+static void
+HideVarDir()
+{
+	BPath path;
+	status_t err = find_directory(B_COMMON_VAR_DIRECTORY, &path);
+	
+	if (err != B_OK){
+		PRINT(("var err = %s\n", strerror(err)));
+		return;
+	}
+
+	BDirectory varDirectory(path.Path());
+	if (varDirectory.InitCheck() == B_OK) {
+		PoseInfo info;
+		// make var dir invisible
+		info.fInvisible = true;
+		info.fInitedDirectory = -1;
+		
+		if (varDirectory.WriteAttr(kAttrPoseInfo, B_RAW_TYPE, 0, &info, sizeof(info))
+			== sizeof(info))
+			varDirectory.RemoveAttr(kAttrPoseInfoForeign);
+	}
+}
+
+
+//	#pragma mark -
+
+
+TTracker::TTracker()
+	:	BApplication(kTrackerSignature),
+	fSettingsWindow(NULL)
+{
+	// set the cwd to /boot/home, anything that's launched 
+	// from Tracker will automatically inherit this 
+	BPath homePath;
+	
+	if (find_directory(B_USER_DIRECTORY, &homePath) == B_OK)
+		chdir(homePath.Path());
+	
+	_kset_fd_limit_(512);
+		// ask for a bunch more file descriptors so that nested copying
+		// works well
+	
+	fNodeMonitorCount = DEFAULT_MON_NUM;
+
+#ifdef CHECK_OPEN_MODEL_LEAKS
+	InitOpenModelDumping();
+#endif
+
+	InitIconPreloader();
+
+#ifdef LEAK_CHECKING
+	SetNewLeakChecking(true);
+	SetMallocLeakChecking(true);
+#endif
+
+	//This is how often it should update the free space bar on the volume icons
+	SetPulseRate(1000000);
+}
+
+
+TTracker::~TTracker()
+{
+}
+
 
 bool
 TTracker::QuitRequested()
@@ -249,13 +311,12 @@ TTracker::QuitRequested()
 	return _inherited::QuitRequested();
 }
 
-NodePreloader *gPreloader = NULL;
 
 void
 TTracker::Quit()
 {
-	gTrackerState.SaveSettings(false);
-	
+	TrackerSettings().SaveSettings(false);
+
 	fAutoMounter->Lock();
 	fAutoMounter->QuitRequested();	// automounter does some stuff in QuitRequested
 	fAutoMounter->Quit();			// but we really don't care if it is cooperating or not
@@ -271,6 +332,7 @@ TTracker::Quit()
 
 	_inherited::Quit();
 }
+
 
 void
 TTracker::MessageReceived(BMessage *message)
@@ -385,10 +447,11 @@ TTracker::MessageReceived(BMessage *message)
 	}
 }
 
+
 void
 TTracker::Pulse()
 {
-	if (!ShowVolumeSpaceBar())
+	if (!TrackerSettings().ShowVolumeSpaceBar())
 		return;
 
 	// update the volume icon's free space bars
@@ -408,8 +471,6 @@ TTracker::Pulse()
 	}
 }
 
-const uint32 PSV_MAKE_PRINTER_ACTIVE_QUIETLY = 'pmaq';
-	// from pr_server.h
 
 void
 TTracker::SetDefaultPrinter(const BMessage *message)
@@ -444,6 +505,7 @@ TTracker::SetDefaultPrinter(const BMessage *message)
 	messenger.SendMessage(&makeActiveMessage, &reply);
 #endif
 }
+
 
 void
 TTracker::MoveRefsToTrash(const BMessage *message)
@@ -480,6 +542,7 @@ TTracker::MoveRefsToTrash(const BMessage *message)
 		FSMoveToTrash(srcList);
 }
 
+
 template <class T, class FT>
 class EntryAndNodeDoSoonWithMessageFunctor : public FunctionObjectWithResult<bool> {
 public:
@@ -508,6 +571,7 @@ protected:
 	bool fSendMessage;
 };
 
+
 bool 
 TTracker::LaunchAndCloseParentIfOK(const entry_ref *launchThis,
 	const node_ref *closeThis, const BMessage *messageToBundle)
@@ -526,6 +590,7 @@ TTracker::LaunchAndCloseParentIfOK(const entry_ref *launchThis,
 	}
 	return false;
 }
+
 
 status_t
 TTracker::OpenRef(const entry_ref *ref, const node_ref *nodeToClose,
@@ -620,6 +685,7 @@ TTracker::OpenRef(const entry_ref *ref, const node_ref *nodeToClose,
 	return B_OK;
 }
 
+
 void
 TTracker::RefsReceived(BMessage *message)
 {
@@ -699,6 +765,7 @@ TTracker::RefsReceived(BMessage *message)
 	}
 }
 
+
 void
 TTracker::ArgvReceived(int32 argc, char **argv)
 {
@@ -718,6 +785,7 @@ TTracker::ArgvReceived(int32 argc, char **argv)
 		}
 	}
 }
+
 
 void
 TTracker::OpenContainerWindow(Model *model, BMessage *originalRefsList,
@@ -787,6 +855,7 @@ TTracker::OpenContainerWindow(Model *model, BMessage *originalRefsList,
 	window->PostMessage(&restoreStateMessage);
 }
 
+
 void
 TTracker::EditQueries(const BMessage *message)
 {
@@ -806,6 +875,7 @@ TTracker::EditQueries(const BMessage *message)
 
 	}
 }
+
 
 void
 TTracker::OpenInfoWindows(BMessage *message)
@@ -840,6 +910,7 @@ TTracker::OpenInfoWindows(BMessage *message)
 	}
 }
 
+
 BDeskWindow *
 TTracker::GetDeskWindow() const
 {
@@ -854,6 +925,7 @@ TTracker::GetDeskWindow() const
 	TRESPASS();
 	return NULL;
 }
+
 
 BContainerWindow *
 TTracker::FindContainerWindow(const node_ref *node, int32 number) const
@@ -874,6 +946,7 @@ TTracker::FindContainerWindow(const node_ref *node, int32 number) const
 	return NULL;
 }
 
+
 BContainerWindow *
 TTracker::FindContainerWindow(const entry_ref *entry, int32 number) const
 {
@@ -892,6 +965,7 @@ TTracker::FindContainerWindow(const entry_ref *entry, int32 number) const
 	}
 	return NULL;
 }
+
 
 bool 
 TTracker::EntryHasWindowOpen(const entry_ref *entry)
@@ -925,6 +999,7 @@ TTracker::FindParentContainerWindow(const entry_ref *ref) const
 	return NULL;
 }
 
+
 BInfoWindow *
 TTracker::FindInfoWindow(const node_ref* node) const
 {
@@ -939,6 +1014,7 @@ TTracker::FindInfoWindow(const node_ref* node) const
 	}
 	return NULL;
 }
+
 
 bool 
 TTracker::QueryActiveForDevice(dev_t device)
@@ -956,6 +1032,7 @@ TTracker::QueryActiveForDevice(dev_t device)
 	}
 	return false;
 }
+
 
 void 
 TTracker::CloseActiveQueryWindows(dev_t device)
@@ -984,6 +1061,7 @@ TTracker::CloseActiveQueryWindows(dev_t device)
 			snooze(100000);
 		}
 }
+
 
 void
 TTracker::SaveAllPoseLocations()
@@ -1044,6 +1122,7 @@ TTracker::CloseWindowAndChildren(const node_ref *node)
 	}
 }
 
+
 void
 TTracker::CloseAllWindows()
 {
@@ -1072,30 +1151,6 @@ TTracker::CloseAllWindows()
 	}	
 }
 
-
-static void
-HideVarDir()
-{
-	BPath path;
-	status_t err = find_directory(B_COMMON_VAR_DIRECTORY, &path);
-	
-	if (err != B_OK){
-		PRINT(("var err = %s\n", strerror(err)));
-		return;
-	}
-
-	BDirectory varDirectory(path.Path());
-	if (varDirectory.InitCheck() == B_OK) {
-		PoseInfo info;
-		// make var dir invisible
-		info.fInvisible = true;
-		info.fInitedDirectory = -1;
-		
-		if (varDirectory.WriteAttr(kAttrPoseInfo, B_RAW_TYPE, 0, &info, sizeof(info))
-			== sizeof(info))
-			varDirectory.RemoveAttr(kAttrPoseInfoForeign);
-	}
-}
 
 void
 TTracker::ReadyToRun()
@@ -1190,7 +1245,7 @@ TTracker::ReadyToRun()
 		Model model(&entry);
 		if (model.InitCheck() == B_OK) {
 
-			if (ShowDisksIcon()) {
+			if (TrackerSettings().ShowDisksIcon()) {
 				// add the root icon to desktop window
 				BMessage message;
 				message.what = B_NODE_MONITOR;
@@ -1391,282 +1446,6 @@ TTracker::WatchNode(const node_ref *node, uint32 flags,
 	return watch_node(node, flags, target);
 }
 
-bool 
-TTracker::ShowDisksIcon()
-{
-	return gTrackerState.ShowDisksIcon();
-}
-
-void
-TTracker::SetShowDisksIcon(bool enabled)
-{
-	gTrackerState.SetShowDisksIcon(enabled);
-}
-
-
-bool 
-TTracker::MountVolumesOntoDesktop()
-{
-	return gTrackerState.MountVolumesOntoDesktop();
-}
-
-void
-TTracker::SetMountVolumesOntoDesktop(bool enabled)
-{
-	gTrackerState.SetMountVolumesOntoDesktop(enabled);
-}
-
-bool 
-TTracker::MountSharedVolumesOntoDesktop()
-{
-	return gTrackerState.MountSharedVolumesOntoDesktop();
-}
-
-void
-TTracker::SetMountSharedVolumesOntoDesktop(bool enabled)
-{
-	gTrackerState.SetMountSharedVolumesOntoDesktop(enabled);
-}
-
-bool 
-TTracker::IntegrateNonBootBeOSDesktops()
-{
-	return gTrackerState.IntegrateNonBootBeOSDesktops();
-}
-
-void
-TTracker::SetIntegrateNonBootBeOSDesktops(bool enabled)
-{
-	gTrackerState.SetIntegrateNonBootBeOSDesktops(enabled);
-}
-
-bool 
-TTracker::IntegrateAllNonBootDesktops()
-{
-	return gTrackerState.IntegrateAllNonBootDesktops();
-}
-
-bool 
-TTracker::DesktopFilePanelRoot()
-{
-	return gTrackerState.DesktopFilePanelRoot();
-}
-
-void
-TTracker::SetDesktopFilePanelRoot(bool enabled)
-{
-	gTrackerState.SetDesktopFilePanelRoot(enabled);
-}
-
-bool 
-TTracker::ShowVolumeSpaceBar()
-{
-	return gTrackerState.ShowVolumeSpaceBar();
-}
-
-void
-TTracker::SetShowVolumeSpaceBar(bool enabled)
-{
-	gTrackerState.SetShowVolumeSpaceBar(enabled);
-}
-
-rgb_color 
-TTracker::UsedSpaceColor()
-{
-	return gTrackerState.UsedSpaceColor();
-}
-
-void
-TTracker::SetUsedSpaceColor(rgb_color color)
-{
-	gTrackerState.SetUsedSpaceColor(color);
-}
-
-rgb_color 
-TTracker::FreeSpaceColor()
-{
-	return gTrackerState.FreeSpaceColor();
-}
-
-void
-TTracker::SetFreeSpaceColor(rgb_color color)
-{
-	gTrackerState.SetFreeSpaceColor(color);
-}
-
-rgb_color 
-TTracker::WarningSpaceColor()
-{
-	return gTrackerState.WarningSpaceColor();
-}
-
-void
-TTracker::SetWarningSpaceColor(rgb_color color)
-{
-	gTrackerState.SetWarningSpaceColor(color);
-}
-
-bool
-TTracker::ShowFullPathInTitleBar()
-{
-	return gTrackerState.ShowFullPathInTitleBar();
-}
-
-void
-TTracker::SetShowFullPathInTitleBar(bool enabled)
-{
-	gTrackerState.SetShowFullPathInTitleBar(enabled);
-}
-
-bool
-TTracker::SortFolderNamesFirst()
-{
-	return gTrackerState.SortFolderNamesFirst();
-}
-
-void
-TTracker::SetSortFolderNamesFirst(bool enabled)
-{
-	gTrackerState.SetSortFolderNamesFirst(enabled);
-}
-
-bool
-TTracker::ShowSelectionWhenInactive()
-{
-	return gTrackerState.ShowSelectionWhenInactive();
-}
-
-void
-TTracker::SetShowSelectionWhenInactive(bool enabled)
-{
-	gTrackerState.SetShowSelectionWhenInactive(enabled);
-
-}
-
-
-bool
-TTracker::SingleWindowBrowse()
-{
-	return gTrackerState.SingleWindowBrowse();
-}
-
-void
-TTracker::SetSingleWindowBrowse(bool enabled)
-{
-	gTrackerState.SetSingleWindowBrowse(enabled);
-}
-
-bool
-TTracker::ShowNavigator()
-{
-	return gTrackerState.ShowNavigator();
-}
-
-void
-TTracker::SetShowNavigator(bool enabled)
-{
-	gTrackerState.SetShowNavigator(enabled);
-}
-
-
-void
-TTracker::RecentCounts(int32 *applications, int32 *documents, int32 *folders)
-{
-	gTrackerState.RecentCounts(applications, documents, folders);
-}
-
-void
-TTracker::SetRecentApplicationsCount(int32 count)
-{
-	gTrackerState.SetRecentApplicationsCount(count);
-}
-
-void
-TTracker::SetRecentDocumentsCount(int32 count)
-{
-	gTrackerState.SetRecentDocumentsCount(count);
-}
-
-void
-TTracker::SetRecentFoldersCount(int32 count)
-{
-	gTrackerState.SetRecentFoldersCount(count);
-}
-
-FormatSeparator
-TTracker::TimeFormatSeparator()
-{
-	return gTrackerState.TimeFormatSeparator();
-}
-
-void
-TTracker::SetTimeFormatSeparator(FormatSeparator separator)
-{
-	gTrackerState.SetTimeFormatSeparator(separator);
-}
-
-DateOrder
-TTracker::DateOrderFormat()
-{
-	return gTrackerState.DateOrderFormat();
-}
-
-void
-TTracker::SetDateOrderFormat(DateOrder order)
-{
-	gTrackerState.SetDateOrderFormat(order);
-
-	TTracker *tracker = dynamic_cast<TTracker*>(be_app);
-	if (!tracker)
-		return;
-}
-
-bool
-TTracker::ClockIs24Hr()
-{
-	return gTrackerState.ClockIs24Hr();
-}
-
-void
-TTracker::SetClockTo24Hr(bool enabled)
-{
-	gTrackerState.SetClockTo24Hr(enabled);
-
-	TTracker *tracker = dynamic_cast<TTracker*>(be_app);
-	if (!tracker)
-		return;
-}
-
-bool
-TTracker::DontMoveFilesToTrash()
-{
-	return gTrackerState.DontMoveFilesToTrash();
-}
-
-void
-TTracker::SetDontMoveFilesToTrash(bool enabled)
-{
-	gTrackerState.SetDontMoveFilesToTrash(enabled);
-}
-
-bool
-TTracker::AskBeforeDeleteFile()
-{
-	return gTrackerState.AskBeforeDeleteFile();
-}
-
-void
-TTracker::SetAskBeforeDeleteFile(bool enabled)
-{
-	gTrackerState.SetAskBeforeDeleteFile(enabled);
-}
-
-void
-TTracker::SaveSettings(bool onlyIfNonDefault)
-{
-	gTrackerState.SaveSettings(onlyIfNonDefault);
-}
-
 
 AutoMounter *
 TTracker::AutoMounterLoop()
@@ -1674,454 +1453,24 @@ TTracker::AutoMounterLoop()
 	return fAutoMounter;
 }
 
+
 bool 
 TTracker::InTrashNode(const entry_ref *node) const
 {
 	return FSInTrashDir(node);
 }
 
+
 bool
 TTracker::TrashFull() const
 {
 	return fTrashWatcher->CheckTrashDirs();
 }
-	
+
+
 bool
 TTracker::IsTrashNode(const node_ref *node) const
 {
 	return fTrashWatcher->IsTrashNode(node);
 }	
 
-
-// #pragma mark -
-
-TTrackerState::TTrackerState()
-	:	Settings("TrackerSettings", "Tracker"),
-		fInited(false),
-		fSettingsLoaded(false)
-{
-}
-
-TTrackerState::TTrackerState(const TTrackerState&)
-	:	Settings("", "")
-{
-	// Placeholder copy constructor to prevent others from accidentally using the
-	// default copy constructor.  Note, the DEBUGGER call is for the off chance that
-	// a TTrackerState method (or friend) tries to make a copy.
-	DEBUGGER("Don't make a copy of this!");
-}
-
-
-void
-TTrackerState::InitIfNeeded()
-{
-	AutoLock<Benaphore> lock(gTrackerState.fInitLock);
-	
-	if (gTrackerState.fInited)
-		return;
-
-#ifdef CHECK_OPEN_MODEL_LEAKS
-	InitOpenModelDumping();
-#endif
-
-	IconCache::iconCache = new IconCache();
-	gTrackerState.fInited = true;
-}
-
-namespace BPrivate {
-
-void 
-TrackerInitIconPreloader()
-{
-	TTrackerState::InitIfNeeded();
-	
-	if (gPreloader)
-		return;
-
-	gPreloader = NodePreloader::InstallNodePreloader("NodePreloader", be_app);
-}
-
-}
-
-TTrackerState::~TTrackerState()
-{
-	if (fInited) 
-		fInited = false;
-}
-
-void 
-TTrackerState::SaveSettings(bool onlyIfNonDefault)
-{
-	if (fSettingsLoaded)
-		_inherited::SaveSettings(onlyIfNonDefault);
-}
-
-bool 
-TTrackerState::ShowDisksIcon()
-{
-	LoadSettingsIfNeeded();
-	return fShowDisksIcon->Value();
-}
-
-void
-TTrackerState::SetShowDisksIcon(bool enabled)
-{
-	fShowDisksIcon->SetValue(enabled);
-}
-
-bool 
-TTrackerState::DesktopFilePanelRoot()
-{
-	LoadSettingsIfNeeded();
-	return fDesktopFilePanelRoot->Value();
-}
-
-void 
-TTrackerState::SetDesktopFilePanelRoot(bool enabled)
-{
-	fDesktopFilePanelRoot->SetValue(enabled);
-}
-
-bool 
-TTrackerState::MountVolumesOntoDesktop()
-{
-	LoadSettingsIfNeeded();
-	return fMountVolumesOntoDesktop->Value();
-}
-
-void 
-TTrackerState::SetMountVolumesOntoDesktop(bool enabled)
-{
-	fMountVolumesOntoDesktop->SetValue(enabled);
-}
-
-bool
-TTrackerState::MountSharedVolumesOntoDesktop()
-{
-	LoadSettingsIfNeeded();
-	return fMountSharedVolumesOntoDesktop->Value();
-}
-
-void 
-TTrackerState::SetMountSharedVolumesOntoDesktop(bool enabled)
-{
-	fMountSharedVolumesOntoDesktop->SetValue(enabled);
-}
-
-bool 
-TTrackerState::IntegrateNonBootBeOSDesktops()
-{
-	LoadSettingsIfNeeded();
-	return fIntegrateNonBootBeOSDesktops->Value();
-}
-
-void 
-TTrackerState::SetIntegrateNonBootBeOSDesktops(bool enabled)
-{
-	fIntegrateNonBootBeOSDesktops->SetValue(enabled);
-}
-
-bool 
-TTrackerState::IntegrateAllNonBootDesktops()
-{
-	LoadSettingsIfNeeded();
-	return fIntegrateAllNonBootDesktops->Value();
-}
-
-bool 
-TTrackerState::ShowVolumeSpaceBar()
-{
-	LoadSettingsIfNeeded();
-	return fShowVolumeSpaceBar->Value();
-}
-
-void
-TTrackerState::SetShowVolumeSpaceBar(bool enabled)
-{
-	fShowVolumeSpaceBar->SetValue(enabled);
-}
-
-rgb_color ValueToColor(int32 value)
-{
-	rgb_color color;
-	color.alpha = static_cast<uchar>((value >> 24L) & 0xff);
-	color.red = static_cast<uchar>((value >> 16L) & 0xff);
-	color.green = static_cast<uchar>((value >> 8L) & 0xff);
-	color.blue = static_cast<uchar>(value & 0xff);
-
-	// zero alpha is invalid
-	if (color.alpha == 0)
-		color.alpha = 192;
-
-	return color;	
-}
-
-int32 ColorToValue(rgb_color color)
-{
-	// zero alpha is invalid
-	if (color.alpha == 0)
-		color.alpha = 192;
-
-	return	color.alpha << 24L
-			| color.red << 16L
-			| color.green << 8L
-			| color.blue;
-}
-
-rgb_color
-TTrackerState::UsedSpaceColor()
-{
-	LoadSettingsIfNeeded();
-	return ValueToColor(fUsedSpaceColor->Value());
-}
-
-void
-TTrackerState::SetUsedSpaceColor(rgb_color color)
-{
-	if (color.alpha == 0)
-		color.alpha = 192;
-	fUsedSpaceColor->ValueChanged(ColorToValue(color));
-}
-
-rgb_color
-TTrackerState::FreeSpaceColor()
-{
-	LoadSettingsIfNeeded();
-	return ValueToColor(fFreeSpaceColor->Value());
-}
-
-void
-TTrackerState::SetFreeSpaceColor(rgb_color color)
-{
-	if (color.alpha == 0)
-		color.alpha = 192;
-	fFreeSpaceColor->ValueChanged(ColorToValue(color));
-}
-
-rgb_color
-TTrackerState::WarningSpaceColor()
-{
-	LoadSettingsIfNeeded();
-	return ValueToColor(fWarningSpaceColor->Value());
-}
-
-void
-TTrackerState::SetWarningSpaceColor(rgb_color color)
-{
-	if (color.alpha == 0)
-		color.alpha = 192;
-	fWarningSpaceColor->ValueChanged(ColorToValue(color));
-}
-
-bool 
-TTrackerState::ShowFullPathInTitleBar()
-{
-	LoadSettingsIfNeeded();
-	return fShowFullPathInTitleBar->Value();
-}
-
-void
-TTrackerState::SetShowFullPathInTitleBar(bool enabled)
-{
-	fShowFullPathInTitleBar->SetValue(enabled);
-}
-
-bool 
-TTrackerState::ShowSelectionWhenInactive()
-{
-	LoadSettingsIfNeeded();
-	return fShowSelectionWhenInactive->Value();
-}
-
-void
-TTrackerState::SetShowSelectionWhenInactive(bool enabled)
-{
-	fShowSelectionWhenInactive->SetValue(enabled);
-}
-
-bool
-TTrackerState::SortFolderNamesFirst()
-{
-	LoadSettingsIfNeeded();
-	return fSortFolderNamesFirst->Value();
-}
-
-void
-TTrackerState::SetSortFolderNamesFirst(bool enabled)
-{
-	fSortFolderNamesFirst->SetValue(enabled);
-	NameAttributeText::SetSortFolderNamesFirst(enabled);
-}
-
-bool
-TTrackerState::SingleWindowBrowse()
-{
-	LoadSettingsIfNeeded();
-	return fSingleWindowBrowse->Value();
-}
-
-void
-TTrackerState::SetSingleWindowBrowse(bool enabled)
-{
-	fSingleWindowBrowse->SetValue(enabled);
-}
-
-bool
-TTrackerState::ShowNavigator()
-{
-	LoadSettingsIfNeeded();
-	return fShowNavigator->Value();
-}
-
-void
-TTrackerState::SetShowNavigator(bool enabled)
-{
-	fShowNavigator->SetValue(enabled);
-}
-
-void 
-TTrackerState::RecentCounts(int32 *applications, int32 *documents, int32 *folders)
-{
-	LoadSettingsIfNeeded();
-	*applications = fRecentApplicationsCount->Value();
-	*documents = fRecentDocumentsCount->Value();
-	*folders = fRecentFoldersCount->Value();
-}
-
-void  
-TTrackerState::SetRecentApplicationsCount(int32 count)
-{
-	LoadSettingsIfNeeded();
-	fRecentApplicationsCount->ValueChanged(count);
-}
-
-void  
-TTrackerState::SetRecentDocumentsCount(int32 count)
-{
-	LoadSettingsIfNeeded();
-	fRecentDocumentsCount->ValueChanged(count);
-}
-
-void  
-TTrackerState::SetRecentFoldersCount(int32 count)
-{
-	LoadSettingsIfNeeded();
-	fRecentFoldersCount->ValueChanged(count);
-}
-
-FormatSeparator
-TTrackerState::TimeFormatSeparator()
-{
-	LoadSettingsIfNeeded();
-	return (FormatSeparator)fTimeFormatSeparator->Value();
-}
-
-void
-TTrackerState::SetTimeFormatSeparator(FormatSeparator separator)
-{
-	fTimeFormatSeparator->ValueChanged((int32)separator);
-}
-
-DateOrder
-TTrackerState::DateOrderFormat()
-{
-	LoadSettingsIfNeeded();
-	return (DateOrder)fDateOrderFormat->Value();
-}
-
-void
-TTrackerState::SetDateOrderFormat(DateOrder order)
-{
-	fDateOrderFormat->ValueChanged((int32)order);
-}
-
-bool
-TTrackerState::ClockIs24Hr()
-{
-	LoadSettingsIfNeeded();
-	return f24HrClock->Value();
-}
-
-void
-TTrackerState::SetClockTo24Hr(bool enabled)
-{
-	f24HrClock->SetValue(enabled);
-}
-
-bool 
-TTrackerState::DontMoveFilesToTrash()
-{
-	LoadSettingsIfNeeded();
-	return fDontMoveFilesToTrash->Value();
-}
-
-void
-TTrackerState::SetDontMoveFilesToTrash(bool enabled)
-{
-	fDontMoveFilesToTrash->SetValue(enabled);
-}
-
-bool 
-TTrackerState::AskBeforeDeleteFile()
-{
-	LoadSettingsIfNeeded();
-	return fAskBeforeDeleteFile->Value();
-}
-
-void
-TTrackerState::SetAskBeforeDeleteFile(bool enabled)
-{
-	fAskBeforeDeleteFile->SetValue(enabled);
-}
-
-
-void 
-TTrackerState::LoadSettingsIfNeeded()
-{
-	if (fSettingsLoaded)
-		return;
-
-	Add(fShowDisksIcon = new BooleanValueSetting("ShowDisksIcon", false));
-	Add(fMountVolumesOntoDesktop = new BooleanValueSetting("MountVolumesOntoDesktop", true));
-	Add(fMountSharedVolumesOntoDesktop =
-		new BooleanValueSetting("MountSharedVolumesOntoDesktop", false));
-	Add(fIntegrateNonBootBeOSDesktops = new BooleanValueSetting
-		("IntegrateNonBootBeOSDesktops", true));
-	Add(fIntegrateAllNonBootDesktops = new BooleanValueSetting
-		("IntegrateAllNonBootDesktops", false));
-	Add(fDesktopFilePanelRoot = new BooleanValueSetting("DesktopFilePanelRoot", true));
-	Add(fShowFullPathInTitleBar = new BooleanValueSetting("ShowFullPathInTitleBar", false));
-	Add(fShowSelectionWhenInactive = new BooleanValueSetting("ShowSelectionWhenInactive", true));
-	Add(fSortFolderNamesFirst = new BooleanValueSetting("SortFolderNamesFirst", false));
- 	Add(fSingleWindowBrowse = new BooleanValueSetting("SingleWindowBrowse", false));
-	Add(fShowNavigator = new BooleanValueSetting("ShowNavigator", false));
-	
-	Add(fRecentApplicationsCount = new ScalarValueSetting("RecentApplications", 10, "", ""));
-	Add(fRecentDocumentsCount = new ScalarValueSetting("RecentDocuments", 10, "", ""));
-	Add(fRecentFoldersCount = new ScalarValueSetting("RecentFolders", 10, "", ""));
-
-	Add(fTimeFormatSeparator = new ScalarValueSetting("TimeFormatSeparator", 3, "", ""));
-	Add(fDateOrderFormat = new ScalarValueSetting("DateOrderFormat", 2, "", ""));
-	Add(f24HrClock = new BooleanValueSetting("24HrClock", false));
-
-	Add(fShowVolumeSpaceBar = new BooleanValueSetting("ShowVolumeSpaceBar", false));
-
-	Add(fUsedSpaceColor = new HexScalarValueSetting("UsedSpaceColor", 0xc000cb00, "", ""));
-	Add(fFreeSpaceColor = new HexScalarValueSetting("FreeSpaceColor", 0xc0ffffff, "", ""));
-	Add(fWarningSpaceColor = new HexScalarValueSetting("WarningSpaceColor", 0xc0cb0000, "", ""));
-
-	Add(fDontMoveFilesToTrash = new BooleanValueSetting("DontMoveFilesToTrash", false));
-	Add(fAskBeforeDeleteFile = new BooleanValueSetting("AskBeforeDeleteFile", true));
-
-	TryReadingSettings();
-
-	NameAttributeText::SetSortFolderNamesFirst(fSortFolderNamesFirst->Value());
-
-	fSettingsLoaded = true;
-}
-
-namespace BPrivate {
-
-BStatusWindow *gStatusWindow = NULL;
-
-}
