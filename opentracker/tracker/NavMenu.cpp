@@ -242,7 +242,7 @@ BNavMenu::BNavMenu(const char* title, uint32 message, const BHandler *target,
 		fContainer(0),
 		fTypesList(list)
 {
-	TTrackerState::InitIfNeeded();
+	InitIconPreloader();
 
 	SetFont(be_plain_font);
 
@@ -267,7 +267,7 @@ BNavMenu::BNavMenu(const char *title, uint32 message, const BMessenger &messenge
 		fContainer(0),
 		fTypesList(list)
 {
-	TTrackerState::InitIfNeeded();
+	InitIconPreloader();
 
 	SetFont(be_plain_font);
 
@@ -640,21 +640,23 @@ BNavMenu::CompareFolderNamesFirstOne(const BMenuItem *i1, const BMenuItem *i2)
 	return strcasecmp(i1->Label(), i2->Label());
 }
 
+
 int
 BNavMenu::CompareOne(const BMenuItem *i1, const BMenuItem *i2)
 {
 	return strcasecmp(i1->Label(), i2->Label());
 }
 
+
 void
 BNavMenu::DoneBuildingItemList()
 {
 	// add sorted items to menu
-	if (TTrackerState().SortFolderNamesFirst())
+	if (TrackerSettings().SortFolderNamesFirst())
 		fItemList->SortItems(CompareFolderNamesFirstOne);
 	else
 		fItemList->SortItems(CompareOne);
-		
+
 	int32 count = fItemList->CountItems();
 	for (int32 index = 0; index < count; index++) 
 		AddItem(fItemList->ItemAt(index));
@@ -669,12 +671,14 @@ BNavMenu::DoneBuildingItemList()
 	SetTargetForItems(fMessenger);
 }
 
+
 int32
 BNavMenu::GetMaxMenuWidth(void)
 {
 	int32 width = (int32)(BScreen().Frame().Width() / 4);
 	return (width < kMinMenuWidth) ? kMinMenuWidth : width;
 }
+
 
 void 
 BNavMenu::AddNavDir(const Model *model, uint32 what, BHandler *target,
