@@ -82,7 +82,7 @@ BCatalogAddOnInfo::~BCatalogAddOnInfo()
 	int32 count = fLoadedCatalogs.CountItems();
 	for (int32 i=0; i<count; ++i) {
 		BCatalogAddOn* cat 
-			= reinterpret_cast<BCatalogAddOn*>(fLoadedCatalogs.ItemAt(i));
+			= static_cast<BCatalogAddOn*>(fLoadedCatalogs.ItemAt(i));
 		delete cat;
 	}
 	fLoadedCatalogs.MakeEmpty();
@@ -489,7 +489,13 @@ BLocaleRoster::LoadCatalog(const char *signature, const char *language,
 			catalog = info->fInstantiateFunc(signature, lang, fingerprint);
 			if (catalog) {
 				info->fLoadedCatalogs.AddItem(catalog);
-				// Now chain-load catalogs for languages that depend on 
+#if 0			
+				// Chain-loading of catalogs has been disabled, as with the
+				// current way of handling languages (there are no general
+				// languages like 'English', but only specialized ones, like
+				// 'English-american') it does not make sense... 
+				//
+				// Chain-load catalogs for languages that depend on 
 				// other languages.
 				// The current implementation uses the filename in order to 
 				// detect dependencies (parenthood) between languages (it
@@ -509,6 +515,7 @@ BLocaleRoster::LoadCatalog(const char *signature, const char *language,
 						currCatalog = nextCatalog;
 					}
 				}
+#endif
 				return catalog;
 			}
 		}
@@ -571,6 +578,8 @@ BLocaleRoster::UnloadCatalog(BCatalogAddOn *catalog)
 
 	status_t res = B_ERROR;
 	BCatalogAddOn *nextCatalog;
+	// note: as we currently aren't chainloading catalogs, there is only
+	//       one catalog to unload...
 	while (catalog) {
 		nextCatalog = catalog->fNext;
 		int32 count = gRosterData.fCatalogAddOnInfos.CountItems();
