@@ -33,6 +33,8 @@ class CatalogSpeed {
 		void TestIdLookup();
 };
 
+#define TR_CONTEXT "CatalogSpeed"
+
 #define catSig "x-vnd.Be.locale.catalogSpeed"
 #define catName catSig".catalog"
 
@@ -42,16 +44,13 @@ CatalogSpeed::TestCreation()
 {
 	for (int i = 0; i < kNumStrings; i++) {
 		strs[i] << "native-string#" << 1000000+i;
-		ctxs[i] << typeid(*this).name();
+		ctxs[i] << TR_CONTEXT;
 		trls[i] << "translation#" << 4000000+i;
 	}
 
 	BStopWatch watch("catalogSpeed", true);
 
 	status_t res;
-	BString s("string");
-	s << "\x01" << typeid(*this).name() << "\x01";
-	size_t hashVal = __stl_hash_string(s.String());
 	assert(be_locale != NULL);
 	system("mkdir -p ./locale/catalogs/"catSig);
 
@@ -71,8 +70,8 @@ CatalogSpeed::TestCreation()
 
 	watch.Reset();
 	watch.Resume();
-	res = catalog->WriteToDisk("./locale/catalogs/"catSig"/klingon.catalog");
-	assert( res == B_OK);
+	res = catalog->WriteToFile("./locale/catalogs/"catSig"/klingon.catalog");
+	assert(res == B_OK);
 	watch.Suspend();
 	printf("\t%d strings written to disk in %9Ld usecs\n", 
 		catalog->CountItems(), watch.ElapsedTime());
@@ -141,7 +140,7 @@ CatalogSpeed::TestIdCreation()
 
 	watch.Reset();
 	watch.Resume();
-	res = catalog->WriteToDisk("./locale/catalogs/"catSig"/klingon.catalog");
+	res = catalog->WriteToFile("./locale/catalogs/"catSig"/klingon.catalog");
 	assert( res == B_OK);
 	watch.Suspend();
 	printf("\t%d strings written to disk in %9Ld usecs\n", 

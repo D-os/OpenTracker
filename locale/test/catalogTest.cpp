@@ -20,6 +20,8 @@ class CatalogTest {
 		void Check();
 };
 
+#define TR_CONTEXT "CatalogTest"
+
 
 #define catSig "x-vnd.Be.locale.catalogTest"
 #define catName catSig".catalog"
@@ -28,8 +30,8 @@ void
 CatalogTest::Run() {
 	printf("app...", be_locale);
 	status_t res;
-	BString s("string");
-	s << "\x01" << typeid(*this).name() << "\x01";
+	BString s;
+	s << "string" << "\x01" << TR_CONTEXT << "\x01";
 	size_t hashVal = __stl_hash_string(s.String());
 	assert(be_locale != NULL);
 	system("mkdir -p ./locale/catalogs/"catSig);
@@ -37,10 +39,11 @@ CatalogTest::Run() {
 	// create an empty catalog of default type...
 	BCatalog cat1("Default", catSig, "German");
 	assert(cat1.InitCheck() == B_OK);
+
 	// ...and populate the catalog with some data:
 	DefaultCatalog *catalog = dynamic_cast<DefaultCatalog*>(cat1.fCatalog);
 	assert(catalog != NULL);
-	res = catalog->SetString("string", "Schnur", typeid(*this).name());
+	res = catalog->SetString("string", "Schnur", TR_CONTEXT);
 	assert(res == B_OK);
 	res = catalog->SetString(hashVal, "Schnur_id");
 		// add a second entry for the same hash-value, but with different translation
@@ -49,12 +52,13 @@ CatalogTest::Run() {
 	assert(res == B_OK);
 	res = catalog->SetString("string", "Textpuffer", "programming", "Deutsches Fachbuch");
 	assert(res == B_OK);
-	res = catalog->SetString("string", "Leine", typeid(*this).name(), "Deutsches Fachbuch");
+	res = catalog->SetString("string", "Leine", TR_CONTEXT, "Deutsches Fachbuch");
 	assert(res == B_OK);
-	res = catalog->WriteToDisk("./locale/catalogs/"catSig"/german.catalog");
+	res = catalog->WriteToFile("./locale/catalogs/"catSig"/german.catalog");
 	assert(res == B_OK);
+
 	// check if we are getting back the correct strings:
-	s = catalog->GetString("string", typeid(*this).name());
+	s = catalog->GetString("string", TR_CONTEXT);
 	assert(s == "Schnur");
 	s = catalog->GetString(hashVal);
 	assert(s == "Schnur_id");
@@ -62,8 +66,28 @@ CatalogTest::Run() {
 	assert(s == "String");
 	s = catalog->GetString("string", "programming", "Deutsches Fachbuch");
 	assert(s == "Textpuffer");
-	s = catalog->GetString("string", typeid(*this).name(), "Deutsches Fachbuch");
+	s = catalog->GetString("string", TR_CONTEXT, "Deutsches Fachbuch");
 	assert(s == "Leine");
+
+	// now we create a new (base) catalog and embed this one into the app-file:
+	BCatalog cat2("Default", catSig, "English");
+	assert(cat2.InitCheck() == B_OK);
+	catalog = dynamic_cast<DefaultCatalog*>(cat2.fCatalog);
+	assert(catalog != NULL);
+	// the following string is unique to the embedded catalog:
+	res = catalog->SetString("string", "string", "base");
+	assert(res == B_OK);
+	// the following id is unique to the embedded catalog:
+	res = catalog->SetString(32, "hashed string");
+	assert(res == B_OK);
+	// the following string will be hidden by the definition inside the german catalog:
+	res = catalog->SetString("string", "hidden", TR_CONTEXT);
+	assert(res == B_OK);
+	app_info appInfo;
+	res = be_app->GetAppInfo(&appInfo);
+	assert(res == B_OK);
+	res = catalog->WriteToResource(&appInfo.ref);
+	assert(res == B_OK);
 
 	printf("ok.\n");
 	Check();
@@ -74,8 +98,8 @@ void
 CatalogTest::Check() {
 	status_t res;
 	printf("app-check...");
-	BString s("string");
-	s << "\x01" << typeid(*this).name() << "\x01";
+	BString s;
+	s << "string" << "\x01" << TR_CONTEXT << "\x01";
 	size_t hashVal = __stl_hash_string(s.String());
 	// ok, we now try to re-load the catalog that has just been written:
 	//
@@ -94,9 +118,8 @@ CatalogTest::Check() {
 	BString sig;
 	res = cat.GetSignature(&sig);
 	assert(res == B_OK);
+
 	// now check strings:
-	s = TR("string");
-	assert(s == "Schnur");
 	s = TR_ID(hashVal);
 	assert(s == "Schnur_id");
 	s = TR_ALL("string", "programming", "");
@@ -105,6 +128,20 @@ CatalogTest::Check() {
 	assert(s == "Textpuffer");
 	s = TR_CMT("string", "Deutsches Fachbuch");
 	assert(s == "Leine");
+	// the following string should be found in the embedded catalog only:
+	s = TR_ALL("string", "base", "");
+	assert(s == "string");
+	// the following id should be found in the embedded catalog only:
+	s = TR_ID(32);
+	assert(s == "hashed string");
+	// the following id doesn't exist anywhere (hopefully):
+	s = TR_ID(-1);
+	assert(s == "");
+	// the following string exists twice, in the embedded as well as in the 
+	// external catalog. So we should get the external translation (as it should
+	// override the embedded one):
+	s = TR("string");
+	assert(s == "Schnur");
 
 	// now check if trying to access same catalog by specifying its data works:
 	BCatalog cat2(sig.String(), lang.String(), fingerprint);
@@ -112,6 +149,10 @@ CatalogTest::Check() {
 	// now check if trying to access same catalog with wrong fingerprint fails:
 	BCatalog cat3(sig.String(), lang.String(), fingerprint*-1);
 	assert(cat3.InitCheck() == B_NO_INIT);
+	// translating through an invalid catalog should yield the native string:
+	s = cat3.GetString("string");
+	assert(s == "string");
+
 	printf("ok.\n");
 }
 
