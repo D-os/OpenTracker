@@ -9,18 +9,16 @@
 #include <List.h>
 
 
-static BLocaleRoster gLocaleRoster;
-BLocaleRoster *be_locale_roster = &gLocaleRoster;
-
 static BLocale gLocale;
 BLocale *be_locale = &gLocale;
 
 
 BLocale::BLocale()
 {
-	be_locale_roster->GetDefaultCollator(&fCollator);
-	be_locale_roster->GetDefaultCountry(&fCountry);
-	be_locale_roster->GetDefaultLanguage(&fLanguage);
+	BLocaleRoster roster;
+	roster.GetDefaultCollator(&fCollator);
+	roster.GetDefaultCountry(&fCountry);
+	roster.GetDefaultLanguage(&fLanguage);
 }
 
 
