@@ -6,3 +6,5 @@ SubInclude LOCALE_TOP languages ;
 SubInclude LOCALE_TOP lib ;
 SubInclude LOCALE_TOP test ;
 SubInclude LOCALE_TOP tools ;
+
+InvokeFinalRules ;
