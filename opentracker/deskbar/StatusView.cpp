@@ -222,6 +222,8 @@ TReplicantTray::CanShowFullDate()
 void
 TReplicantTray::DealWithClock(bool showClock)
 {
+	fBarView->ShowClock(showClock);
+
 	if (showClock) {
 		if (!fClock) {
 			desk_settings *settings = ((TBarApp *)be_app)->Settings();
@@ -242,7 +244,6 @@ TReplicantTray::DealWithClock(bool showClock)
 			fClock = NULL;
 		}
 	}
-	fBarView->ShowClock(showClock);
 }
 
 
@@ -1209,9 +1210,11 @@ TReplicantTray::AcceptAddon(BRect replicantFrame, BMessage *message)
 }
 
 
-//	based on the previous (index - 1) replicant in the list
-//	calculate where the left point should be for this
-//	replicant.  replicant will flow to the right on its own
+/**	based on the previous (index - 1) replicant in the list
+ *	calculate where the left point should be for this
+ *	replicant.  replicant will flow to the right on its own
+ */
+
 BPoint
 TReplicantTray::LocForReplicant(int32, int32 index, float width)
 {
@@ -1233,7 +1236,7 @@ TReplicantTray::LocForReplicant(int32, int32 index, float width)
 		// if on any other row, don't go past right edge
 		if ((loc.x + width + 2 >= kMinimumTrayWidth)
 			|| (fBarView->ShowingClock()
-				&& (loc.x + width + 6 >= kMinimumTrayWidth-fClock->Frame().Width())
+				&& (loc.x + width + 6 >= kMinimumTrayWidth - fClock->Frame().Width())
 				&& (loc.y == kGutter + 1))) {
 			// make the vertical placement uniform
 			// based on the maximum height provided for each
