@@ -182,6 +182,9 @@ public:
 	void BuildAttrQuery(BQuery *, bool &dynamicDate) const;
 	BPopUpMenu *MimeTypeMenu() const
 		{ return fMimeTypeMenu; }
+	BMenuItem *CurrentMimeType(const char **type = NULL) const;
+	status_t SetCurrentMimeType(BMenuItem *item);
+	status_t SetCurrentMimeType(const char *label);
 
 	BPopUpMenu *VolMenu() const
 		{ return fVolMenu; }
@@ -258,6 +261,7 @@ private:
 	uint32 fMode;
 	BObjectList<TAttrView> fAttrViewList;
 	BPopUpMenu *fMimeTypeMenu;
+	BMenuField *fMimeTypeField;
 	BPopUpMenu *fVolMenu;
 	BPopUpMenu *fSearchModeMenu;
 	BPopUpMenu *fRecentQueries;

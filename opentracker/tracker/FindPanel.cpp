@@ -228,8 +228,7 @@ FindWindow::SwitchToTemplate(const entry_ref *ref)
 		EnableUpdates();
 		
 	} catch (...) {
-	}
-	
+	}	
 }
 
 
@@ -261,7 +260,7 @@ MakeValidFilename(BString &string)
 	// replace slashes
 	int32 length = string.Length();
 	char *buf = string.LockBuffer(length);
-	for (int32 index = length - 1; index >= 0; index--)
+	for (int32 index = length; index-- > 0;)
 		if (buf[index] == '/' || buf[index] == ':')
 			buf[index] = '_';
 	string.UnlockBuffer(length);
@@ -639,12 +638,14 @@ FindPanel::FindPanel(BRect frame, BFile *node, FindWindow *parent,
 
 	// add popup for mime types
 	fMimeTypeMenu = new BPopUpMenu("MimeTypeMenu");
+	fMimeTypeMenu->SetRadioMode(false);
 	AddMimeTypesToMenu();
 	
 	rect.right = rect.left + 150;
-	BMenuField* menuField = new BMenuField(rect, "MimeTypeMenu", "", fMimeTypeMenu);
-	menuField->SetDivider(0.0f);
-	AddChild(menuField);
+	fMimeTypeField = new BMenuField(rect, "MimeTypeMenu", "", fMimeTypeMenu);
+	fMimeTypeField->SetDivider(0.0f);
+	fMimeTypeField->MenuItem()->SetLabel("All files and folders");
+	AddChild(fMimeTypeField);
 
 	// add popup for search criteria
 	fSearchModeMenu = new BPopUpMenu("searchMode");
@@ -658,7 +659,7 @@ FindPanel::FindPanel(BRect frame, BFile *node, FindWindow *parent,
 	rect.left = rect.right + 10;
 	rect.right = rect.left + 100;
 	rect.bottom = rect.top + 15;
-	menuField = new BMenuField(rect, "", "", fSearchModeMenu);
+	BMenuField *menuField = new BMenuField(rect, "", "", fSearchModeMenu);
 	menuField->SetDivider(0.0f);
 	AddChild(menuField);
 
@@ -800,7 +801,16 @@ FindPanel::AttachedToWindow()
 		button->SetTarget(this);
 	
 	fVolMenu->SetTargetForItems(this);
+	
+	// set target for MIME type items
+	for (int32 index = MimeTypeMenu()->CountItems();index-- > 2;) {
+		BMenu *submenu = MimeTypeMenu()->ItemAt(index)->Submenu();
+		if (submenu != NULL)
+				submenu->SetTargetForItems(this);
+	}
 	fMimeTypeMenu->SetTargetForItems(this);
+
+
 	if (fDraggableIcon)
 		fDraggableIcon->SetTarget(BMessenger(this));
 	
@@ -980,6 +990,10 @@ FindPanel::MessageReceived(BMessage *message)
 
 		case kMIMETypeItem:
 			{
+				BMenuItem *item;
+				if (message->FindPointer("source",(void **)&item) == B_OK)
+					SetCurrentMimeType(item);
+
 				// mime type switched 
 				if (fMode != kByAttributeItem)
 					break;
@@ -1026,7 +1040,6 @@ FindPanel::MessageReceived(BMessage *message)
 				}
 				if (error == B_OK) 
 					SaveAsQueryOrTemplate(&dir, name, true);
-	
 			}
 			break;
 
@@ -1220,22 +1233,21 @@ FindPanel::BuildAttrQuery(BQuery *query, bool &dynamicDate) const
 void
 FindPanel::PushMimeType(BQuery *query) const
 {
-	BMenuItem *item = MimeTypeMenu()->FindMarked();
-	// add mime type match if necessary
-	if (!item)
+	const char *type;
+	if (CurrentMimeType(&type) == NULL)
 		return;
 
-	BMessage *message = item->Message();
-	if (!message)
-		return;
+	if (strcmp(kAllMimeTypes, type)) {
+		// add an asterisk if we are searching for a supertype
+		char buffer[B_FILE_NAME_LENGTH];
+		if (strchr(type,'/') == NULL) {
+			strcpy(buffer,type);
+			strcat(buffer,"/*");
+			type = buffer;
+		}
 
-	const char *str;
-	if (message->FindString("mimetype", &str) != B_OK)
-		return;
-
-	if (strcmp(kAllMimeTypes, str)) {
 		query->PushAttr(kAttrMIMEType);
-		query->PushString(str);
+		query->PushString(type);
 		query->PushOp(B_EQ);
 		query->PushOp(B_AND);
 	}
@@ -1353,14 +1365,92 @@ FindPanel::SwitchMode(uint32 mode)
 	}
 }
 
+BMenuItem *
+FindPanel::CurrentMimeType(const char **type) const
+{
+	// search for marked item in the list
+	BMenuItem *item = MimeTypeMenu()->FindMarked();
+	if (item == NULL) {
+		for (int32 index = MimeTypeMenu()->CountItems();index-- > 0;) {
+			BMenu *submenu = MimeTypeMenu()->ItemAt(index)->Submenu();
+			if (submenu != NULL && (item = submenu->FindMarked()) != NULL)
+				break;
+		}
+	}
+
+	if (type) {
+		BMessage *message = item->Message();
+		if (!message)
+			return NULL;
+	
+		if (message->FindString("mimetype", type) != B_OK)
+			return NULL;
+	}
+	return item;
+}
+
+status_t 
+FindPanel::SetCurrentMimeType(BMenuItem *item)
+{
+	BMenuItem *marked = CurrentMimeType();
+	if (marked != NULL)
+		marked->SetMarked(false);
+
+	if (item != NULL) {
+		item->SetMarked(true);
+		fMimeTypeField->MenuItem()->SetLabel(item->Label());
+	}
+	return B_OK;
+}
+
+status_t 
+FindPanel::SetCurrentMimeType(const char *label)
+{
+	BMenuItem *marked = CurrentMimeType();
+	if (marked != NULL)
+		marked->SetMarked(false);
+
+	fMimeTypeField->MenuItem()->SetLabel(label);
+
+	for (int32 index = MimeTypeMenu()->CountItems(); index-- > 0;)  {
+		BMenuItem *item = MimeTypeMenu()->ItemAt(index);
+		BMenu *submenu = item->Submenu();
+		if (submenu != NULL) {
+			for (int32 subIndex = submenu->CountItems(); subIndex-- > 0;) {
+				BMenuItem *subItem = submenu->ItemAt(subIndex);
+				if (strcmp(label, subItem->Label()) == 0) {
+					subItem->SetMarked(true);
+					return B_OK;
+				}
+			}
+		}
+		if (strcmp(label, item->Label()) == 0) {
+			item->SetMarked(true);
+			return B_OK;
+		}
+	}
+
+	return B_ENTRY_NOT_FOUND;
+}
+
 bool
 FindPanel::AddOneMimeTypeToMenu(const ShortMimeInfo *info, void *castToMenu)
 {
-	BMessage *item = new BMessage(kMIMETypeItem);
-	item->AddString("mimetype", info->InternalName());
+	BPopUpMenu *menu = static_cast<BPopUpMenu *>(castToMenu);
 
-	static_cast<BPopUpMenu *>(castToMenu)->AddItem(
-		new BMenuItem(info->ShortDescription(), item));
+	BMimeType type(info->InternalName());
+	BMimeType super;
+	type.GetSupertype(&super);
+	if (super.InitCheck() < B_OK)
+		return false;
+
+	BMenuItem *superItem = menu->FindItem(super.Type());
+	if (superItem != NULL) {
+		BMessage *msg = new BMessage(kMIMETypeItem);
+		msg->AddString("mimetype", info->InternalName());
+
+		superItem->Submenu()->AddItem(new BMenuItem(info->ShortDescription(), msg));
+	}
 
 	return false;
 }
@@ -1374,10 +1464,42 @@ FindPanel::AddMimeTypesToMenu()
 	MimeTypeMenu()->AddSeparatorItem();
 	MimeTypeMenu()->ItemAt(0)->SetMarked(true);
 
+	BMessage types;
+	if (BMimeType::GetInstalledSupertypes(&types) == B_OK) {
+		const char *superType;
+		int32 index = 0;
+
+		while (types.FindString("super_types",index++,&superType) == B_OK) {
+			BMenu *superMenu = new BMenu(superType);
+
+			BMessage *message = new BMessage(kMIMETypeItem);
+			message->AddString("mimetype",superType);
+
+			MimeTypeMenu()->AddItem(new BMenuItem(superMenu,message));
+
+			// the MimeTypeMenu's font is not correct at this time
+			superMenu->SetFont(be_plain_font);
+		}
+	}
+
 	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
 	if (tracker) 
 		tracker->MimeTypes()->EachCommonType(&FindPanel::AddOneMimeTypeToMenu,
 			MimeTypeMenu());
+
+	// remove empty super type menus (and set target)
+	
+	for (int32 index = MimeTypeMenu()->CountItems();index-- > 2;) {
+		BMenuItem *item = MimeTypeMenu()->ItemAt(index);
+		BMenu *submenu = item->Submenu();
+		if (submenu != NULL) {
+			if (submenu->CountItems() == 0) {
+				MimeTypeMenu()->RemoveItem(item);
+				delete item;
+			} else
+				submenu->SetTargetForItems(this);
+		}
+	}
 
 	MimeTypeMenu()->SetTargetForItems(this);
 }
@@ -1679,8 +1801,9 @@ FindPanel::InitialAttrCount(const BNode *node)
 static int32
 SelectItemWithLabel(BMenu *menu, const char *label)
 {
-	for (int32 index = menu->CountItems() - 1; index >= 0; index--)  {
+	for (int32 index = menu->CountItems(); index-- > 0;)  {
 		BMenuItem *item = menu->ItemAt(index);
+
 		if (strcmp(label, item->Label()) == 0) {
 			item->SetMarked(true);
 			return index;
@@ -1694,7 +1817,7 @@ FindPanel::SaveWindowState(BNode *node, bool editTemplate)
 {
 	ASSERT(node->InitCheck() == B_OK);
 
-	BMenuItem *item = fMimeTypeMenu->FindMarked();
+	BMenuItem *item = CurrentMimeType();
 	if (item) {
 		BString label(item->Label());
 		node->WriteAttrString(kAttrQueryInitialMime, &label);
@@ -1792,7 +1915,7 @@ FindPanel::RestoreMimeTypeMenuSelection(const BNode *node)
 
 	BString buffer;
 	if (node->ReadAttrString(kAttrQueryInitialMime, &buffer) == B_OK)
-		SelectItemWithLabel(fMimeTypeMenu, buffer.String());
+		SetCurrentMimeType(buffer.String());
 }
 
 void 
@@ -2314,16 +2437,8 @@ TAttrView::AddMimeTypeAttrs(BMenu *menu)
 	if (!mainView)
 		return;
 
-	BMenuItem *item = mainView->MimeTypeMenu()->FindMarked();
-	if (!item)
-		return;
-
-	BMessage *message = item->Message();
-	if (!message)
-		return;
-
 	const char *typeName;
-	if (message->FindString("mimetype", &typeName) != B_OK)
+	if (mainView->CurrentMimeType(&typeName) == NULL)
 		return;
 
 	BMimeType mimeType(typeName);
@@ -2358,10 +2473,10 @@ TAttrView::AddMimeTypeAttrs(BMenu *menu)
 		BMenu *submenu = new BMenu(publicName);
 		submenu->SetRadioMode(true);
 		submenu->SetFont(be_plain_font);
-		message = new BMessage(kAttributeItemMain);
+		BMessage *message = new BMessage(kAttributeItemMain);
 		message->AddString("name", attributeName);
 		message->AddInt32("type", type);
-		item = new BMenuItem(submenu, message);
+		BMenuItem *item = new BMenuItem(submenu, message);
 		menu->AddItem(item);
 		menu->SetTargetForItems(this);
 
