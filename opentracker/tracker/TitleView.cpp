@@ -717,8 +717,10 @@ ColumnDragState::Clicked(BPoint, uint32)
 			poseView->SetSecondarySort(0);
 		else
 			poseView->SetSecondarySort(hash);
-	} else
+	} else {
 		poseView->SetPrimarySort(hash);
+		poseView->SetReverseSort(false);
+	}
 
 	if (poseView->PrimarySort() == poseView->SecondarySort())
 		poseView->SetSecondarySort(0);

@@ -1910,9 +1910,9 @@ BContainerWindow::MenusBeginning()
 		? PoseView()->SelectionList()->FirstItem()->TargetModel()->EntryRef() : NULL, fFileMenu);
 
 	UpdateMenu(fMenuBar, kMenuBarContext);
-	
+
 	AddMimeTypesToMenu(fAttrMenu);
-	
+
 	if (IsPrintersDir())
 		EnableNamedMenuItem(fFileMenu, "Make Active Printer", selectCount == 1);
 }
@@ -2840,20 +2840,21 @@ BContainerWindow::LoadAddOn(BMessage *message)
 
 
 BMenuItem * 
-BContainerWindow::NewAttributeMenuItem (const char *label, const char *attrName, 
+BContainerWindow::NewAttributeMenuItem(const char *label, const char *attrName, 
 	int32 attrType, float attrWidth, int32 attrAlign, bool attrEditable, bool attrStatField)
 {
-	BMessage *message = new BMessage (kAttributeItem);
-	message->AddString ("attr_name", attrName);
-	message->AddInt32 ("attr_type", attrType);
-	int32 attrHash = (int32)AttrHashString(attrName, (uint32)attrType);	
-	message->AddInt32 ("attr_hash", attrHash);
-	message->AddFloat ("attr_width", attrWidth);
-	message->AddInt32 ("attr_align", attrAlign);
-	message->AddBool ("attr_editable", attrEditable);
-	message->AddBool ("attr_statfield", attrStatField);
+	BMessage *message = new BMessage(kAttributeItem);
+	message->AddString("attr_name", attrName);
+	message->AddInt32("attr_type", attrType);
+	message->AddInt32("attr_hash", (int32)AttrHashString(attrName, (uint32)attrType));
+	message->AddFloat("attr_width", attrWidth);
+	message->AddInt32("attr_align", attrAlign);
+	message->AddBool("attr_editable", attrEditable);
+	message->AddBool("attr_statfield", attrStatField);
+
 	BMenuItem *menuItem = new BMenuItem(label, message);
-	menuItem->SetTarget (PoseView());
+	menuItem->SetTarget(PoseView());
+
 	return menuItem;
 }
 
@@ -2862,6 +2863,13 @@ void
 BContainerWindow::NewAttributeMenu(BMenu *menu)
 {
 	ASSERT(PoseView());
+
+	BMenuItem *item;
+	menu->AddItem(item = new BMenuItem("Copy Attributes", new BMessage(kCopyAttributes)));
+	item->SetTarget(PoseView());
+	menu->AddItem(item = new BMenuItem("Paste Attributes", new BMessage(kPasteAttributes)));
+	item->SetTarget(PoseView());
+	menu->AddSeparatorItem();
 
 	menu->AddItem(NewAttributeMenuItem ("Name", kAttrStatName, B_STRING_TYPE,
 		145, B_ALIGN_LEFT, true, true));
@@ -2895,7 +2903,6 @@ BContainerWindow::NewAttributeMenu(BMenu *menu)
 
 	menu->AddItem(NewAttributeMenuItem ("Permissions", kAttrStatMode, B_STRING_TYPE,
 		80, B_ALIGN_LEFT, false, true));
-
 }
 
 
@@ -2971,19 +2978,21 @@ BContainerWindow::AddMimeTypesToMenu(BMenu *menu)
 	int32 count = menu->CountItems();
 	int32 start;
 
-	for (start = 0; start < count; start++) 
+	for (start = 0; start < count; start++) { 
 		if (menu->ItemAt(start)->Submenu())
 			break;
+	}
 
-	if (menu->FindItem((uint32)0) == NULL)
-		menu->AddSeparatorItem();
-
- 	int32 removeIndex = count - 1;
  	// Remove old mime menu:
+ 	int32 removeIndex = count - 1;
  	while (menu->ItemAt(removeIndex)->Submenu() != NULL) {
 		delete menu->RemoveItem(removeIndex);
  		removeIndex--;
  	}
+ 
+ 	// Add a separator item if there is none yet
+ 	if (dynamic_cast<BSeparatorItem *>(menu->ItemAt(removeIndex)) == NULL)
+		menu->AddSeparatorItem(); 		
 
 	int32 typeCount = PoseView()->CountMimeTypes();
 
@@ -3075,8 +3084,8 @@ BContainerWindow::AddMimeTypesToMenu(BMenu *menu)
 	}
 
 	// remove separator if it's the only item in menu
-	BMenuItem *item = menu->FindItem((uint32)0);
-	if (item && item == menu->ItemAt(menu->CountItems() - 1)) {
+	BMenuItem *item = menu->ItemAt(menu->CountItems() - 1);
+	if (dynamic_cast<BSeparatorItem *>(item) != NULL) {
 		menu->RemoveItem(item);
 		delete item;
 	}

@@ -415,21 +415,21 @@ void
 BPoseView::AddColumnList(BObjectList<BColumn> *list)
 {
 	list->SortItems(&CompareColumns);
-	
+
 	float nextLeftEdge = 0;
 	for (int32 columIndex = 0; columIndex < list->CountItems(); columIndex++) {
 		BColumn *column = list->ItemAt(columIndex);
-		
+
 		// Make sure that columns don't overlap
 		if (column->Offset() < nextLeftEdge) {
 			PRINT(("\t**Overlapped columns in archived column state\n"));
 			column->SetOffset(nextLeftEdge);
 		}
-		
+
 		nextLeftEdge = column->Offset() + column->Width()
 			+ kTitleColumnExtraMargin;
 		fColumnList->AddItem(column);
-		
+
 		if (!IsWatchingDateFormatChange() && column->AttrType() == B_TIME_TYPE)
 			StartWatchDateFormatChange();
 	}
@@ -537,7 +537,7 @@ ClearViewOriginOne(const char *DEBUG_ONLY(name), uint32 type, off_t size,
 	return true;
 }
 
-}
+}	// namespace BPrivate
 
 
 void
@@ -1783,13 +1783,12 @@ BPoseView::RefreshMimeTypeList()
 { 
 	fMimeTypeList->MakeEmpty(); 
 	fMimeTypeListIsDirty = false;
- 
+
 	for (int32 index = 0;; index++) { 
- 
 		BPose *pose = PoseAtIndex(index); 
 		if (!pose) 
 			break; 
- 
+
 		if (pose->TargetModel()) 
 			AddMimeType(pose->TargetModel()->MimeType()); 
 	}
@@ -2135,6 +2134,69 @@ BPoseView::MessageReceived(BMessage *message)
 			OpenParent();
 			break;
 
+		case kCopyAttributes:
+			if (be_clipboard->Lock()) {
+				be_clipboard->Clear();
+				BMessage *data = be_clipboard->Data();
+				if (data != NULL) {
+					// copy attributes to the clipboard
+					BMessage state;
+					SaveState(state);
+
+					BMallocIO stream;
+					ssize_t size;
+					if (state.Flatten(&stream, &size) == B_OK) {
+						data->AddData("application/tracker-columns", B_MIME_TYPE, stream.Buffer(), size);
+						be_clipboard->Commit();
+					}
+				}
+				be_clipboard->Unlock();
+			}
+			break;
+		case kPasteAttributes:
+			if (be_clipboard->Lock()) {
+				BMessage *data = be_clipboard->Data();
+				if (data != NULL) {
+					// find the attributes in the clipboard
+					const void *buffer;
+					ssize_t size;
+					if (data->FindData("application/tracker-columns", B_MIME_TYPE, &buffer, &size) == B_OK) {
+						BMessage state;
+						if (state.Unflatten((const char *)buffer) == B_OK) {
+							// remove all current columns (one always stays)
+							BColumn *old;
+							while ((old = ColumnAt(0)) != NULL) {
+								if (!RemoveColumn(old, false))
+									break;
+							}
+
+							// add new columns
+							for (int32 index = 0; ; index++) {
+								BColumn *column = BColumn::InstantiateFromMessage(state, index);
+								if (!column)
+									break;
+								AddColumn(column);
+							}
+
+							// remove the last old one
+							RemoveColumn(old, false);
+
+							// set sorting mode
+							BViewState *viewState = BViewState::InstantiateFromMessage(state);
+							if (viewState != NULL) {
+								SetPrimarySort(viewState->PrimarySort());
+								SetSecondarySort(viewState->SecondarySort());
+								SetReverseSort(viewState->ReverseSort());
+
+								SortPoses();
+								Invalidate();
+							}
+						}
+					}
+				}
+				be_clipboard->Unlock();
+			}
+			break;
 		case kAttributeItem:
 			HandleAttrMenuItemSelected(message);
 			break;
@@ -2286,26 +2348,24 @@ BPoseView::RemoveColumn(BColumn *columnToRemove, bool runAlert)
 	ContainerWindow()->MarkAttributeMenu();
 
 	if (IsWatchingDateFormatChange()) {
-		
 		int32 columnCount = CountColumns();
-		
 		bool anyDateAttributesLeft = false;
-		
+
 		for (int32 i = 0; i<columnCount; i++) {
 			BColumn *col = ColumnAt(i);
-			
+
 			if (col->AttrType() == B_TIME_TYPE)
 				anyDateAttributesLeft = true;
-		
+
 			if (anyDateAttributesLeft)
 				break;
 		}
-	
+
 		if (!anyDateAttributesLeft)
 			StopWatchDateFormatChange();
 	}	
 
-	fStateNeedsSaving =  true;
+	fStateNeedsSaving = true;
 	
 	return true;
 }
@@ -2391,10 +2451,8 @@ BPoseView::HandleAttrMenuItemSelected(BMessage *message)
 
 	BColumn *column = ColumnFor(attrHash);
 	if (column) {
-
 		RemoveColumn(column, true);
 		return;
-
 	} else {
 		// collect info about selected attribute
 		const char *attrName;
@@ -2420,7 +2478,6 @@ BPoseView::HandleAttrMenuItemSelected(BMessage *message)
 		bool isStatfield;
 		if (message->FindBool("attr_statfield", &isStatfield) != B_OK)
 			return;
-
 
 		column = new BColumn(item->Label(), 0, attrWidth, attrAlign,
 			attrName, attrType, isStatfield, isEditable);
@@ -5076,7 +5133,7 @@ BPoseView::AttributeChanged(const BMessage *message)
 			result = model->OpenNode();
 			if (result == B_OK || result != B_BUSY)
 				break;
-			
+
 			PRINT(("model %s busy, retrying in a bit\n", model->Name()));
 			snooze(10000);
 		}
@@ -5118,6 +5175,7 @@ BPoseView::AttributeChanged(const BMessage *message)
 			return false;
 		}
 	}
+
 	return true;
 }
 
