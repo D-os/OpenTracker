@@ -1213,8 +1213,8 @@ MoveItem(BEntry *entry, BDirectory *destDir, BPoint *loc, uint32 moveMode,
 			if (moveMode == kCreateRelativeLink) {
 				if (statbuf.st_dev == destNode.device) {
 					// relative link only works on the same device
-					char oldwd[512];
-					getcwd(oldwd, 512);
+					char oldwd[B_PATH_NAME_LENGTH];
+					getcwd(oldwd, B_PATH_NAME_LENGTH);
 					
 					BEntry destEntry;
 					destDir -> GetEntry(&destEntry);
@@ -1230,13 +1230,22 @@ MoveItem(BEntry *entry, BDirectory *destDir, BPoint *loc, uint32 moveMode,
 					BString srcString(path.Path());
 					srcString.RemoveLast(path.Leaf());
 					
-					const char *src = srcString.String();
-					const char *dest = destString.String();
-					
 					// find index while paths are the same
+
+					const char *src = srcString.String();
+					const char *dest = destString.String();					
+					const char *lastFolderSrc = src;
+					const char *lastFolderDest = dest;
+
 					while (*src && *dest && *src == *dest) {
 						++src;
 						++dest;
+						if (*dest++ == '/') {
+							lastFolderSrc = src;
+							lastFolderDest = dest;
+						}
+						src = lastFolderSrc;
+						dest = lastFolderDest;
 					}
 					
 					BString source;
