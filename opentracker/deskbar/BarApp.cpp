@@ -60,7 +60,9 @@ All rights reserved.
 #include "ResourceSet.h"
 #include "WindowMenuItem.h"
 
+
 const BRect kIconSize(0.0f, 0.0f, 15.0f, 15.0f);
+
 
 int
 main()
@@ -78,8 +80,7 @@ TBarApp::TBarApp()
 		fConfigWindow(NULL)
 {
 	InitSettings();
-
-	TrackerInitIconPreloader();
+	InitIconPreloader();
 
 	sBarTeamInfoList.MakeEmpty();
 

@@ -66,7 +66,23 @@ All rights reserved.
 #include "TimeView.h"
 #include "BarApp.h"
 
+
 #ifdef DB_ADDONS
+//	Add-on support
+//
+//	Item - internal item list (node, eref, etc)
+//	Icon - physical replicant handed to the DeskbarClass class
+//	AddOn - attribute based add-on
+
+const char *const kInstantiateItemCFunctionName = "instantiate_deskbar_item";
+const char *const kInstantiateEntryCFunctionName = "instantiate_deskbar_entry";
+const char *const kDeskbarSecurityCodeFile = "Deskbar_security_code";
+const char *const kDeskbarSecurityCodeAttr = "be:deskbar_security_code";
+const char *const kStatusPredicate = "be:deskbar_item_status";
+const char *const kEnabledPredicate = "be:deskbar_item_status=enabled";
+const char *const kDisabledPredicate = "be:deskbar_item_status=disabled";
+
+
 static void
 DumpItem(DeskbarItemInfo *item)
 {
@@ -75,6 +91,7 @@ DumpItem(DeskbarItemInfo *item)
 	printf("node_ref:  %ld, %Ld\n", item->nref.device, item->nref.node);
 	printf("real dev:  %li\n", item->realDevice);				
 }
+
 
 static void
 DumpList(BList *itemlist)
@@ -92,8 +109,8 @@ DumpList(BList *itemlist)
 		DumpItem(item);
 	}
 }
+#endif	/* DB_ADDONS */
 
-#endif
 
 //	don't change the name of this view to anything other than
 //	Status 
@@ -108,10 +125,12 @@ TReplicantTray::TReplicantTray(TBarView *parent, bool vertical)
 	fShelf = new TReplicantShelf(this);
 }
 
+
 TReplicantTray::~TReplicantTray()
 {
 	delete fShelf;
 }
+
 
 void
 TReplicantTray::AttachedToWindow()
@@ -130,6 +149,7 @@ TReplicantTray::AttachedToWindow()
 	ResizeToPreferred();
 }
 
+
 void
 TReplicantTray::DetachedFromWindow()
 {
@@ -139,6 +159,7 @@ TReplicantTray::DetachedFromWindow()
 #endif	
 	BView::DetachedFromWindow();
 }
+
 
 void
 TReplicantTray::RememberClockSettings()
@@ -153,6 +174,7 @@ TReplicantTray::RememberClockSettings()
 	}
 }
 
+
 bool
 TReplicantTray::ShowingSeconds()
 {
@@ -160,6 +182,7 @@ TReplicantTray::ShowingSeconds()
 		return fClock->ShowingSeconds();
 	return false;
 }
+
 
 bool
 TReplicantTray::ShowingMiltime()
@@ -169,6 +192,7 @@ TReplicantTray::ShowingMiltime()
 	return false;
 }
 
+
 bool
 TReplicantTray::ShowingEuroDate()
 {
@@ -176,6 +200,7 @@ TReplicantTray::ShowingEuroDate()
 		return fClock->ShowingEuroDate();
 	return false;
 }
+
 
 bool
 TReplicantTray::ShowingFullDate()
@@ -185,6 +210,7 @@ TReplicantTray::ShowingFullDate()
 	return false;
 }
 
+
 bool
 TReplicantTray::CanShowFullDate()
 {
@@ -192,6 +218,7 @@ TReplicantTray::CanShowFullDate()
 		return fClock->CanShowFullDate();
 	return false;
 }
+
 
 void
 TReplicantTray::DealWithClock(bool showClock)
@@ -216,6 +243,7 @@ TReplicantTray::DealWithClock(bool showClock)
 	}
 	fBarView->ShowClock(showClock);
 }
+
 
 //	width is set to a minimum of kMinimumReplicantCount by kMaxReplicantWidth
 // 	if not in multirowmode and greater than kMinimumReplicantCount
@@ -265,6 +293,7 @@ TReplicantTray::GetPreferredSize(float *preferredWidth, float *preferredHeight)
 	*preferredHeight = height + 1;
 }
 
+
 void
 TReplicantTray::AdjustPlacement()
 {
@@ -277,6 +306,7 @@ TReplicantTray::AdjustPlacement()
 	Parent()->Invalidate();
 	Invalidate();
 }
+
 
 void
 TReplicantTray::Draw(BRect)
@@ -295,6 +325,7 @@ TReplicantTray::Draw(BRect)
 	StrokeLine(frame.RightTop(), frame.LeftTop());
 	StrokeLine(frame.LeftTop(), frame.LeftBottom());
 }
+
 
 void
 TReplicantTray::MessageReceived(BMessage *message)
@@ -348,6 +379,7 @@ TReplicantTray::MessageReceived(BMessage *message)
 	}
 }
 
+
 void
 TReplicantTray::ShowReplicantMenu(BPoint point)
 {
@@ -368,6 +400,7 @@ TReplicantTray::ShowReplicantMenu(BPoint point)
 			where + BPoint(4, 4)), true);
 	}
 }
+
 
 void
 TReplicantTray::MouseDown(BPoint where)
@@ -409,38 +442,24 @@ TReplicantTray::MouseDown(BPoint where)
 
 #ifdef DB_ADDONS		
 
-//	Add-on support
-//
-//	Item - internal item list (node, eref, etc)
-//	Icon - physical replicant handed to the DeskbarClass class
-//	AddOn - attribute based add-on
-
-const char *const kInstantiateItemCFunctionName = "instantiate_deskbar_item";
-const char *const kInstantiateEntryCFunctionName = "instantiate_deskbar_entry";
-const char *const kDeskbarSecurityCodeFile = "Deskbar_security_code";
-const char *const kDeskbarSecurityCodeAttr = "be:deskbar_security_code";
-const char *const kStatusPredicate = "be:deskbar_item_status";
-const char *const kEnabledPredicate = "be:deskbar_item_status=enabled";
-const char *const kDisabledPredicate = "be:deskbar_item_status=disabled";
-
 void
 TReplicantTray::InitAddOnSupport()
 {
 	// list to maintain refs to each rep added/deleted
 	fItemList = new BList();
 
-	bool havekey = false;
+	bool haveKey = false;
  	BPath path;
-    if (find_directory (B_USER_SETTINGS_DIRECTORY, &path, true) == B_OK) {
+    if (find_directory(B_USER_SETTINGS_DIRECTORY, &path, true) == B_OK) {
 		path.Append(kDeskbarSecurityCodeFile);
+
 		BFile file(path.Path(),B_READ_ONLY);
-		if (file.InitCheck() == B_OK) {
-			if (file.Read(&fDeskbarSecurityCode,
-				sizeof(fDeskbarSecurityCode)) == sizeof(fDeskbarSecurityCode))
-				havekey = true;
-		}
+		if (file.InitCheck() == B_OK
+			&& file.Read(&fDeskbarSecurityCode,
+					sizeof(fDeskbarSecurityCode)) == sizeof(fDeskbarSecurityCode))
+			haveKey = true;
 	}
-	if (!havekey) {
+	if (!haveKey) {
 		// create the security code
 		bigtime_t real = real_time_clock_usecs();
 		bigtime_t boot = system_time();
@@ -448,6 +467,7 @@ TReplicantTray::InitAddOnSupport()
 		// Deskbar at the exact same time into the bootsequence in order for their
 		// security-ID to be identical
 		fDeskbarSecurityCode = ((real&0xffffffffULL)<<32)|(boot&0xffffffffULL);
+
     	if (find_directory (B_USER_SETTINGS_DIRECTORY, &path, true) == B_OK) {
 			path.Append(kDeskbarSecurityCodeFile);
 			BFile file(path.Path(), B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE);
@@ -455,8 +475,6 @@ TReplicantTray::InitAddOnSupport()
 				file.Write(&fDeskbarSecurityCode, sizeof(fDeskbarSecurityCode));
 		}
 	}
- 
-
 	
 	//	for each volume currently mounted
 	//		index the volume with our indices
@@ -471,6 +489,7 @@ TReplicantTray::InitAddOnSupport()
 	//	we also watch for volumes mounted and unmounted
 	watch_node(NULL, B_WATCH_MOUNT | B_WATCH_ATTR, this, Window());
 }
+
 
 void
 TReplicantTray::DeleteAddOnSupport()
@@ -491,6 +510,7 @@ TReplicantTray::DeleteAddOnSupport()
 	stop_watching(this, Window());
 }
 
+
 void
 TReplicantTray::RunAddOnQuery(BVolume *volume, const char *predicate)
 {
@@ -510,6 +530,7 @@ TReplicantTray::RunAddOnQuery(BVolume *volume, const char *predicate)
 		LoadAddOn(&entry, &id);
 }
 
+
 bool
 TReplicantTray::IsAddOn(entry_ref *eref)
 {
@@ -520,6 +541,7 @@ TReplicantTray::IsAddOn(entry_ref *eref)
 		
 	return size > 0;
 }
+
 
 bool
 TReplicantTray::NodeExists(node_ref *nodeRef)
@@ -669,6 +691,7 @@ TReplicantTray::HandleEntryUpdate(BMessage *message)
 	}	
 }
 
+
 //	the add-ons must support the exported C function API
 //	if they do, they will be loaded and added to deskbar
 //	primary function is the Instantiate function
@@ -752,6 +775,7 @@ TReplicantTray::LoadAddOn(BEntry *entry, int32 *id, bool force)
 	return B_OK;
 }
 
+
 status_t
 TReplicantTray::AddItem(int32 id, node_ref nodeRef, BEntry *entry, bool isaddon)
 {
@@ -791,6 +815,7 @@ TReplicantTray::AddItem(int32 id, node_ref nodeRef, BEntry *entry, bool isaddon)
 	return B_OK;		
 }
 
+
 //	from entry_removed message, when attribute removed
 //	or when a device is unmounted (use removeall, by device)
 void
@@ -817,6 +842,7 @@ TReplicantTray::UnloadAddOn(node_ref *nodeRef, dev_t *device,
 		}
 	}
 }
+
 
 void
 TReplicantTray::RemoveItem(int32 id)
@@ -846,6 +872,7 @@ TReplicantTray::RemoveItem(int32 id)
 		}
 	}
 }
+
 
 //	ENTRY_MOVED message, moving only occurs on a device
 //	copying will occur (ENTRY_CREATED) between devices
@@ -903,6 +930,7 @@ TReplicantTray::ItemInfo(int32 id, const char **name)
 	return B_ERROR;
 }
 
+
 //	for a specific name
 //	return the id (internal to Deskbar)
 status_t
@@ -918,6 +946,7 @@ TReplicantTray::ItemInfo(const char *name, int32 *id)
 	
 	return B_ERROR;
 }
+
 
 //	at a specific index
 //	return both the name and the id of the replicant
@@ -937,6 +966,7 @@ TReplicantTray::ItemInfo(int32 index, const char **name, int32 *id)
 	return B_ERROR;
 }
 
+
 //	replicant exists, by id/index
 bool
 TReplicantTray::IconExists(int32 target, bool byIndex)
@@ -946,6 +976,7 @@ TReplicantTray::IconExists(int32 target, bool byIndex)
 		
 	return view && index >= 0;
 }
+
 
 //	replicant exists, by name
 bool
@@ -960,11 +991,13 @@ TReplicantTray::IconExists(const char *name)
 	return view && index >= 0;
 }
 
+
 int32
 TReplicantTray::IconCount() const
 {
 	return fShelf->CountReplicants();
 }
+
 
 //	message must contain an archivable view
 //	in the Archives folder for later rehydration
@@ -1015,6 +1048,7 @@ TReplicantTray::AddIcon(BMessage *icon, int32 *id, const entry_ref *addOn)
  	return B_OK;
 }
 
+
 void
 TReplicantTray::RemoveIcon(int32 target, bool byIndex)
 {
@@ -1032,6 +1066,7 @@ TReplicantTray::RemoveIcon(int32 target, bool byIndex)
 		RealReplicantAdjustment(index);
 	}
 }
+
 
 void
 TReplicantTray::RemoveIcon(const char *name)
@@ -1051,6 +1086,7 @@ TReplicantTray::RemoveIcon(const char *name)
 	}
 }
 
+
 void
 TReplicantTray::RealReplicantAdjustment(int32 startindex)
 {
@@ -1069,6 +1105,7 @@ TReplicantTray::RealReplicantAdjustment(int32 startindex)
 		AdjustPlacement();
 	}
 }
+
 
 //	looking for a replicant by id/index
 //	return the view and index
@@ -1101,6 +1138,7 @@ TReplicantTray::ViewAt(int32 *index, int32 *id, int32 target, bool byIndex)
 	return NULL;
 }
 
+
 //	looking for a replicant with a view by name
 //	return the view, index and the id of the replicant
 BView *
@@ -1121,6 +1159,7 @@ TReplicantTray::ViewAt(int32 *index, int32 *id, const char *name)
 	
 	return NULL;
 }
+
 
 // 	Shelf will call to determine where and if
 //	the replicant is to be added
@@ -1154,6 +1193,7 @@ TReplicantTray::AcceptAddon(BRect replicantFrame, BMessage *message)
 
 	return true;
 }
+
 
 //	based on the previous (index - 1) replicant in the list
 //	calculate where the left point should be for this
@@ -1192,6 +1232,7 @@ TReplicantTray::LocForReplicant(int32, int32 index, float width)
 	return loc;
 }
 
+
 BRect
 TReplicantTray::IconFrame(int32 target, bool byIndex)
 {
@@ -1202,6 +1243,7 @@ TReplicantTray::IconFrame(int32 target, bool byIndex)
 
 	return BRect(0, 0, 0, 0);
 }
+
 
 BRect
 TReplicantTray::IconFrame(const char *name)
@@ -1216,6 +1258,7 @@ TReplicantTray::IconFrame(const char *name)
 	
 	return BRect(0, 0, 0, 0);
 }
+
 
 //	scan from the startIndex and reset the location
 //	as defined in LocForReplicant
@@ -1239,11 +1282,15 @@ TReplicantTray::RealignReplicants(int32 startIndex)
 	}
 }
 
+
 void
 TReplicantTray::SetMultiRow(bool state)
 {
 	fMultiRowMode = state;
 }
+
+
+//	#pragma mark -
 
 
 //	draggable region that is asynchronous so that
@@ -1257,6 +1304,7 @@ TDragRegion::TDragRegion(TBarView *parent, BView *child)
 {
 }
 
+
 void
 TDragRegion::AttachedToWindow()
 {
@@ -1264,6 +1312,7 @@ TDragRegion::AttachedToWindow()
 	SetViewColor(ui_color(B_MENU_BACKGROUND_COLOR));
 	ResizeToPreferred();
 }
+
 
 void
 TDragRegion::GetPreferredSize(float *width, float *height)
@@ -1280,6 +1329,7 @@ TDragRegion::GetPreferredSize(float *width, float *height)
 	*height += 3;
 }
 
+
 void
 TDragRegion::FrameMoved(BPoint)
 {
@@ -1288,6 +1338,7 @@ TDragRegion::FrameMoved(BPoint)
 	else
 		fChild->MoveTo(2,2);
 }
+
 
 void 
 TDragRegion::Draw(BRect)
@@ -1326,6 +1377,7 @@ TDragRegion::Draw(BRect)
 		DrawDragRegion();
 }
 
+
 void
 TDragRegion::DrawDragRegion()
 {	
@@ -1360,6 +1412,7 @@ TDragRegion::DrawDragRegion()
 	EndLineArray();
 }
 
+
 BRect
 TDragRegion::DragRegion() const
 {
@@ -1388,6 +1441,7 @@ TDragRegion::DragRegion() const
 	
 	return dragRegion;
 }
+
 
 void 
 TDragRegion::MouseDown(BPoint thePoint)
@@ -1419,6 +1473,7 @@ TDragRegion::MouseDown(BPoint thePoint)
 	}
 }
 
+
 void 
 TDragRegion::MouseUp(BPoint pt)
 {
@@ -1428,6 +1483,7 @@ TDragRegion::MouseUp(BPoint pt)
 	} else
 		BControl::MouseUp(pt);
 }
+
 
 bool 
 TDragRegion::SwitchModeForRect(BPoint mouse, BRect rect, 
@@ -1448,6 +1504,7 @@ TDragRegion::SwitchModeForRect(BPoint mouse, BRect rect,
 		
 	return true;
 }
+
 
 void 
 TDragRegion::MouseMoved(BPoint where, uint32 code, const BMessage *message)
@@ -1510,11 +1567,13 @@ TDragRegion::MouseMoved(BPoint where, uint32 code, const BMessage *message)
 		BControl::MouseMoved(where, code, message);
 }
 
+
 int32
 TDragRegion::DragRegionLocation() const
 {
 	return fDragLocation;	
 }
+
 
 void
 TDragRegion::SetDragRegionLocation(int32 location)
@@ -1525,3 +1584,4 @@ TDragRegion::SetDragRegionLocation(int32 location)
 	fDragLocation = location;
 	Invalidate();
 }
+
