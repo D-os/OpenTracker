@@ -87,6 +87,9 @@ const uint32 kRunSaveAsTemplatePanel = 'svtm';
 const char *kDragNDropTypes [] = { B_QUERY_MIMETYPE, B_QUERY_TEMPLATE_MIMETYPE };
 const char *kDragNDropActionSpecifiers [] = { "Create a Query", "Create a Query template" };
 
+const uint32 kAttachFile = 'attf';
+
+
 namespace BPrivate {
 
 class MostUsedNames {
@@ -126,6 +129,7 @@ MoreOptionsStruct::EndianSwap(void *)
 	// noop for now
 }
 
+
 void 
 MoreOptionsStruct::SetQueryTemporary(BNode *node, bool on)
 {
@@ -138,6 +142,7 @@ MoreOptionsStruct::SetQueryTemporary(BNode *node, bool on)
 	node->WriteAttr(kAttrQueryMoreOptions, B_RAW_TYPE, 0, &saveMoreOptions,
 		sizeof(saveMoreOptions));	
 }
+
 
 bool 
 MoreOptionsStruct::QueryTemporary(const BNode *node)
@@ -203,11 +208,13 @@ FindWindow::FindWindow(const entry_ref *newRef, bool editIfTemplateOnly)
 	AddChild(fBackground);
 }
 
+
 FindWindow::~FindWindow()
 {
 	delete fFile;
 	delete fSaveAsTemplatePanel;
 }
+
 
 BFile *
 FindWindow::TryOpening(const entry_ref *ref)
@@ -223,6 +230,7 @@ FindWindow::TryOpening(const entry_ref *ref)
 	return result;
 }
 
+
 void 
 FindWindow::GetDefaultQuery(BEntry &entry)
 {
@@ -234,6 +242,7 @@ FindWindow::GetDefaultQuery(BEntry &entry)
 	
 	entry.SetTo(&directory, "default");
 }
+
 
 bool 
 FindWindow::IsQueryTemplate(BNode *file)
@@ -280,6 +289,7 @@ FindWindow::QueryName() const
 	return fRef.name;
 }
 
+
 static const char * 
 MakeValidFilename(BString &string)
 {
@@ -300,6 +310,7 @@ MakeValidFilename(BString &string)
 	
 	return string.String();
 }
+
 
 void 
 FindWindow::GetPredicateString(BString &predicate, bool &dynamicDate)
@@ -322,6 +333,7 @@ FindWindow::GetPredicateString(BString &predicate, bool &dynamicDate)
 			break;
 	}
 }
+
 
 void 
 FindWindow::GetDefaultName(BString &result)
@@ -353,6 +365,7 @@ FindWindow::GetDefaultName(BString &result)
 	MakeValidFilename(result);
 }
 
+
 void
 FindWindow::SaveQueryAttributes(BNode *file, bool queryTemplate)
 {
@@ -365,6 +378,7 @@ FindWindow::SaveQueryAttributes(BNode *file, bool queryTemplate)
 	int32 tmp = 1;
 	file->WriteAttr("_trk/recentQuery", B_INT32_TYPE, 0, &tmp, sizeof(int32));
 }
+
 
 status_t 
 FindWindow::SaveQueryAsAttributes(BNode *file, BEntry *entry, bool queryTemplate,
@@ -455,6 +469,7 @@ FindWindow::SaveQueryAsAttributes(BNode *file, BEntry *entry, bool queryTemplate
 	return B_OK;
 }
 
+
 void 
 FindWindow::Save()
 {
@@ -463,6 +478,7 @@ FindWindow::Save()
 	// close the find panel
 	PostMessage(B_QUIT_REQUESTED);
 }
+
 
 void
 FindWindow::Find()
@@ -500,6 +516,7 @@ FindWindow::Find()
 	// close the find panel
 	PostMessage(B_QUIT_REQUESTED);
 }
+
 
 bool 
 FindWindow::FindSaveCommon(bool find)
@@ -566,7 +583,6 @@ FindWindow::FindSaveCommon(bool find)
 	return newFile;
 }
 
-const uint32 kAttachFile = 'attf';
 
 void
 FindWindow::MessageReceived(BMessage *message)
@@ -796,9 +812,11 @@ FindPanel::FindPanel(BRect frame, BFile *node, FindWindow *parent,
 	button->MakeDefault(true);
 }
 
+
 FindPanel::~FindPanel()
 {
 }
+
 
 void
 FindPanel::AttachedToWindow()
@@ -870,6 +888,7 @@ FindPanel::InitialViewSize(const BNode *node)
 	return result;
 }
 
+
 float 
 FindPanel::ViewHeightForMode(uint32 mode, bool moreOptions)
 {
@@ -887,6 +906,7 @@ FindPanel::ViewHeightForMode(uint32 mode, bool moreOptions)
 	return 0;
 }
 
+
 float
 FindPanel::BoxHeightForMode(uint32 mode, bool /*moreOptions*/)
 {
@@ -903,6 +923,7 @@ FindPanel::BoxHeightForMode(uint32 mode, bool /*moreOptions*/)
 	return 0;
 }
 
+
 static void
 PopUpMenuSetTitle(BMenu *menu, const char *title)
 {
@@ -916,6 +937,7 @@ PopUpMenuSetTitle(BMenu *menu, const char *title)
 
 	bar->ItemAt(0)->SetLabel(title);
 }
+
 
 void
 FindPanel::ShowVolumeMenuLabel()
@@ -953,6 +975,7 @@ FindPanel::ShowVolumeMenuLabel()
 		PopUpMenuSetTitle(fVolMenu, tmpItem->Label());
 	}
 }
+
 
 void
 FindPanel::MessageReceived(BMessage *message)
@@ -1027,7 +1050,7 @@ FindPanel::MessageReceived(BMessage *message)
 				BMenuItem *item;
 				if (message->FindPointer("source",(void **)&item) == B_OK) {
 					// don't add the "All files and folders" to the list
-					if (message->FindInt32("index") > 0)
+					if (fMimeTypeMenu->IndexOf(item) != 0)
 						gMostUsedMimeTypes.AddName(item->Label());
 
 					SetCurrentMimeType(item);
@@ -1120,6 +1143,7 @@ FindPanel::MessageReceived(BMessage *message)
 			break;
 	}
 }
+
 
 void 
 FindPanel::SaveAsQueryOrTemplate(const entry_ref *dir, const char *name, bool queryTemplate)
@@ -1269,6 +1293,7 @@ FindPanel::BuildAttrQuery(BQuery *query, bool &dynamicDate) const
 	}
 }
 
+
 void
 FindPanel::PushMimeType(BQuery *query) const
 {
@@ -1292,6 +1317,7 @@ FindPanel::PushMimeType(BQuery *query) const
 	}
 }
 
+
 void 
 FindPanel::GetByAttrPredicate(BQuery *query, bool &dynamicDate) const
 {
@@ -1299,6 +1325,7 @@ FindPanel::GetByAttrPredicate(BQuery *query, bool &dynamicDate) const
 	BuildAttrQuery(query, dynamicDate);
 	PushMimeType(query);
 }
+
 
 const char *
 FindPanel::UserSpecifiedName() const
@@ -1308,6 +1335,7 @@ FindPanel::UserSpecifiedName() const
 
 	return fQueryName->Text();
 }
+
 
 void
 FindPanel::GetByNamePredicate(BQuery *query) const
@@ -1327,6 +1355,7 @@ FindPanel::GetByNamePredicate(BQuery *query) const
 
 	PushMimeType(query);
 }
+
 
 void
 FindPanel::SwitchMode(uint32 mode)
@@ -1404,6 +1433,7 @@ FindPanel::SwitchMode(uint32 mode)
 	}
 }
 
+
 BMenuItem *
 FindPanel::CurrentMimeType(const char **type) const
 {
@@ -1432,6 +1462,7 @@ FindPanel::CurrentMimeType(const char **type) const
 	}
 	return item;
 }
+
 
 status_t 
 FindPanel::SetCurrentMimeType(BMenuItem *item)
@@ -1475,6 +1506,7 @@ FindPanel::SetCurrentMimeType(BMenuItem *item)
 	return B_OK;
 }
 
+
 status_t 
 FindPanel::SetCurrentMimeType(const char *label)
 {
@@ -1514,6 +1546,7 @@ FindPanel::SetCurrentMimeType(const char *label)
 	return found ? B_OK : B_ENTRY_NOT_FOUND;
 }
 
+
 bool
 FindPanel::AddOneMimeTypeToMenu(const ShortMimeInfo *info, void *castToMenu)
 {
@@ -1536,6 +1569,7 @@ FindPanel::AddOneMimeTypeToMenu(const ShortMimeInfo *info, void *castToMenu)
 	return false;
 }
 
+
 void
 FindPanel::AddMimeTypesToMenu()
 {
@@ -1551,8 +1585,8 @@ FindPanel::AddMimeTypesToMenu()
 
 	BList list;
 	if (gMostUsedMimeTypes.ObtainList(&list) && tracker) {
-		int32 index = 0;
-		for (;index < list.CountItems();index++) {
+		int32 count = 0;
+		for (int32 index = 0;index < list.CountItems();index++) {
 			const char *name = (const char *)list.ItemAt(index);
 
 			const ShortMimeInfo *info;
@@ -1563,8 +1597,9 @@ FindPanel::AddMimeTypesToMenu()
 			message->AddString("mimetype",info->InternalName());
 
 			MimeTypeMenu()->AddItem(new BMenuItem(name,message));
+			count++;
 		}
-		if (index > 0)
+		if (count != 0)
 			MimeTypeMenu()->AddSeparatorItem();
 
 		gMostUsedMimeTypes.ReleaseList();
@@ -1611,6 +1646,7 @@ FindPanel::AddMimeTypesToMenu()
 	MimeTypeMenu()->SetTargetForItems(this);
 }
 
+
 void
 FindPanel::AddVolumes(BMenu *menu)
 {
@@ -1650,6 +1686,7 @@ FindPanel::AddVolumes(BMenu *menu)
 	menu->SetTargetForItems(this);
 }
 
+
 typedef std::pair<entry_ref, uint32> EntryWithDate;
 
 static int
@@ -1682,6 +1719,7 @@ AddOneRecentItem(const entry_ref *ref, void *castToParams)
 	
 	return NULL;
 }
+
 
 void 
 FindPanel::AddRecentQueries(BMenu *menu, bool addSaveAsItem, const BMessenger *target,
@@ -1772,6 +1810,7 @@ FindPanel::AddOneAttributeItem(BBox *box, BRect rect)
 	attrView->MakeTextViewFocus();
 }
 
+
 void
 FindPanel::SetUpAddRemoveButtons(BBox *box)
 {
@@ -1800,12 +1839,14 @@ FindPanel::SetUpAddRemoveButtons(BBox *box)
 	button->SetEnabled(fAttrViewList.CountItems() > 1);
 }
 
+
 void 
 FindPanel::FillCurrentQueryName(BTextControl *queryName, FindWindow *window)
 {
 	ASSERT(window);
 	queryName->SetText(window->QueryName());
 }
+
 
 void
 FindPanel::AddAttrView()
@@ -1844,6 +1885,7 @@ FindPanel::AddAttrView()
 	last->AddMimeTypeAttrs();
 }
 
+
 void
 FindPanel::RemoveAttrView()
 {
@@ -1877,6 +1919,7 @@ FindPanel::RemoveAttrView()
 		button->SetEnabled(false);
 }
 
+
 uint32 
 FindPanel::InitialMode(const BNode *node)
 {
@@ -1890,6 +1933,7 @@ FindPanel::InitialMode(const BNode *node)
 
 	return result;
 }
+
 
 int32 
 FindPanel::InitialAttrCount(const BNode *node)
@@ -1905,6 +1949,7 @@ FindPanel::InitialAttrCount(const BNode *node)
 	return result;
 }
 
+
 static int32
 SelectItemWithLabel(BMenu *menu, const char *label)
 {
@@ -1918,6 +1963,7 @@ SelectItemWithLabel(BMenu *menu, const char *label)
 	}
 	return -1;
 }
+
 
 void 
 FindPanel::SaveWindowState(BNode *node, bool editTemplate)
@@ -1986,6 +2032,7 @@ FindPanel::SaveWindowState(BNode *node, bool editTemplate)
 	}
 }
 
+
 void 
 FindPanel::SwitchToTemplate(const BNode *node)
 {
@@ -2014,6 +2061,7 @@ FindPanel::SwitchToTemplate(const BNode *node)
 	RestoreWindowState(node);
 }
 
+
 void
 FindPanel::RestoreMimeTypeMenuSelection(const BNode *node)
 {
@@ -2024,6 +2072,7 @@ FindPanel::RestoreMimeTypeMenuSelection(const BNode *node)
 	if (node->ReadAttrString(kAttrQueryInitialMime, &buffer) == B_OK)
 		SetCurrentMimeType(buffer.String());
 }
+
 
 void 
 FindPanel::RestoreWindowState(const BNode *node)
@@ -2151,6 +2200,7 @@ FindPanel::RestoreWindowState(const BNode *node)
 	}
 }
 
+
 void
 FindPanel::ResizeAttributeBox(const BNode *node)
 {
@@ -2161,6 +2211,7 @@ FindPanel::ResizeAttributeBox(const BNode *node)
 	bounds.bottom = count * 30 + 40;
 	box->ResizeTo(bounds.Width(), bounds.Height());
 }
+
 
 void
 FindPanel::AddByAttributeItems(const BNode *node)
@@ -2184,6 +2235,7 @@ FindPanel::AddByAttributeItems(const BNode *node)
 	SetUpAddRemoveButtons(box);
 }
 
+
 void
 FindPanel::AddByNameOrFormulaItems()
 {
@@ -2196,6 +2248,7 @@ FindPanel::AddByNameOrFormulaItems()
 	box->AddChild(textControl);
 	textControl->MakeFocus();
 }
+
 
 void
 FindPanel::RemoveAttrViewItems()
@@ -2210,6 +2263,7 @@ FindPanel::RemoveAttrViewItems()
 	
 	fAttrViewList.MakeEmpty();
 }
+
 
 void 
 FindPanel::RemoveByAttributeItems()
@@ -2233,6 +2287,7 @@ FindPanel::RemoveByAttributeItems()
 		delete view;
 	}
 }
+
 
 void
 FindPanel::ShowOrHideMimeTypeMenu()
@@ -2340,6 +2395,12 @@ TAttrView::TAttrView(BRect frame, int32 index)
 	// add attributes from currently selected mimetype
 }
 
+
+TAttrView::~TAttrView()
+{
+}
+
+
 void 
 TAttrView::AttachedToWindow()
 {
@@ -2351,15 +2412,13 @@ TAttrView::AttachedToWindow()
 		menu->SubmenuAt(index)->SetTargetForItems(this);
 }
 
+
 void 
 TAttrView::MakeTextViewFocus()
 {
 	fTextControl->MakeFocus();
 }
 
-TAttrView::~TAttrView()
-{
-}
 
 void
 TAttrView::RestoreState(const BMessage &message, int32 index)
@@ -2394,6 +2453,7 @@ TAttrView::RestoreState(const BMessage &message, int32 index)
 		else
 			AddLogicMenu(logicMenuSelectedIndex == 0);
 }
+
 
 void 
 TAttrView::SaveState(BMessage *message, int32)
@@ -2489,6 +2549,7 @@ TAttrView::Draw(BRect)
 	}
 }
 
+
 void
 TAttrView::MessageReceived(BMessage *message)
 {
@@ -2520,12 +2581,14 @@ TAttrView::MessageReceived(BMessage *message)
 	}
 }
 
+
 void 
 TAttrView::AddMimeTypeAttrs()
 {
 	BMenu *menu = fMenuField->Menu();	
 	AddMimeTypeAttrs(menu);
 }
+
 
 void
 TAttrView::AddMimeTypeAttrs(BMenu *menu)
@@ -2652,10 +2715,12 @@ DeleteTransientQueriesTask::DeleteTransientQueriesTask()
 {
 }
 
+
 DeleteTransientQueriesTask::~DeleteTransientQueriesTask()
 {
 	delete fWalker;
 }
+
 
 bool 
 DeleteTransientQueriesTask::DoSomeWork()
@@ -2680,6 +2745,7 @@ DeleteTransientQueriesTask::DoSomeWork()
 	return false;
 }
 
+
 void 
 DeleteTransientQueriesTask::Initialize()
 {
@@ -2693,6 +2759,7 @@ DeleteTransientQueriesTask::Initialize()
 	fWalker = new WALKER_NS::TNodeWalker(path.Path());
 	state = kAllocatedWalker;
 }
+
 
 const int32 kBatchCount = 100;
 
@@ -2717,6 +2784,7 @@ DeleteTransientQueriesTask::GetSome()
 	return false;
 }
 
+
 const int32 kDaysToExpire = 7;
 
 static bool
@@ -2738,6 +2806,7 @@ QueryOldEnough(Model *model)
 	}
 	return true;
 }
+
 
 bool 
 DeleteTransientQueriesTask::ProcessOneRef(Model *model)
@@ -2768,6 +2837,7 @@ DeleteTransientQueriesTask::ProcessOneRef(Model *model)
 	return true;	
 }
 
+
 class DeleteTransientQueriesFunctor : public FunctionObjectWithResult<bool> {
 public:
 	DeleteTransientQueriesFunctor(DeleteTransientQueriesTask *task)
@@ -2785,6 +2855,7 @@ public:
 private:
 	DeleteTransientQueriesTask *task;
 };
+
 
 void 
 DeleteTransientQueriesTask::StartUpTransientQueryCleaner()
@@ -2813,6 +2884,7 @@ RecentFindItemsMenu::RecentFindItemsMenu(const char *title, const BMessenger *ta
 {
 }
 
+
 void 
 RecentFindItemsMenu::AttachedToWindow()
 {
@@ -2823,6 +2895,7 @@ RecentFindItemsMenu::AttachedToWindow()
 	FindPanel::AddRecentQueries(this, false, &fTarget, fWhat);
 	BMenu::AttachedToWindow();
 }
+
 
 #if !B_BEOS_VERSION_DANO
 _IMPEXP_TRACKER
@@ -2844,6 +2917,7 @@ DraggableQueryIcon::DraggableQueryIcon(BRect frame, const char *name,
 			message, messenger, resizeFlags, flags)
 {
 }
+
 
 bool 
 DraggableQueryIcon::DragStarted(BMessage *dragMessage)
@@ -2872,6 +2946,7 @@ MostUsedNames::MostUsedNames(const char *fileName,const char *directory,int32 ma
 	fCount(maxCount)
 {
 }
+
 
 MostUsedNames::~MostUsedNames()
 {
@@ -2910,6 +2985,7 @@ MostUsedNames::~MostUsedNames()
 	}
 }
 
+
 bool
 MostUsedNames::ObtainList(BList *list)
 {
@@ -2932,11 +3008,13 @@ MostUsedNames::ObtainList(BList *list)
 	return true;
 }
 
+
 void 
 MostUsedNames::ReleaseList()
 {
 	fLock.Unlock();
 }
+
 
 void 
 MostUsedNames::AddName(const char *name)
@@ -2977,10 +3055,11 @@ MostUsedNames::AddName(const char *name)
 		fList.AddItem(entry);
 	} else
 		entry->count++;
-	
+
 	fLock.Unlock();
 	UpdateList();
 }
+
 
 int
 MostUsedNames::CompareNames(const void *a,const void *b)
@@ -2993,6 +3072,7 @@ MostUsedNames::CompareNames(const void *a,const void *b)
 
 	return entryB->count - entryA->count;
 }
+
 
 void 
 MostUsedNames::LoadList()
