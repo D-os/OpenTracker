@@ -408,11 +408,11 @@ BColumnTitle::Draw(BView *view, bool pressed)
 	
 	view->FillRect(bounds, B_SOLID_LOW);
 
-	BString titleString;
-	float resultingWidth;
-	TruncString(&titleString, fColumn->Title(), view,
-		bounds.Width() - kTitleColumnExtraMargin, B_TRUNCATE_END,
-		&resultingWidth);
+	BString titleString(fColumn->Title());
+	view->TruncateString(&titleString, B_TRUNCATE_END,
+		bounds.Width() - kTitleColumnExtraMargin);
+	float resultingWidth = view->StringWidth(titleString.String());
+	
 
 	switch (fColumn->Alignment()) {
 		case B_ALIGN_LEFT:

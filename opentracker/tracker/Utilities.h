@@ -403,14 +403,6 @@ BMenuItem *EachMenuItem(BMenu *menu, bool recursive, BMenuItem *(*func)(BMenuIte
 const BMenuItem *EachMenuItem(const BMenu *menu, bool recursive,
 	BMenuItem *(*func)(const BMenuItem *));
 
-// string manipulation
-// note that there are now TruncateString APIs in both BView and BFont
-void TruncString(const BFont *font, const char *original, BString &result,
-	float width, uint32 truncMode = (uint32)B_TRUNCATE_END);
-void TruncString(BString *result, const char *str, const BView *view,
-	float width, uint32 truncMode, float *resultingWidth = 0);
-BString *TruncString(const BView *view, const char *str, float width);
-
 int64 StringToScalar(const char *text);
 	// string to num, understands kB, MB, etc.
 

@@ -599,8 +599,9 @@ BNavMenu::NewModelItem(Model *model, const BMessage *invokeMessage,
 	message->AddRef("refs", model->EntryRef());
 
 	// Truncate the name if necessary
-	BString truncatedString;
-	TruncString(be_plain_font, model->Name(), truncatedString, GetMaxMenuWidth());
+	BString truncatedString(model->Name());
+	be_plain_font->TruncateString(&truncatedString, B_TRUNCATE_END,
+		GetMaxMenuWidth());
 
 	ModelMenuItem *item = NULL;
 	if (!container || suppressFolderHierarchy) {

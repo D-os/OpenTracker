@@ -1246,9 +1246,9 @@ AttributeView::MouseMoved(BPoint point, uint32, const BMessage *message)
 					kNormalIcon, B_LARGE_ICON, true);
 
 				// See if we need to truncate the string
-				BString nameString = fModel->Name();
+				BString nameString(fModel->Name());
 				if (view->StringWidth(fModel->Name()) > rect.Width()) 
-					TruncString(&nameString, fModel->Name(), this, rect.Width() - 5, B_TRUNCATE_END);
+					view->TruncateString(&nameString, B_TRUNCATE_END, rect.Width() - 5);
 
 				// Draw the label
 				font_height fontHeight;
@@ -1560,9 +1560,9 @@ AttributeView::Draw(BRect)
 			Bounds().Width() - 5);
 		// Check for possible need of truncation
 		if (StringWidth(fModel->Name()) > fTitleRect.Width()) {
-			BString nameString;
-			TruncString(&nameString, fModel->Name(), this,
-				fTitleRect.Width() - 2, B_TRUNCATE_END);
+			BString nameString(fModel->Name());
+			TruncateString(&nameString, B_TRUNCATE_END,
+				fTitleRect.Width() - 2);
 			DrawString(nameString.String());
 		} else
 			DrawString(fModel->Name());
@@ -1594,9 +1594,9 @@ AttributeView::Draw(BRect)
 	SetHighColor(kAttrValueColor);
 	// Check for possible need of truncation
 	if (StringWidth(fSizeStr.String()) > (Bounds().Width() - (fDivider + kBorderMargin))) {
-		BString tmpString;
-		TruncString(&tmpString, fSizeStr.String(), this,
-			Bounds().Width() - (fDivider + kBorderMargin), B_TRUNCATE_MIDDLE);
+		BString tmpString(fSizeStr.String());
+		TruncateString(&tmpString, B_TRUNCATE_MIDDLE,
+			Bounds().Width() - (fDivider + kBorderMargin));
 		DrawString(tmpString.String());
 		fSizeRect.right = fSizeRect.left + StringWidth(tmpString.String()) + 3;
 	} else {
@@ -1646,9 +1646,9 @@ AttributeView::Draw(BRect)
 
 	// Check for truncation
 	if (StringWidth(fPathStr.String()) > (Bounds().Width() - (fDivider + kBorderMargin))) {
-		BString nameString;
-		TruncString(&nameString, fPathStr.String(), this,
-			Bounds().Width() - (fDivider + kBorderMargin), B_TRUNCATE_MIDDLE);
+		BString nameString(fPathStr.String());
+		TruncateString(&nameString, B_TRUNCATE_MIDDLE,
+			Bounds().Width() - (fDivider + kBorderMargin));
 		DrawString(nameString.String());
 	} else 
 		DrawString(fPathStr.String());
@@ -1671,9 +1671,9 @@ AttributeView::Draw(BRect)
 
 		// Check for truncation
 		if (StringWidth(fLinkToStr.String()) > (Bounds().Width() - (fDivider + kBorderMargin))) {
-			BString nameString;
-			TruncString(&nameString, fLinkToStr.String(), this, 
-				Bounds().Width() - (fDivider + kBorderMargin), B_TRUNCATE_MIDDLE);
+			BString nameString(fLinkToStr.String());
+			TruncateString(&nameString, B_TRUNCATE_MIDDLE, 
+				Bounds().Width() - (fDivider + kBorderMargin));
 			DrawString(nameString.String());
 		} else
 			DrawString(fLinkToStr.String());
@@ -1708,9 +1708,9 @@ AttributeView::Draw(BRect)
 		SetHighColor(kAttrValueColor);
 		// Check for truncation
 		if (StringWidth(fDescStr.String()) > (Bounds().Width() - (fDivider + kBorderMargin))) {
-				BString nameString;
-				TruncString(&nameString, fDescStr.String(), this, 
-					Bounds().Width() - (fDivider + kBorderMargin), B_TRUNCATE_MIDDLE);
+				BString nameString(fDescStr.String());
+				TruncateString(&nameString, B_TRUNCATE_MIDDLE, 
+					Bounds().Width() - (fDivider + kBorderMargin));
 				DrawString(nameString.String());
 			} else 
 				DrawString(fDescStr.String());

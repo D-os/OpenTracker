@@ -1415,8 +1415,8 @@ TContentsMenu::Draw(BRect updateRect)
 			name = kUntitledItemStr;
 
 		//	truncate to fit appropriately
-		BString truncatedString;
-		TruncString(fMenuFont, name, truncatedString, textFrame.Width());
+		BString truncatedString(name);
+		fMenuFont->TruncateString(&truncatedString, B_TRUNCATE_END, textFrame.Width());
 
 		SetHighColor(kBlack);
 		SetFont(fMenuFont);

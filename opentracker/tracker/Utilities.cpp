@@ -710,10 +710,11 @@ TitledSeparatorItem::Draw()
 	// ToDo:
 	// handle case where maxStringWidth turns out negative here
 	
-	BString truncatedLabel;
-	TruncString(&truncatedLabel, Label(), parent,
-		maxStringWidth, (uint32)B_TRUNCATE_END, &maxStringWidth);
+	BString truncatedLabel(Label());
+	parent->TruncateString(&truncatedLabel, B_TRUNCATE_END, maxStringWidth);
 
+	maxStringWidth = parent->StringWidth(truncatedLabel.String());
+	
 	// first calculate the length of the stub part of the
 	// divider line, so we can use it for secondStartX
 	float firstEndX = ((endX - startX) - maxStringWidth) / 2 - kStubToStringSlotX;
@@ -1025,72 +1026,6 @@ EachEntryRef(const BMessage *message, const entry_ref *(*func)(const entry_ref *
 {
 	return EachEntryRefCommon(const_cast<BMessage *>(message),
 		(EachEntryIteratee)func, passThru, maxCount);
-}
-
-void
-TruncString(const BFont *font, const char *original, BString &result, float width,
-	uint32 truncMode)
-{
-	// these are obsolete, replace with ones in BView
-	const char *srcstr[1];
-	char *results[1];
-
-	srcstr[0] = original;
-	results[0] = new char[strlen(original) + 3];
-
-
-    font->GetTruncatedStrings(srcstr, 1, truncMode, width, results);
-	result = results[0];
-	
-	delete [] results[0];
-}
-
-void
-TruncString(BString *result, const char *str, const BView *view,
-	float width, uint32 truncMode, float *resultingWidth)
-{
-	float inWidth = view->StringWidth(str);
-	if (inWidth <= width) {
-		*result = str;
-		if (resultingWidth)
-			*resultingWidth = inWidth;
-		return;
-	}
-
-	const char *srcstr[1];
-	char *results[1];
-
-	srcstr[0] = str;
-	results[0] = result->LockBuffer((int32)strlen(str) + 3);
-	BFont font;
-	const_cast<BView *>(view)->GetFont(&font);
-    font.GetTruncatedStrings(srcstr, 1, truncMode, width, results);
-	result->UnlockBuffer();
-
-	if (resultingWidth)
-		*resultingWidth = view->StringWidth(result->String());
-}
-
-BString *
-TruncString(const BView *view, const char *str, float width)
-{
-	BString *result = new BString;
-	if (view->StringWidth(str) <= width)
-		(*result) = str;
-	else {
-		const char *srcstr[1];
-		char *results[1];
-
-		srcstr[0] = str;
-		results[0] = result->LockBuffer((int32)strlen(str) + 3);
-
-		BFont font;
-		const_cast<BView *>(view)->GetFont(&font);
-	
-	    font.GetTruncatedStrings(srcstr, 1, (uint32)B_TRUNCATE_END, width, results);
-		result->UnlockBuffer();
-	}
-	return result;
 }
 
 void 

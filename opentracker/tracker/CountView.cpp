@@ -171,14 +171,13 @@ BCountView::Draw(BRect)
 		itemString << TypeAhead();
 		
 	
-	BString *string;
+	BString string(itemString);
 	BRect textRect(TextInvalRect());
 
 	if (fShowingBarberPole && !fStartSpinningAfter) {
 		barberPoleRect = BarberPoleOuterRect();
-		string = TruncString(this, itemString.String(), textRect.Width());
-	} else
-		string = new BString(itemString);
+		TruncateString(&string, B_TRUNCATE_END, textRect.Width());
+	}
 
 	if (IsTypingAhead())
 		// use a muted gray for the typeahead
@@ -186,8 +185,7 @@ BCountView::Draw(BRect)
 	else
 		SetHighColor(0, 0, 0);
 	MovePenTo(textRect.LeftBottom());
-	DrawString(string->String());
-	delete string;
+	DrawString(string.String());
 
 	bounds.top++;
 

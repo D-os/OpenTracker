@@ -1104,9 +1104,8 @@ OpenWithMenu::DoneBuildingItemList()
 				delete message;
 				continue;
 			}
-
-			TruncString(&font, path.Path(), result, kMaxMenuWidth,
-				B_TRUNCATE_MIDDLE);
+			result = path.Path();
+			font.TruncateString(&result, B_TRUNCATE_MIDDLE, kMaxMenuWidth);
 		}
 #if DEBUG
 		BString relationDescription;
