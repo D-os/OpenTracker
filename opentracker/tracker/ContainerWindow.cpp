@@ -38,6 +38,7 @@ All rights reserved.
 
 #include <Alert.h>
 #include <Application.h>
+#include <AppFileInfo.h>
 #include <Debug.h>
 #include <Directory.h>
 #include <Entry.h>
@@ -70,6 +71,7 @@ All rights reserved.
 #include "FSUtils.h"
 #include "IconMenuItem.h"
 #include "OpenWithWindow.h"
+#include "MimeTypes.h"
 #include "Model.h"
 #include "MountMenu.h"
 #include "Navigator.h"
@@ -92,7 +94,8 @@ const char *kAddOnsMenuName = "Add-Ons";
 }
 
 struct AddOneAddonParams {
-	BObjectList<BMenuItem> *addOnList;
+	BObjectList<BMenuItem> *primaryList;
+	BObjectList<BMenuItem> *secondaryList;
 };
 
 struct StaggerOneParams {
@@ -161,16 +164,21 @@ CompareLabels(const BMenuItem *item1, const BMenuItem *item2)
 
 
 static bool
-AddOneAddon(const Model *model, const char *name, uint32 shortcut, void *context)
+AddOneAddon(const Model *model, const char *name, uint32 shortcut, bool primary, void *context)
 {
 	AddOneAddonParams *params = (AddOneAddonParams *)context;
 
 	BMessage *message = new BMessage(kLoadAddOn);
 	message->AddRef("refs", model->EntryRef());
 
-	params->addOnList->AddItem(new ModelMenuItem(model, name, message,
-		(char)shortcut, B_OPTION_KEY));
-	
+	ModelMenuItem *item = new ModelMenuItem(model, name, message,
+		(char)shortcut, B_OPTION_KEY);
+
+	if (primary)
+		params->primaryList->AddItem(item);
+	else
+		params->secondaryList->AddItem(item);
+
 	return false;
 }
 
@@ -189,7 +197,6 @@ AddOnThread(BMessage *refsMessage, entry_ref addonRef, entry_ref dirRef)
 	if (result == B_OK) {
 		image_id addonImage = load_add_on(path.Path());
 		if (addonImage >= 0) {
-	
 			void (*processRefs)(entry_ref, BMessage *, void *);
 			result = get_image_symbol(addonImage, "process_refs", 2, (void **)&processRefs);
 
@@ -251,6 +258,28 @@ OffsetFrameOne(const char *DEBUG_ONLY(name), uint32, off_t, void *castToRect,
 	
 	((BRect *)castToRect)->OffsetBy(kWindowStaggerBy, kWindowStaggerBy);
 	return true;
+}
+
+
+static void
+AddMimeTypeString(BObjectList<BString> &list, Model *model)
+{
+	BString *mimeType = new BString(model->MimeType());
+	if (!mimeType->Length() || !mimeType->ICompare(B_FILE_MIMETYPE)) {
+		// if model is of unknown type, try mimeseting it first
+		model->Mimeset(true);
+		mimeType->SetTo(model->MimeType());
+	}
+
+	if (mimeType->Length()) {
+		// only add the type if it's not already there
+		for (int32 i = list.CountItems(); i-- > 0;) {
+			BString *string = list.ItemAt(i);
+			if (string != NULL && !string->ICompare(*mimeType))
+				return;
+		}
+		list.AddItem(mimeType);
+	}
 }
 
 
@@ -1837,7 +1866,7 @@ BContainerWindow::SetupOpenWithMenu(BMenu *parent)
 	if (PoseView()->SelectionList()->CountItems() == 0)
 		// no selection, nothing to open
 		return;
-	
+
 	if (TargetModel()->IsRoot())
 		// don't add ourselves if we are root
 		return;
@@ -1859,7 +1888,7 @@ BContainerWindow::SetupOpenWithMenu(BMenu *parent)
 		BPose *pose = PoseView()->SelectionList()->ItemAt(index);
 		message.AddRef("refs", pose->TargetModel()->EntryRef());
 	}
-	
+
 	// add Tracker token so that refs received recipients can script us
 	message.AddMessenger("TrackerViewToken", BMessenger(PoseView()));
 
@@ -2108,7 +2137,7 @@ BContainerWindow::ShowContextMenu(BPoint loc, const entry_ref *ref, BView *)
 
 		bool showAsVolume = false;
 		bool filePanel = PoseView()->IsFilePanel();
-		
+
 		if (Dragging()) {
 			fContextMenu = NULL;
 
@@ -2136,7 +2165,7 @@ BContainerWindow::ShowContextMenu(BPoint loc, const entry_ref *ref, BView *)
 				BEntry resolvedEntry(ref, true);
 				if (!resolvedEntry.IsDirectory())
 					return;
-				
+
 				entry_ref resolvedRef;
 				resolvedEntry.GetRef(&resolvedRef);
 
@@ -2161,8 +2190,7 @@ BContainerWindow::ShowContextMenu(BPoint loc, const entry_ref *ref, BView *)
 			showAsVolume = true;
 		} else
 			fContextMenu = fFileContextMenu;
-		
-		
+
 		// clean up items from last context menu
 
 		if (fContextMenu) {
@@ -2177,10 +2205,10 @@ BContainerWindow::ShowContextMenu(BPoint loc, const entry_ref *ref, BView *)
 					EnableNamedMenuItem(fContextMenu, kDuplicateSelection, false);
 					EnableNamedMenuItem(fContextMenu, kMoveToTrash, false);
 					EnableNamedMenuItem(fContextMenu, kIdentifyEntry, false);
-				
+
 					// volume model, enable/disable the Unmount item
 					bool ejectableVolumeSelected = false;
-					
+
 					BVolume boot;
 					BVolumeRoster().GetBootVolume(&boot);
 					BVolume volume;
@@ -2197,9 +2225,9 @@ BContainerWindow::ShowContextMenu(BPoint loc, const entry_ref *ref, BView *)
 				SetupMoveCopyMenus(ref, fContextMenu);
 				SetupOpenWithMenu(fContextMenu);
 			}
-			
+
 			UpdateMenu(fContextMenu, kPosePopUpContext);
-			
+
 			fContextMenu->Go(global, true, false, mouseRect, true);
 		}
 	} else if (fWindowContextMenu) {
@@ -2207,12 +2235,12 @@ BContainerWindow::ShowContextMenu(BPoint loc, const entry_ref *ref, BView *)
 			return;
 
 		MenusEnded();		
-		
+
 		// clicked on a window, show window context menu
 
 		SetupNavigationMenu(ref, fWindowContextMenu);
 		UpdateMenu(fWindowContextMenu, kWindowPopUpContext);
-		
+
 		fWindowContextMenu->Go(global, true, false, mouseRect, true);
 	}
 	fContextMenu = NULL;
@@ -2246,13 +2274,13 @@ BContainerWindow::AddFileContextMenus(BMenu *menu)
 	BMenuItem *cutItem, *copyItem;
 	menu->AddItem(cutItem = new BMenuItem("Cut", new BMessage(B_CUT), 'X'));
 	menu->AddItem(copyItem = new BMenuItem("Copy", new BMessage(B_COPY), 'C'));
-		
+
 	menu->AddSeparatorItem();
 	menu->AddItem(new BMenuItem("Identify", new BMessage(kIdentifyEntry)));
 	BMenu *addOnMenuItem = new BMenu(kAddOnsMenuName);
 	addOnMenuItem->SetFont(be_plain_font);
 	menu->AddItem(addOnMenuItem);
-	
+
 	// set targets as needed
 	menu->SetTargetForItems(PoseView());
 	cutItem->SetTarget(this);
@@ -2269,7 +2297,7 @@ BContainerWindow::AddVolumeContextMenus(BMenu *menu)
 
 	menu->AddSeparatorItem();
 	menu->AddItem(new MountMenu("Mount"));
-	
+
 	BMenuItem *item = new BMenuItem("Unmount", new BMessage(kUnmountVolume), 'U');
 	item->SetEnabled(false);
 	menu->AddItem(item);
@@ -2358,14 +2386,14 @@ BContainerWindow::AddDropContextMenus(BMenu *menu)
 
 void
 BContainerWindow::EachAddon(bool (*eachAddon)(const Model *, const char *,
-	uint32 shortcut, void *context), void *passThru)
+	uint32 shortcut, bool primary, void *context), void *passThru)
 {
 	BObjectList<Model> uniqueList(10, true);
 	BPath path;
 	bool bail = false;
 	if (find_directory(B_BEOS_ADDONS_DIRECTORY, &path) == B_OK)
 		bail = EachAddon(path, eachAddon, &uniqueList, passThru);
-	
+
 	if (!bail && find_directory(B_USER_ADDONS_DIRECTORY, &path) == B_OK)
 		bail = EachAddon(path, eachAddon, &uniqueList, passThru);
 
@@ -2376,8 +2404,8 @@ BContainerWindow::EachAddon(bool (*eachAddon)(const Model *, const char *,
 
 bool
 BContainerWindow::EachAddon(BPath &path, bool (*eachAddon)(const Model *,
-	const char *, uint32, void *), BObjectList <Model> *uniqueList,
-	void *params)
+	const char *, uint32 shortcut, bool primary, void *),
+	BObjectList<Model> *uniqueList, void *params)
 {
 	path.Append("Tracker");
 
@@ -2387,8 +2415,24 @@ BContainerWindow::EachAddon(BPath &path, bool (*eachAddon)(const Model *,
 	if (dir.SetTo(path.Path()) != B_OK)
 		return false;
 
+	// build a list of the MIME types of the selected items
+
+	BObjectList<BString> mimeTypes(10, true);
+
+	int32 count = PoseView()->SelectionList()->CountItems();
+	if (!count) {
+		// just add the type of the current directory
+		AddMimeTypeString(mimeTypes, TargetModel());
+	} else {
+		for (int32 index = 0; index < count; index++) {
+			BPose *pose = PoseView()->SelectionList()->ItemAt(index);
+			AddMimeTypeString(mimeTypes, pose->TargetModel());
+		}
+	}
+
 	dir.Rewind();
 	while (dir.GetNextEntry(&entry) == B_OK) {
+		bool primary = false;
 	
 		if (entry.IsSymLink()) {
 			// resolve symlinks if needed
@@ -2403,6 +2447,49 @@ BContainerWindow::EachAddon(BPath &path, bool (*eachAddon)(const Model *,
 			continue;
 		}
 
+		// check if it supports at least one of the selected entries
+
+		if (mimeTypes.CountItems()) {
+			BFile file(&entry, B_READ_ONLY);
+			if (file.InitCheck() == B_OK) {
+				BAppFileInfo info(&file);
+				if (info.InitCheck() == B_OK) {
+					bool secondary = false;
+
+					// does this add-on has types set at all?
+					BMessage message;
+					if (info.GetSupportedTypes(&message) == B_OK) {
+						type_code type;
+						int32 count;
+						if (message.GetInfo("types", &type, &count) != B_OK)
+							secondary = true;
+						else {
+							// check if 
+						}
+					}
+
+					// check all supported types if it has some set
+					if (!secondary) {
+						for (int32 i = mimeTypes.CountItems(); !primary && i-- > 0;) {
+							BString *type = mimeTypes.ItemAt(i);
+							if (info.IsSupportedType(type->String())) {
+								BMimeType mimeType(type->String());
+								if (info.Supports(&mimeType))
+									primary = true;
+								else
+									secondary = true;
+							}
+						}
+					}
+
+					if (!secondary && !primary) {
+						delete model;
+						continue;
+					}
+				}
+			}
+		}
+
 		char name[B_FILE_NAME_LENGTH];
 		uint32 key;
 		StripShortcut(model, name, key);
@@ -2414,8 +2501,8 @@ BContainerWindow::EachAddon(BPath &path, bool (*eachAddon)(const Model *,
 			continue;
 		}
 		uniqueList->AddItem(model);
-	
-		if ((eachAddon)(model, name, key, params))
+
+		if ((eachAddon)(model, name, key, primary, params))
 			return true;
 	}
 	return false;
@@ -2449,18 +2536,28 @@ BContainerWindow::BuildAddOnMenu(BMenu *menu)
 		delete item;
 	}
 
-	BObjectList<BMenuItem> addOnList;
-	
-	AddOneAddonParams params;
-	params.addOnList = &addOnList;
-	
-	EachAddon(AddOneAddon, &params);
-	
-	addOnList.SortItems(CompareLabels);
+	BObjectList<BMenuItem> primaryList;
+	BObjectList<BMenuItem> secondaryList;
 
-	int32 count = addOnList.CountItems();
+	AddOneAddonParams params;
+	params.primaryList = &primaryList;
+	params.secondaryList = &secondaryList;
+
+	EachAddon(AddOneAddon, &params);
+
+	primaryList.SortItems(CompareLabels);
+	secondaryList.SortItems(CompareLabels);
+
+	int32 count = primaryList.CountItems();
 	for (int32 index = 0; index < count; index++)
-		menu->AddItem(addOnList.ItemAt(index));
+		menu->AddItem(primaryList.ItemAt(index));
+
+	if (count != 0)
+		menu->AddSeparatorItem();
+
+	count = secondaryList.CountItems();
+	for (int32 index = 0; index < count; index++)
+		menu->AddItem(secondaryList.ItemAt(index));
 
 	menu->SetTargetForItems(this);
 }
@@ -2471,7 +2568,7 @@ BContainerWindow::UpdateMenu(BMenu *menu, UpdateMenuContext context)
 {
 	const int32 selectCount = PoseView()->SelectionList()->CountItems();
 	const int32 count = PoseView()->CountItems();
-	
+
 	if (context == kMenuBarContext) {
 		EnableNamedMenuItem(menu, kOpenSelection, selectCount > 0);
 		EnableNamedMenuItem(menu, kGetInfo, selectCount > 0);
@@ -2481,7 +2578,7 @@ BContainerWindow::UpdateMenu(BMenu *menu, UpdateMenuContext context)
 		EnableNamedMenuItem(menu, kDelete, selectCount > 0);
 		EnableNamedMenuItem(menu, kDuplicateSelection, selectCount > 0);
 	}
-	
+
 	if (context == kMenuBarContext || context == kPosePopUpContext) {
 		SetUpEditQueryItem(menu);
 		EnableNamedMenuItem(menu, kEditItem, selectCount == 1
@@ -2490,7 +2587,7 @@ BContainerWindow::UpdateMenu(BMenu *menu, UpdateMenuContext context)
 		SetCopyItem(menu);
 		SetPasteItem(menu);
 	}
-	
+
 	if (context == kMenuBarContext || context == kWindowPopUpContext) {
 		MarkNamedMenuItem(menu, kIconMode, PoseView()->ViewMode() == kIconMode);
 		MarkNamedMenuItem(menu, kListMode, PoseView()->ViewMode() == kListMode);
@@ -2504,7 +2601,7 @@ BContainerWindow::UpdateMenu(BMenu *menu, UpdateMenuContext context)
 		EnableNamedMenuItem(menu, kOpenParentDir, !TargetModel()->IsRoot());
 		EnableNamedMenuItem(menu, kEmptyTrash, count > 0);
 		EnableNamedMenuItem(menu, B_SELECT_ALL, count > 0);
-		
+
 		BMenuItem *item = menu->FindItem(kTemplatesMenuName);
 		if (item) {
 			TemplatesMenu *templateMenu = dynamic_cast<TemplatesMenu *>(
@@ -2513,7 +2610,7 @@ BContainerWindow::UpdateMenu(BMenu *menu, UpdateMenuContext context)
 				templateMenu->UpdateMenuState();
 		}
 	}
-	
+
 	BuildAddOnMenu(menu);
 }
 

@@ -164,7 +164,7 @@ class BContainerWindow : public BWindow {
 			bool createNew = false, bool createFolder = true);
 
 		// add-on iteration
-		void EachAddon(bool(*)(const Model *, const char *, uint32 shortcut, void *), void *);
+		void EachAddon(bool(*)(const Model *, const char *, uint32 shortcut, bool primary, void *), void *);
 
 		BPopUpMenu *ContextMenu();
 
@@ -238,7 +238,7 @@ class BContainerWindow : public BWindow {
 		BHandler *ResolveSpecifier(BMessage *, int32, BMessage *, int32,
 			const char *);
 
-		bool EachAddon(BPath &path, bool(*)(const Model *, const char *, uint32, void *),
+		bool EachAddon(BPath &path, bool(*)(const Model *, const char *, uint32, bool, void *),
 			BObjectList<Model> *, void *);
 		void LoadAddOn(BMessage *);
 

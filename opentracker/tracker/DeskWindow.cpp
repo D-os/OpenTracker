@@ -148,12 +148,12 @@ struct AddOneShortcutParams {
 };
 
 static bool
-AddOneShortcut(const Model *model, const char *, uint32 shortcut, void *context)
+AddOneShortcut(const Model *model, const char *, uint32 shortcut, bool /*primary*/, void *context)
 {
 	if (!shortcut)
 		// no shortcut, bail
 		return false;
-		
+
 	AddOneShortcutParams *params = (AddOneShortcutParams *)context;
 	BMessage *runAddon = new BMessage(kLoadAddOn);
 	runAddon->AddRef("refs", model->EntryRef());
@@ -162,7 +162,7 @@ AddOneShortcut(const Model *model, const char *, uint32 shortcut, void *context)
 		runAddon);
 	params->currentAddonShortcuts->insert(shortcut);
 	PRINT(("adding new shortcut %c\n", (char)shortcut));
-	
+
 	return false;
 }
 
