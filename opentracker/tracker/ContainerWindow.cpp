@@ -89,9 +89,27 @@ _IMPEXP_BE
 #endif
 void do_minimize_team(BRect zoomRect, team_id team, bool zoom);
 
+// Amount you have to move the mouse before a drag starts
+const float kDragSlop = 3.0f;
+
 namespace BPrivate {
 const char *kAddOnsMenuName = "Add-Ons";
-}
+
+class DraggableContainerIcon : public BView {
+	public:
+		DraggableContainerIcon(BRect rect, const char *name, uint32 resizeMask);
+
+		virtual void AttachedToWindow();
+		virtual void MouseDown(BPoint where);
+		virtual void MouseUp(BPoint where);
+		virtual void MouseMoved(BPoint point, uint32 /*transit*/, const BMessage *message);
+		virtual void Draw(BRect updateRect);
+
+	private:
+		uint32	fDragButton;
+		BPoint	fClickPoint;
+};
+}	// namespace BPrivate
 
 struct AddOneAddonParams {
 	BObjectList<BMenuItem> *primaryList;
@@ -280,6 +298,149 @@ AddMimeTypeString(BObjectList<BString> &list, Model *model)
 		}
 		list.AddItem(mimeType);
 	}
+}
+
+
+//	#pragma mark -
+
+
+DraggableContainerIcon::DraggableContainerIcon(BRect rect, const char *name,
+	uint32 resizeMask)
+	: BView(rect, name, resizeMask, B_WILL_DRAW),
+	fDragButton(0)
+{
+}
+
+
+void
+DraggableContainerIcon::AttachedToWindow()
+{
+	//SetViewColor(B_TRANSPARENT_COLOR);
+	SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
+}
+
+
+void
+DraggableContainerIcon::MouseDown(BPoint point)
+{
+	// we only like container windows
+	BContainerWindow *window = dynamic_cast<BContainerWindow *>(Window());
+	if (window == NULL)
+		return;
+
+	// we don't like the Trash icon (because it cannot be moved)
+	if (window->IsTrash() || window->IsPrintersDir())
+		return;
+
+	uint32 buttons;
+	window->CurrentMessage()->FindInt32("buttons", (int32 *)&buttons);
+
+	if (IconCache::sIconCache->IconHitTest(point, window->TargetModel(),
+			kNormalIcon, B_MINI_ICON)) {
+		// The click hit the icon, initiate a drag
+		fDragButton = buttons & (B_PRIMARY_MOUSE_BUTTON | B_SECONDARY_MOUSE_BUTTON);
+		fClickPoint = point;
+	}
+}
+
+
+void
+DraggableContainerIcon::MouseUp(BPoint /*point*/)
+{
+	fDragButton = 0;
+}
+
+
+void
+DraggableContainerIcon::MouseMoved(BPoint point, uint32 /*transit*/, const BMessage */*message*/)
+{
+	if (fDragButton == 0
+		|| (abs((int32)(point.x - fClickPoint.x)) <= kDragSlop
+			&& abs((int32)(point.y - fClickPoint.y)) <= kDragSlop))
+		return;
+
+	BContainerWindow *window = static_cast<BContainerWindow *>(Window());
+		// we can only get here in a BContainerWindow
+	Model *model = window->TargetModel();
+
+	// Find the required height
+	BFont font;
+	GetFont(&font);
+
+	font_height fontHeight;
+	font.GetHeight(&fontHeight);
+	float height = fontHeight.ascent + fontHeight.descent + fontHeight.leading + 2
+		+ Bounds().Height() + 8;
+
+	BRect rect(0, 0, max_c(Bounds().Width(), font.StringWidth(model->Name()) + 4), height);
+	BBitmap *dragBitmap = new BBitmap(rect, B_RGBA32, true);
+
+	dragBitmap->Lock();
+	BView *view = new BView(dragBitmap->Bounds(), "", B_FOLLOW_NONE, 0);
+	dragBitmap->AddChild(view);
+	view->SetOrigin(0, 0);
+	BRect clipRect(view->Bounds());
+	BRegion newClip;
+	newClip.Set(clipRect);
+	view->ConstrainClippingRegion(&newClip);
+
+	// Transparent draw magic
+	view->SetHighColor(0, 0, 0, 0);
+	view->FillRect(view->Bounds());
+	view->SetDrawingMode(B_OP_ALPHA);
+	view->SetHighColor(0, 0, 0, 128);	// set the level of transparency by  value
+	view->SetBlendingMode(B_CONSTANT_ALPHA, B_ALPHA_COMPOSITE);
+
+	// Draw the icon
+	float hIconOffset = (rect.Width() - Bounds().Width()) / 2;
+	IconCache::sIconCache->Draw(model, view, BPoint(hIconOffset, 0),
+		kNormalIcon, B_MINI_ICON, true);
+
+	// See if we need to truncate the string
+	BString nameString = model->Name();
+	if (view->StringWidth(model->Name()) > rect.Width()) 
+		TruncString(&nameString, model->Name(), this, rect.Width() - 5, B_TRUNCATE_END);
+
+	// Draw the label
+	float leftText = (view->StringWidth(nameString.String()) - Bounds().Width()) / 2;
+	view->MovePenTo(BPoint(hIconOffset - leftText + 2, Bounds().Height() + (fontHeight.ascent + 2)));
+	view->DrawString(nameString.String());
+
+	view->Sync();
+	dragBitmap->Unlock();
+
+	BMessage message(B_REFS_RECEIVED);
+	message.AddRef("refs", model->EntryRef());
+	message.AddPoint("click_pt", fClickPoint);
+
+	BPoint tmpLoc;
+	uint32 button;
+	GetMouse(&tmpLoc, &button);
+	if (button)
+		message.AddInt32("buttons", (int32)button);
+
+	if (button & B_PRIMARY_MOUSE_BUTTON) {
+		// add an action specifier to the message, so that it is not copied
+		message.AddInt32("be:actions",
+			(modifiers() & B_OPTION_KEY) != 0 ? B_COPY_TARGET : B_MOVE_TARGET);
+	}
+
+	DragMessage(&message, dragBitmap, B_OP_ALPHA,
+		BPoint(fClickPoint.x + hIconOffset, fClickPoint.y), this);
+}
+
+
+void
+DraggableContainerIcon::Draw(BRect /*updateRect*/)
+{
+	BContainerWindow *window = dynamic_cast<BContainerWindow *>(Window());
+	if (window == NULL)
+		return;
+
+	// Draw the icon, straddling the border
+	SetDrawingMode(B_OP_OVER);
+	IconCache::sIconCache->Draw(window->TargetModel(), this, BPoint(0, 0),
+		kNormalIcon, B_MINI_ICON, true);
 }
 
 
@@ -672,10 +833,16 @@ BContainerWindow::Init(const BMessage *message)
 			fPoseView->VScrollBar()->MoveBy(0, KeyMenuBar()->Bounds().Height() + 1);
 			fPoseView->VScrollBar()->ResizeBy(0, -(KeyMenuBar()->Bounds().Height() + 1));
 		}
+
+		// add folder icon to menu bar
+		if (!TargetModel()->IsRoot() && !TargetModel()->IsVolume() && !IsTrash() && !IsPrintersDir()) {
+			BView *icon = new DraggableContainerIcon(BRect(Bounds().Width() - 20, 2, Bounds().Width() - 4, 18),
+				"ThisContainer", B_FOLLOW_RIGHT);
+			fMenuBar->AddChild(icon);
+		}
 	} else
 		// add equivalents of the menu shortcuts to the menuless desktop window
 		AddShortcuts();
-
 
 	AddContextMenus();
 	AddShortcut('T', B_COMMAND_KEY | B_SHIFT_KEY, new BMessage(kDelete), PoseView());
@@ -2009,14 +2176,15 @@ BContainerWindow::SetupMoveCopyMenus(const entry_ref *item_ref, BMenu *parent)
 
 	// Grab the modifiers state since we use it twice
 	uint32 modifierKeys = modifiers();
-	
+
 	// re-parent items to this menu since they're shared
 	int32 index = parent->CountItems() - 7;
-	if (dynamic_cast<BSeparatorItem *>(parent->ItemAt(index - 1)) == NULL) {
+	if (index > 0 && dynamic_cast<BSeparatorItem *>(parent->ItemAt(index - 1)) == NULL) {
 		// The items below the items to be added vary in number, so
 		// this little "hack" makes sure they are always in place
 		index++;
-	}
+	} else
+		index = 0;
 
 	if (fMoveToItem->Menu() != parent) {
 		if (fMoveToItem->Menu())
@@ -2130,7 +2298,7 @@ BContainerWindow::ShowContextMenu(BPoint loc, const entry_ref *ref, BView *)
 	PoseView()->CommitActivePose();
 	BRect mouseRect(global.x, global.y, global.x, global.y);
 	mouseRect.InsetBy(-5, -5);
-	
+
 	if (ref) {
 		// clicked on a pose, show file or volume context menu
 		Model model(ref);
