@@ -1695,11 +1695,6 @@ BContainerWindow::ShowContextMenu(BPoint loc, const entry_ref *ref, BView *)
 	BRect mouseRect(global.x, global.y, global.x, global.y);
 	mouseRect.InsetBy(-5, -5);
 	
-	// clean up items from last context menu
-	MenusEnded();
-	fContextMenu = NULL;
-
-	
 	if (ref) {
 		// clicked on a pose, show file or volume context menu
 		Model model(ref);
@@ -1740,10 +1735,8 @@ BContainerWindow::ShowContextMenu(BPoint loc, const entry_ref *ref, BView *)
 
 				//	use the resolved ref for the menu
 				fDragContextMenu->SetNavDir(&resolvedRef);
-				
 				fDragContextMenu->SetTypesList(fCachedTypesList);
 				fDragContextMenu->SetTarget(BMessenger(this));
-				
 				BPoseView *poseView = PoseView();
 				if (poseView) {
 					BMessenger tmpTarget(poseView);
@@ -1761,8 +1754,16 @@ BContainerWindow::ShowContextMenu(BPoint loc, const entry_ref *ref, BView *)
 			showAsVolume = true;
 		} else
 			fContextMenu = fFileContextMenu;
+		
+		
+		// clean up items from last context menu
 
 		if (fContextMenu) {
+			if (fContextMenu->Window())
+				return;
+			else
+				MenusEnded();
+
 			if (model.InitCheck() == B_OK) { // ??? Do I need this ???
 				if (showAsVolume) {
 					// non-volume enable/disable copy, move, identify
@@ -1795,7 +1796,10 @@ BContainerWindow::ShowContextMenu(BPoint loc, const entry_ref *ref, BView *)
 			fContextMenu->Go(global, true, false, mouseRect, true);
 		}
 	} else if (fWindowContextMenu) {
-		
+		if (fWindowContextMenu->Window())
+			return;
+		else
+			MenusEnded();		
 		// clicked on a window, show window context menu
 		
 		SetupNavigationMenu(ref, fWindowContextMenu);
@@ -1804,6 +1808,7 @@ BContainerWindow::ShowContextMenu(BPoint loc, const entry_ref *ref, BView *)
 		
 		fWindowContextMenu->Go(global, true, false, mouseRect, true);
 	}
+	fContextMenu = NULL;
 }
 
 void 
