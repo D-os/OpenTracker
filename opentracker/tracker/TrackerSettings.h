@@ -32,107 +32,97 @@ names are registered trademarks or trademarks of their respective holders.
 All rights reserved.
 */
 
-#ifndef __SETTINGS__
-#define __SETTINGS__
+#ifndef	_TRACKER_SETTINGS_H
+#define	_TRACKER_SETTINGS_H
 
-#include <String.h>
-#include "SettingsHandler.h"
+
+#include "Utilities.h"
+#include "Settings.h"
+
 
 namespace BPrivate {
 
-extern Settings *settings;
-
-class StringValueSetting : public SettingsArgvDispatcher {
-	// simple string setting
-public:
-	StringValueSetting(const char *name, const char *defaultValue, 
-		const char *valueExpectedErrorString,
-		const char *wrongValueErrorString);
-
-	virtual ~StringValueSetting();
-
-	void ValueChanged(const char *newValue);
-	const char *Value() const;
-	virtual const char *Handle(const char *const *argv);	
-
-protected:
-	virtual void SaveSettingValue(Settings *);
-	virtual bool NeedsSaving() const;
-
-	const char *fDefaultValue;
-	const char *fValueExpectedErrorString;
-	const char *fWrongValueErrorString;
-	BString fValue;
+enum FormatSeparator {
+		kNoSeparator,
+		kSpaceSeparator,
+		kMinusSeparator,
+		kSlashSeparator,
+		kBackslashSeparator,
+		kDotSeparator,
+		kSeparatorsEnd
+};
+	
+enum DateOrder {
+		kYMDFormat,
+		kDMYFormat,
+		kMDYFormat,
+		kDateFormatEnd
 };
 
-class EnumeratedStringValueSetting : public StringValueSetting {
-	// string setting, values that do not match string enumeration
-	// are rejected
-public:
-	EnumeratedStringValueSetting(const char *name, const char *defaultValue, 
-		const char *const *values, const char *valueExpectedErrorString,
-		const char *wrongValueErrorString);
 
-	void ValueChanged(const char *newValue);
-	virtual const char *Handle(const char *const *argv);	
 
-protected:
-	const char *const *fValues;
+class TrackerSettings {
+	public:
+		TrackerSettings();
+
+		//TTrackerState *Settings() const { return fSettings; }
+		void SaveSettings(bool onlyIfNonDefault = true);
+
+		bool ShowDisksIcon();
+		void SetShowDisksIcon(bool);
+		bool DesktopFilePanelRoot();
+		void SetDesktopFilePanelRoot(bool);
+		bool MountVolumesOntoDesktop();
+		void SetMountVolumesOntoDesktop(bool);
+		bool MountSharedVolumesOntoDesktop();
+		void SetMountSharedVolumesOntoDesktop(bool);
+		bool IntegrateNonBootBeOSDesktops();
+		void SetIntegrateNonBootBeOSDesktops(bool);
+		bool IntegrateAllNonBootDesktops();
+		void SetIntegrateAllNonBootDesktops(bool);
+	
+		bool ShowVolumeSpaceBar();
+		void SetShowVolumeSpaceBar(bool);
+	 	rgb_color UsedSpaceColor();
+		void SetUsedSpaceColor(rgb_color color);
+	 	rgb_color FreeSpaceColor();
+		void SetFreeSpaceColor(rgb_color color);
+	 	rgb_color WarningSpaceColor();
+		void SetWarningSpaceColor(rgb_color color);
+	
+		bool ShowFullPathInTitleBar();
+		void SetShowFullPathInTitleBar(bool);
+		bool SortFolderNamesFirst();
+		void SetSortFolderNamesFirst(bool);
+		bool ShowSelectionWhenInactive();
+		void SetShowSelectionWhenInactive(bool);
+	
+		bool SingleWindowBrowse();
+		void SetSingleWindowBrowse(bool);
+		bool ShowNavigator();
+		void SetShowNavigator(bool);
+	
+		void RecentCounts(int32 *applications, int32 *documents, int32 *folders);
+		void SetRecentApplicationsCount(int32);
+		void SetRecentDocumentsCount(int32);
+		void SetRecentFoldersCount(int32);
+	
+		FormatSeparator TimeFormatSeparator();
+		void SetTimeFormatSeparator(FormatSeparator);
+		DateOrder DateOrderFormat();
+		void SetDateOrderFormat(DateOrder);
+		bool ClockIs24Hr();
+		void SetClockTo24Hr(bool);
+
+		bool DontMoveFilesToTrash();
+		void SetDontMoveFilesToTrash(bool);
+		bool AskBeforeDeleteFile();
+		void SetAskBeforeDeleteFile(bool);
+
+	private:
+		//TTrackerState *fSettings;
 };
 
-class ScalarValueSetting : public SettingsArgvDispatcher {
-	// simple int32 setting
-public:
-	ScalarValueSetting(const char *name, int32 defaultValue,
-		const char *valueExpectedErrorString, const char *wrongValueErrorString,
-		int32 min = LONG_MIN, int32 max = LONG_MAX);
+} // namespace BPrivate
 
-	void ValueChanged(int32 newValue);
-	int32 Value() const;
-	void GetValueAsString(char *) const;
-	virtual const char *Handle(const char *const *argv);	
-
-protected:
-	virtual void SaveSettingValue(Settings *);
-	virtual bool NeedsSaving() const;
-
-	int32 fDefaultValue;
-	int32 fValue;
-	int32 fMax;
-	int32 fMin;
-
-	const char *fValueExpectedErrorString;
-	const char *fWrongValueErrorString;
-};
-
-class HexScalarValueSetting : public ScalarValueSetting {
-	// hexadecimal int32 setting
-public:
-	HexScalarValueSetting(const char *name, int32 defaultValue,
-		const char *valueExpectedErrorString, const char *wrongValueErrorString,
-		int32 min = LONG_MIN, int32 max = LONG_MAX);
-
-	void GetValueAsString(char *buffer) const;
-
-protected:
-	virtual void SaveSettingValue(Settings *settings);
-};
-
-class BooleanValueSetting : public ScalarValueSetting {
-	// on-off setting
-public:
-	BooleanValueSetting(const char *name, bool defaultValue);
-
-	bool Value() const;
-	void SetValue(bool value);
-	virtual const char *Handle(const char *const *argv);	
-
-protected:
-	virtual void SaveSettingValue(Settings *);
-};
-
-}
-
-using namespace BPrivate;
-
-#endif
+#endif	/* _TRACKER_SETTINGS_H */
