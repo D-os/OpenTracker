@@ -507,7 +507,6 @@ BTextWidget::Draw(BRect eraseRect, BRect textRect, float, BPoseView *view,
 	loc.x = textRect.left + 1;
 
 	drawView->MovePenTo(loc);
-
 	drawView->DrawString(fText->FittingText(view));
 
 	if (fSymLink && (fAttrHash == view->FirstColumn()->AttrHash())) {

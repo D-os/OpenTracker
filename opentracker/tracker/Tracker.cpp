@@ -462,7 +462,7 @@ TTracker::Pulse()
 	BVolumeRoster roster;
 
  	BVolume volume;
-	while(roster.GetNextVolume(&volume) == B_NO_ERROR)
+	while (roster.GetNextVolume(&volume) == B_NO_ERROR)
 	{
 		BDirectory dir;
 		volume.GetRootDirectory(&dir);
@@ -471,7 +471,10 @@ TTracker::Pulse()
 
 		BMessage notificationMessage;
 		notificationMessage.AddInt32("device", *(int32 *)&nodeRef.device);
+
+		LockLooper();
 		SendNotices(kUpdateVolumeSpaceBar, &notificationMessage);
+		UnlockLooper();
 	}
 }
 

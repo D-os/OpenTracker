@@ -306,10 +306,12 @@ BContainerWindow::BContainerWindow(LockingList<BWindow> *list,
 	Run();
 
 	// Watch out for settings changes:
+	be_app->LockLooper();
 	be_app->StartWatching(this, kWindowsShowFullPathChanged);
 	be_app->StartWatching(this, kSingleWindowBrowseChanged);
 	be_app->StartWatching(this, kShowNavigatorChanged);
 	be_app->StartWatching(this, kDontMoveFilesToTrashChanged);
+	be_app->UnlockLooper();
 }
 
 
@@ -318,10 +320,12 @@ BContainerWindow::~BContainerWindow()
 	ASSERT(IsLocked());
 
 	// stop the watchers
+	be_app->LockLooper();
 	be_app->StopWatching(this, kWindowsShowFullPathChanged);
 	be_app->StopWatching(this, kSingleWindowBrowseChanged);
 	be_app->StopWatching(this, kShowNavigatorChanged);
 	be_app->StopWatching(this, kDontMoveFilesToTrashChanged);
+	be_app->UnlockLooper();
 
 	delete fTaskLoop;
 	delete fBackgroundImage;

@@ -646,13 +646,17 @@ FilePanelSettingsView::FilePanelSettingsView(BRect rect)
 	
 	recentBox->ResizeTo(recentBox->Frame().Width(), fRecentFoldersTextControl->Frame().bottom + kBorderSpacing);
 	
+	be_app->LockLooper();
 	be_app->StartWatching(this, kFavoriteCountChangedExternally);
+	be_app->UnlockLooper();
 }
 
 
 FilePanelSettingsView::~FilePanelSettingsView()
 {
+	be_app->LockLooper();
 	be_app->StopWatching(this, kFavoriteCountChangedExternally);
+	be_app->UnlockLooper();
 }
 
 

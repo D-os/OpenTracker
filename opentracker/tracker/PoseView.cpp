@@ -794,12 +794,14 @@ BPoseView::DetachedFromWindow()
 	if (fTitleView && !fTitleView->Window())
 		delete fTitleView;
 
+	be_app->LockLooper();
 	be_app->StopWatching(this, kShowSelectionWhenInactiveChanged);
 	be_app->StopWatching(this, kTransparentSelectionChanged);
 	be_app->StopWatching(this, kSortFolderNamesFirstChanged);
 	be_app->StopWatching(this, kShowVolumeSpaceBar);
 	be_app->StopWatching(this, kSpaceBarColorChanged);
 	be_app->StopWatching(this, kUpdateVolumeSpaceBar);
+	be_app->UnlockLooper();
 
 	StopWatching();
 	CommitActivePose();
@@ -877,12 +879,14 @@ BPoseView::AttachedToWindow()
 		fFontHeight = fFontInfo.ascent + fFontInfo.descent + fFontInfo.leading;
 	}
 
+	be_app->LockLooper();
 	be_app->StartWatching(this, kShowSelectionWhenInactiveChanged);
 	be_app->StartWatching(this, kTransparentSelectionChanged);
 	be_app->StartWatching(this, kSortFolderNamesFirstChanged);
 	be_app->StartWatching(this, kShowVolumeSpaceBar);
 	be_app->StartWatching(this, kSpaceBarColorChanged);
 	be_app->StartWatching(this, kUpdateVolumeSpaceBar);
+	be_app->UnlockLooper();
 }
 
 
@@ -8965,8 +8969,11 @@ BPoseView::StartWatchDateFormatChange()
 	if (IsFilePanel()) {
 		BMessenger tracker(kTrackerSignature);
 		BHandler::StartWatching(tracker, kDateFormatChanged);
-	} else
-		be_app->StartWatching(this, kDateFormatChanged); 
+	} else {
+		be_app->LockLooper();
+		be_app->StartWatching(this, kDateFormatChanged);
+		be_app->UnlockLooper();
+	}
 
 	fIsWatchingDateFormatChange = true;
 }
@@ -8978,8 +8985,11 @@ BPoseView::StopWatchDateFormatChange()
 	if (IsFilePanel()) {
 		BMessenger tracker(kTrackerSignature);
 		BHandler::StopWatching(tracker, kDateFormatChanged);
-	} else
+	} else {
+		be_app->LockLooper();
 		be_app->StopWatching(this, kDateFormatChanged);
+		be_app->UnlockLooper();
+	}
 
 	fIsWatchingDateFormatChange = false;
 }
