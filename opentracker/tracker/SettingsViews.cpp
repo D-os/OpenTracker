@@ -1292,3 +1292,120 @@ SpaceBarSettingsView::ShowsRevertSettings() const
 {
 	return (fSpaceBarShow == (fSpaceBarShowCheckBox->Value() == 1));
 }
+
+
+//------------------------------------------------------------------------
+// #pragma mark -
+
+
+TrashSettingsView::TrashSettingsView(BRect rect)
+	:	SettingsView(rect, "TrashSettingsView")
+{
+	BRect frame = BRect(kBorderSpacing, kBorderSpacing, rect.Width()
+			- 2 * kBorderSpacing, kBorderSpacing + kItemHeight);
+
+	fDontMoveFilesToTrashCheckBox = new BCheckBox(frame, "", "Don't Move Files To Trash",
+			new BMessage(kDontMoveFilesToTrashChanged));
+	AddChild(fDontMoveFilesToTrashCheckBox);
+	fDontMoveFilesToTrashCheckBox->ResizeToPreferred();
+
+	frame.OffsetBy(0, fDontMoveFilesToTrashCheckBox->Bounds().Height() + kItemExtraSpacing);
+
+	fAskBeforeDeleteFileCheckBox = new BCheckBox(frame, "", "Ask Before Delete",
+			new BMessage(kAskBeforeDeleteFileChanged));
+	AddChild(fAskBeforeDeleteFileCheckBox);
+	fAskBeforeDeleteFileCheckBox->ResizeToPreferred();
+}
+
+void
+TrashSettingsView::AttachedToWindow()
+{
+	fDontMoveFilesToTrashCheckBox->SetTarget(this);
+	fAskBeforeDeleteFileCheckBox->SetTarget(this);
+}
+
+void
+TrashSettingsView::MessageReceived(BMessage *message)
+{
+	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
+	if (!tracker)
+		return;
+		
+	switch (message->what) {
+		case kDontMoveFilesToTrashChanged:
+			tracker->SetDontMoveFilesToTrash(fDontMoveFilesToTrashCheckBox->Value() == 1);
+
+			tracker->SendNotices(kDontMoveFilesToTrashChanged);
+			Window()->PostMessage(kSettingsContentsModified);
+			break;
+
+		case kAskBeforeDeleteFileChanged:
+			tracker->SetAskBeforeDeleteFile(fAskBeforeDeleteFileCheckBox->Value() == 1);
+
+			tracker->SendNotices(kAskBeforeDeleteFileChanged);
+			Window()->PostMessage(kSettingsContentsModified);
+			break;
+
+		default:
+			_inherited::MessageReceived(message);
+			break;
+	}
+}
+
+	
+void
+TrashSettingsView::SetDefaults()
+{
+	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
+	if (!tracker)
+		return;
+
+	tracker->SetDontMoveFilesToTrash(false);
+	tracker->SetAskBeforeDeleteFile(true);
+
+	ShowCurrentSettings(true);
+		// true -> send notices about the change
+}
+
+void
+TrashSettingsView::Revert()
+{
+	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
+	if (!tracker)
+		return;
+
+	tracker->SetDontMoveFilesToTrash(fDontMoveFilesToTrash);
+	tracker->SetAskBeforeDeleteFile(fAskBeforeDeleteFile);
+
+	ShowCurrentSettings(true);
+		// true -> send notices about the change
+}
+
+void
+TrashSettingsView::ShowCurrentSettings(bool sendNotices)
+{
+	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
+	if (!tracker)
+		return;
+
+	fDontMoveFilesToTrashCheckBox->SetValue(tracker->DontMoveFilesToTrash());
+	fAskBeforeDeleteFileCheckBox->SetValue(tracker->AskBeforeDeleteFile());
+
+	if (sendNotices) {
+		Window()->PostMessage(kSettingsContentsModified);
+	}
+}
+
+void
+TrashSettingsView::RecordRevertSettings()
+{
+	fDontMoveFilesToTrash = TTracker::DontMoveFilesToTrash();
+	fAskBeforeDeleteFile = TTracker::AskBeforeDeleteFile();
+}
+
+bool
+TrashSettingsView::ShowsRevertSettings() const
+{
+	return (fDontMoveFilesToTrash == (fDontMoveFilesToTrashCheckBox->Value() > 0))
+			&& (fAskBeforeDeleteFile == (fAskBeforeDeleteFileCheckBox->Value() > 0));
+}

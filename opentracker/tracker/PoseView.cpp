@@ -1915,11 +1915,21 @@ BPoseView::MessageReceived(BMessage *message)
 			break;
 
 		case kMoveToTrash:
-			if ((modifiers() & B_SHIFT_KEY) != 0)
-				DeleteSelection();
+		{
+			bool dontMoveToTrash = false;
+			bool askBeforeDelete = true;
+
+			if (TTracker *tracker = dynamic_cast<TTracker *>(be_app)) {
+				dontMoveToTrash = tracker->DontMoveFilesToTrash();
+				askBeforeDelete = tracker->AskBeforeDeleteFile();
+			}
+			
+			if ((modifiers() & B_SHIFT_KEY) != 0 || dontMoveToTrash)
+				DeleteSelection(true, askBeforeDelete);
 			else
 				MoveSelectionToTrash();
 			break;
+		}
 
 		case kCleanupAll:
 			Cleanup(true);
@@ -5362,20 +5372,27 @@ BPoseView::KeyDown(const char *bytes, int32 count)
 			break;
 
 		case B_DELETE:
-			{
-				// Make sure user can't trash something already in the trash.
-				BEntry entry(TargetModel()->EntryRef());
-				if (FSIsTrashDir(&entry)) {
-					// Delete without asking from the trash
-					DeleteSelection(true, false);
-				} else {
-					if ((modifiers() & B_SHIFT_KEY) != 0)
-						DeleteSelection();
-					else
-						MoveSelectionToTrash();
+		{
+			// Make sure user can't trash something already in the trash.
+			BEntry entry(TargetModel()->EntryRef());
+			if (FSIsTrashDir(&entry)) {
+				// Delete without asking from the trash
+				DeleteSelection(true, false);
+			} else {
+				bool dontMoveToTrash = false;
+				bool askBeforeDelete = true;
+
+				if (TTracker *tracker = dynamic_cast<TTracker *>(be_app)) {
+					dontMoveToTrash = tracker->DontMoveFilesToTrash();
+					askBeforeDelete = tracker->AskBeforeDeleteFile();
 				}
+				if ((modifiers() & B_SHIFT_KEY) != 0 || dontMoveToTrash)
+					DeleteSelection(true, askBeforeDelete);
+				else
+					MoveSelectionToTrash();
 			}
 			break;
+		}
 
 		case B_BACKSPACE:
 			// remove last char from the typeahead buffer

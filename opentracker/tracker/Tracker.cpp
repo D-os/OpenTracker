@@ -1637,6 +1637,30 @@ TTracker::SetClockTo24Hr(bool enabled)
 		return;
 }
 
+bool
+TTracker::DontMoveFilesToTrash()
+{
+	return gTrackerState.DontMoveFilesToTrash();
+}
+
+void
+TTracker::SetDontMoveFilesToTrash(bool enabled)
+{
+	gTrackerState.SetDontMoveFilesToTrash(enabled);
+}
+
+bool
+TTracker::AskBeforeDeleteFile()
+{
+	return gTrackerState.AskBeforeDeleteFile();
+}
+
+void
+TTracker::SetAskBeforeDeleteFile(bool enabled)
+{
+	gTrackerState.SetAskBeforeDeleteFile(enabled);
+}
+
 void
 TTracker::SaveSettings(bool onlyIfNonDefault)
 {
@@ -2024,26 +2048,53 @@ TTrackerState::SetClockTo24Hr(bool enabled)
 	f24HrClock->SetValue(enabled);
 }
 
+bool 
+TTrackerState::DontMoveFilesToTrash()
+{
+	LoadSettingsIfNeeded();
+	return fDontMoveFilesToTrash->Value();
+}
+
+void
+TTrackerState::SetDontMoveFilesToTrash(bool enabled)
+{
+	fDontMoveFilesToTrash->SetValue(enabled);
+}
+
+bool 
+TTrackerState::AskBeforeDeleteFile()
+{
+	LoadSettingsIfNeeded();
+	return fAskBeforeDeleteFile->Value();
+}
+
+void
+TTrackerState::SetAskBeforeDeleteFile(bool enabled)
+{
+	fAskBeforeDeleteFile->SetValue(enabled);
+}
+
+
 void 
 TTrackerState::LoadSettingsIfNeeded()
 {
 	if (fSettingsLoaded)
 		return;
 
-	Add(fShowDisksIcon = new BooleanValueSetting("ShowDisksIcon", 0));
-	Add(fMountVolumesOntoDesktop = new BooleanValueSetting("MountVolumesOntoDesktop", 1));
+	Add(fShowDisksIcon = new BooleanValueSetting("ShowDisksIcon", false));
+	Add(fMountVolumesOntoDesktop = new BooleanValueSetting("MountVolumesOntoDesktop", true));
 	Add(fMountSharedVolumesOntoDesktop =
-		new BooleanValueSetting("MountSharedVolumesOntoDesktop", 0));
+		new BooleanValueSetting("MountSharedVolumesOntoDesktop", false));
 	Add(fIntegrateNonBootBeOSDesktops = new BooleanValueSetting
-		("IntegrateNonBootBeOSDesktops", 1));
+		("IntegrateNonBootBeOSDesktops", true));
 	Add(fIntegrateAllNonBootDesktops = new BooleanValueSetting
-		("IntegrateAllNonBootDesktops", 0));
-	Add(fDesktopFilePanelRoot = new BooleanValueSetting("DesktopFilePanelRoot", 1));
-	Add(fShowFullPathInTitleBar = new BooleanValueSetting("ShowFullPathInTitleBar", 0));
-	Add(fShowSelectionWhenInactive = new BooleanValueSetting("ShowSelectionWhenInactive", 1));
-	Add(fSortFolderNamesFirst = new BooleanValueSetting("SortFolderNamesFirst", 0));
- 	Add(fSingleWindowBrowse = new BooleanValueSetting("SingleWindowBrowse", 0));
-	Add(fShowNavigator = new BooleanValueSetting("ShowNavigator", 0));
+		("IntegrateAllNonBootDesktops", false));
+	Add(fDesktopFilePanelRoot = new BooleanValueSetting("DesktopFilePanelRoot", true));
+	Add(fShowFullPathInTitleBar = new BooleanValueSetting("ShowFullPathInTitleBar", false));
+	Add(fShowSelectionWhenInactive = new BooleanValueSetting("ShowSelectionWhenInactive", true));
+	Add(fSortFolderNamesFirst = new BooleanValueSetting("SortFolderNamesFirst", false));
+ 	Add(fSingleWindowBrowse = new BooleanValueSetting("SingleWindowBrowse", false));
+	Add(fShowNavigator = new BooleanValueSetting("ShowNavigator", false));
 	
 	Add(fRecentApplicationsCount = new ScalarValueSetting("RecentApplications", 10, "", ""));
 	Add(fRecentDocumentsCount = new ScalarValueSetting("RecentDocuments", 10, "", ""));
@@ -2051,13 +2102,16 @@ TTrackerState::LoadSettingsIfNeeded()
 
 	Add(fTimeFormatSeparator = new ScalarValueSetting("TimeFormatSeparator", 3, "", ""));
 	Add(fDateOrderFormat = new ScalarValueSetting("DateOrderFormat", 2, "", ""));
-	Add(f24HrClock = new BooleanValueSetting("24HrClock", 0));
+	Add(f24HrClock = new BooleanValueSetting("24HrClock", false));
 
-	Add(fShowVolumeSpaceBar = new BooleanValueSetting("ShowVolumeSpaceBar", 0));
+	Add(fShowVolumeSpaceBar = new BooleanValueSetting("ShowVolumeSpaceBar", false));
 
 	Add(fUsedSpaceColor = new HexScalarValueSetting("UsedSpaceColor", 0xc000cb00, "", ""));
 	Add(fFreeSpaceColor = new HexScalarValueSetting("FreeSpaceColor", 0xc0ffffff, "", ""));
 	Add(fWarningSpaceColor = new HexScalarValueSetting("WarningSpaceColor", 0xc0cb0000, "", ""));
+
+	Add(fDontMoveFilesToTrash = new BooleanValueSetting("DontMoveFilesToTrash", false));
+	Add(fAskBeforeDeleteFile = new BooleanValueSetting("AskBeforeDeleteFile", true));
 
 	TryReadingSettings();
 

@@ -148,6 +148,7 @@ BContainerWindow::BContainerWindow(LockingList<BWindow> *list,
 	StartWatching(be_app, kWindowsShowFullPathChanged);
 	StartWatching(be_app, kSingleWindowBrowseChanged);
 	StartWatching(be_app, kShowNavigatorChanged);
+	StartWatching(be_app, kDontMoveFilesToTrashChanged);
 }
 
 BContainerWindow::~BContainerWindow()
@@ -1090,6 +1091,28 @@ BContainerWindow::MessageReceived(BMessage *message)
 							if (IsPathWatchingEnabled() && !(TTracker::ShowNavigator() || TTracker::ShowFullPathInTitleBar()))
 								SetPathWatchingEnabled(false);
 							break;
+							
+						case kDontMoveFilesToTrashChanged:
+							{
+								bool dontMoveToTrash = false;
+								TTracker *tracker = dynamic_cast<TTracker *>(be_app);
+								if (tracker) {
+									dontMoveToTrash = tracker->DontMoveFilesToTrash();
+								}
+								
+								BMenuItem *item = fFileContextMenu->FindItem(kMoveToTrash);
+								if (item)
+									item->SetLabel(dontMoveToTrash ? "Delete" : "Move To Trash");
+
+								// Deskbar doesn't have a menu bar, so check if there is fMenuBar
+								if (fMenuBar && fFileMenu) {
+									item = fFileMenu->FindItem(kMoveToTrash);
+									if (item)
+										item->SetLabel(dontMoveToTrash ? "Delete" : "Move To Trash");
+								}
+								UpdateIfNeeded();
+							}
+							break;
 
 						default:
 							_inherited::MessageReceived(message);
@@ -1214,9 +1237,15 @@ BContainerWindow::AddFileMenu(BMenu *menu)
 		menu->AddItem(new BMenuItem("Make Active Printer",
 			new BMessage(kMakeActivePrinter)));
 	} else {
-		menu->AddItem(new BMenuItem("Duplicate",
-			new BMessage(kDuplicateSelection), 'D'));
-		menu->AddItem(new BMenuItem("Move to Trash", new BMessage(kMoveToTrash), 'T'));
+		menu->AddItem(new BMenuItem("Duplicate",new BMessage(kDuplicateSelection), 'D'));
+
+		bool dontMoveToTrash = false;
+		if (TTracker *tracker = dynamic_cast<TTracker *>(be_app))
+			dontMoveToTrash = tracker->DontMoveFilesToTrash();
+
+		menu->AddItem(new BMenuItem(dontMoveToTrash ? "Delete" : "Move to Trash",
+				new BMessage(kMoveToTrash), 'T'));
+
 		menu->AddSeparatorItem();
 		menu->AddSeparatorItem();
 		
@@ -1823,8 +1852,13 @@ BContainerWindow::AddFileContextMenus(BMenu *menu)
 			new BMessage(kDuplicateSelection), 'D'));
 
 	if (!IsTrash() && !InTrash()) {
-		menu->AddItem(new BMenuItem("Move to Trash",
-			new BMessage(kMoveToTrash), 'T'));
+		bool dontMoveToTrash = false;
+		if (TTracker *tracker = dynamic_cast<TTracker *>(be_app))
+			dontMoveToTrash = tracker->DontMoveFilesToTrash();
+
+		menu->AddItem(new BMenuItem(dontMoveToTrash ? "Delete" : "Move to Trash",
+				new BMessage(kMoveToTrash), 'T'));
+
 		// add separator for copy to/move to items (navigation items)
 		menu->AddSeparatorItem();
 	} else {

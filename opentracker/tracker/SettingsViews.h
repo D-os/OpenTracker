@@ -219,6 +219,29 @@ private:
 	typedef SettingsView _inherited;
 };
 
+class TrashSettingsView : public SettingsView {
+public:
+	TrashSettingsView(BRect);
+
+	void MessageReceived(BMessage *);
+	void AttachedToWindow();
+	
+	void SetDefaults();
+	void Revert();
+	void ShowCurrentSettings(bool sendNotices = false);
+	void RecordRevertSettings();
+	bool ShowsRevertSettings() const;
+
+private:
+	BCheckBox *fDontMoveFilesToTrashCheckBox;
+	BCheckBox *fAskBeforeDeleteFileCheckBox;
+
+	bool fDontMoveFilesToTrash;
+	bool fAskBeforeDeleteFile;
+	
+	typedef SettingsView _inherited;
+};
+
 } // namespace BPrivate
 
 using namespace BPrivate;

@@ -186,6 +186,11 @@ public:
 	static void SetDateOrderFormat(DateOrder);
 	static bool ClockIs24Hr();
 	static void SetClockTo24Hr(bool);
+	
+	static bool DontMoveFilesToTrash();
+	static void SetDontMoveFilesToTrash(bool);
+	static bool AskBeforeDeleteFile();
+	static void SetAskBeforeDeleteFile(bool);
 
 	void SaveSettings(bool onlyIfNonDefault = true);
 
@@ -346,6 +351,11 @@ public:
 	void SetDateOrderFormat(DateOrder);
 	bool ClockIs24Hr();
 	void SetClockTo24Hr(bool);
+	
+	bool DontMoveFilesToTrash();
+	void SetDontMoveFilesToTrash(bool);
+	bool AskBeforeDeleteFile();
+	void SetAskBeforeDeleteFile(bool);
 
 	void LoadSettingsIfNeeded();
 	void SaveSettings(bool onlyIfNonDefault = true);
@@ -376,6 +386,9 @@ private:
 	HexScalarValueSetting *fUsedSpaceColor;
 	HexScalarValueSetting *fFreeSpaceColor;
 	HexScalarValueSetting *fWarningSpaceColor;
+	
+	BooleanValueSetting *fDontMoveFilesToTrash;
+	BooleanValueSetting *fAskBeforeDeleteFile;
 
 	Benaphore fInitLock;
 	bool fInited;

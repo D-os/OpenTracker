@@ -120,6 +120,8 @@ TrackerSettingsWindow::TrackerSettingsWindow()
 		new FilePanelSettingsView(SettingsViewSize)));
 	fSettingsTypeListView->AddItem(new SettingsItem("Time Format",
 		new TimeFormatSettingsView(SettingsViewSize)));
+	fSettingsTypeListView->AddItem(new SettingsItem("Trash",
+		new TrashSettingsView(SettingsViewSize)));
 	fSettingsTypeListView->AddItem(new SettingsItem("Volume Icons",
 		new SpaceBarSettingsView(SettingsViewSize)));
 
