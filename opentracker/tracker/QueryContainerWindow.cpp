@@ -130,10 +130,13 @@ BQueryContainerWindow::SetUpDefaultState()
 	BString sanitizedType(PoseView()->SearchForType());
 	
 	defaultStatePath += '/';
-	for (int32 index = sanitizedType.Length() - 1; index >= 0; index--)
-		if (sanitizedType[index] == '/')
-			sanitizedType[index] = '_';
-
+	int32 length = sanitizedType.Length();
+	char *buf = sanitizedType.LockBuffer(length);
+	for (int32 index = length - 1; index >= 0; index--)
+		if (buf[index] == '/')
+			buf[index] = '_';
+	sanitizedType.UnlockBuffer(length);
+	
 	defaultStatePath += sanitizedType;
 
 	PRINT(("looking for default query state at %s\n", defaultStatePath.String()));

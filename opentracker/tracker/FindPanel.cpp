@@ -258,10 +258,13 @@ MakeValidFilename(BString &string)
 		string += B_UTF8_ELLIPSIS;
 	}
 
-	// replace slashes 
-	for (int32 index = string.Length() - 1; index >= 0; index--)
-		if (string[index] == '/' || string[index] == ':')
-			string[index] = '_';
+	// replace slashes
+	int32 length = string.Length();
+	char *buf = string.LockBuffer(length);
+	for (int32 index = length - 1; index >= 0; index--)
+		if (buf[index] == '/' || buf[index] == ':')
+			buf[index] = '_';
+	string.UnlockBuffer(length);
 	
 	return string.String();
 }
