@@ -59,6 +59,7 @@ class BooleanValueSetting;
 class ScalarValueSetting;
 class HexScalarValueSetting;
 class TaskLoop;
+//class TTrackerState;
 class TrackerSettingsWindow;
 
 typedef LockingList<BWindow> WindowList;
@@ -69,25 +70,9 @@ const uint32 kNextSpecifier = 'snxt';
 const uint32 kPreviousSpecifier = 'sprv';
 const uint32 B_ENTRY_SPECIFIER = 'sref';
 
-enum FormatSeparator {
-		kNoSeparator,
-		kSpaceSeparator,
-		kMinusSeparator,
-		kSlashSeparator,
-		kBackslashSeparator,
-		kDotSeparator,
-		kSeparatorsEnd
-};
-	
-enum DateOrder {
-		kYMDFormat,
-		kDMYFormat,
-		kMDYFormat,
-		kDateFormatEnd
-};
-
 #define kPropertyEntry "Entry"
 #define kPropertySelection "Selection"
+
 
 class TTracker : public BApplication {
 public:
@@ -142,60 +127,8 @@ public:
 		// again
 
 	TaskLoop *MainTaskLoop() const;
-
-  	static bool ShowDisksIcon();
-	static void SetShowDisksIcon(bool);
-  	static bool DesktopFilePanelRoot();
-	static void SetDesktopFilePanelRoot(bool);
-  	static bool MountVolumesOntoDesktop();
-	static void SetMountVolumesOntoDesktop(bool);
-  	static bool MountSharedVolumesOntoDesktop();
-	static void SetMountSharedVolumesOntoDesktop(bool);
-  	static bool IntegrateNonBootBeOSDesktops();
-	static void SetIntegrateNonBootBeOSDesktops(bool);
-  	static bool IntegrateAllNonBootDesktops();
-	static void SetIntegrateAllNonBootDesktops(bool);
-	static bool ShowFullPathInTitleBar();
-	static void SetShowFullPathInTitleBar(bool);
-	static bool SortFolderNamesFirst();
-	static void SetSortFolderNamesFirst(bool);
-	static bool ShowSelectionWhenInactive();
-	static void SetShowSelectionWhenInactive(bool);
-	static bool SingleWindowBrowse();
-	static void SetSingleWindowBrowse(bool);
-	static bool ShowNavigator();
-	static void SetShowNavigator(bool);
-
-	static bool ShowVolumeSpaceBar();
-	static void SetShowVolumeSpaceBar(bool);
- 	static rgb_color UsedSpaceColor();
-	static void SetUsedSpaceColor(rgb_color color);
- 	static rgb_color FreeSpaceColor();
-	static void SetFreeSpaceColor(rgb_color color);
- 	static rgb_color WarningSpaceColor();
-	static void SetWarningSpaceColor(rgb_color color);
-
-	void RecentCounts(int32 *applications, int32 *documents, int32 *folders);
-	void SetRecentApplicationsCount(int32);
-	void SetRecentDocumentsCount(int32);
-	void SetRecentFoldersCount(int32);
-
-	static FormatSeparator TimeFormatSeparator();
-	static void SetTimeFormatSeparator(FormatSeparator);
-	static DateOrder DateOrderFormat();
-	static void SetDateOrderFormat(DateOrder);
-	static bool ClockIs24Hr();
-	static void SetClockTo24Hr(bool);
-	
-	static bool DontMoveFilesToTrash();
-	static void SetDontMoveFilesToTrash(bool);
-	static bool AskBeforeDeleteFile();
-	static void SetAskBeforeDeleteFile(bool);
-
-	void SaveSettings(bool onlyIfNonDefault = true);
-
 	AutoMounter *AutoMounterLoop();
-
+	
 	bool QueryActiveForDevice(dev_t);
 	void CloseActiveQueryWindows(dev_t);
 
@@ -209,6 +142,7 @@ public:
 	BContainerWindow *FindContainerWindow(const entry_ref *, int32 number = 0) const;
 	BContainerWindow *FindParentContainerWindow(const entry_ref *) const;
 		// right now works just on plain windows, not on query windows
+
 protected:
 	// scripting
 	virtual BHandler *ResolveSpecifier(BMessage *, int32, BMessage *,
@@ -288,114 +222,6 @@ private:
 friend class CloseSoonFunctor;
 };
 
-
-class TTrackerState : public Settings {
-public:
-	TTrackerState();
-	~TTrackerState();
-	static void InitIfNeeded();
-
-	bool ShowDisksIcon();
-	void SetShowDisksIcon(bool);
-
-	bool DesktopFilePanelRoot();
-	void SetDesktopFilePanelRoot(bool);
-
-	bool MountVolumesOntoDesktop();
-	void SetMountVolumesOntoDesktop(bool);
-
-	bool MountSharedVolumesOntoDesktop();
-	void SetMountSharedVolumesOntoDesktop(bool);
-
-	bool IntegrateNonBootBeOSDesktops();
-	void SetIntegrateNonBootBeOSDesktops(bool);
-
-	bool IntegrateAllNonBootDesktops();
-	void SetIntegrateAllNonBootDesktops(bool);
-
-	bool ShowVolumeSpaceBar();
-	void SetShowVolumeSpaceBar(bool);
-
- 	rgb_color UsedSpaceColor();
-	void SetUsedSpaceColor(rgb_color color);
-
- 	rgb_color FreeSpaceColor();
-	void SetFreeSpaceColor(rgb_color color);
-
- 	rgb_color WarningSpaceColor();
-	void SetWarningSpaceColor(rgb_color color);
-
-	bool ShowFullPathInTitleBar();
-	void SetShowFullPathInTitleBar(bool);
-
-	bool SortFolderNamesFirst();
-	void SetSortFolderNamesFirst(bool);
-	
-	bool ShowSelectionWhenInactive();
-	void SetShowSelectionWhenInactive(bool);
-
-	bool SingleWindowBrowse();
-	void SetSingleWindowBrowse(bool);
-
-	bool ShowNavigator();
-	void SetShowNavigator(bool);
-
-	void RecentCounts(int32 *applications, int32 *documents, int32 *folders);
-	void SetRecentApplicationsCount(int32);
-	void SetRecentDocumentsCount(int32);
-	void SetRecentFoldersCount(int32);
-
-	FormatSeparator TimeFormatSeparator();
-	void SetTimeFormatSeparator(FormatSeparator);
-	DateOrder DateOrderFormat();
-	void SetDateOrderFormat(DateOrder);
-	bool ClockIs24Hr();
-	void SetClockTo24Hr(bool);
-	
-	bool DontMoveFilesToTrash();
-	void SetDontMoveFilesToTrash(bool);
-	bool AskBeforeDeleteFile();
-	void SetAskBeforeDeleteFile(bool);
-
-	void LoadSettingsIfNeeded();
-	void SaveSettings(bool onlyIfNonDefault = true);
-	
-private:
-	TTrackerState(const TTrackerState&);
-	
-	BooleanValueSetting *fShowDisksIcon;
-	BooleanValueSetting *fMountVolumesOntoDesktop;
-	BooleanValueSetting *fIntegrateNonBootBeOSDesktops;
-	BooleanValueSetting *fIntegrateAllNonBootDesktops;
-	BooleanValueSetting *fDesktopFilePanelRoot;
-	BooleanValueSetting *fMountSharedVolumesOntoDesktop;
-	BooleanValueSetting *fShowFullPathInTitleBar;
-	BooleanValueSetting *fShowSelectionWhenInactive;
-	BooleanValueSetting *fSortFolderNamesFirst;
-	BooleanValueSetting *fSingleWindowBrowse;
-	BooleanValueSetting *fShowNavigator;
-	BooleanValueSetting *f24HrClock;
-		
-	ScalarValueSetting *fRecentApplicationsCount;
-	ScalarValueSetting *fRecentDocumentsCount;
-	ScalarValueSetting *fRecentFoldersCount;
-	ScalarValueSetting *fTimeFormatSeparator;
-	ScalarValueSetting *fDateOrderFormat;
-
-	BooleanValueSetting *fShowVolumeSpaceBar;
-	HexScalarValueSetting *fUsedSpaceColor;
-	HexScalarValueSetting *fFreeSpaceColor;
-	HexScalarValueSetting *fWarningSpaceColor;
-	
-	BooleanValueSetting *fDontMoveFilesToTrash;
-	BooleanValueSetting *fAskBeforeDeleteFile;
-
-	Benaphore fInitLock;
-	bool fInited;
-	bool fSettingsLoaded;
-
-	typedef Settings _inherited;
-};
 
 inline TaskLoop *
 TTracker::MainTaskLoop() const
