@@ -54,13 +54,6 @@ Find a window for a path
 
 #endif
 
-#ifndef _SCRIPTING_ONLY
-	#if _SUPPORTS_FEATURE_SCRIPTING
-		#define _SCRIPTING_ONLY(x) x
-	#else
-		#define _SCRIPTING_ONLY(x)
-	#endif
-#endif
 
 #if _SUPPORTS_FEATURE_SCRIPTING
 
@@ -93,47 +86,38 @@ const property_info kTrackerPropertyList[] = {
 	}
 };
 
-#endif
 
 status_t
-TTracker::GetSupportedSuites(BMessage *_SCRIPTING_ONLY(data))
+TTracker::GetSupportedSuites(BMessage *data)
 {
-#if _SUPPORTS_FEATURE_SCRIPTING
 	data->AddString("suites", kTrackerSuites);
 	BPropertyInfo propertyInfo(const_cast<property_info *>(kTrackerPropertyList));
 	data->AddFlat("messages", &propertyInfo);
-	
+
 	return _inherited::GetSupportedSuites(data);
-#else
-	return B_UNSUPPORTED;
-#endif
 }
 
+
 BHandler *
-TTracker::ResolveSpecifier(BMessage *_SCRIPTING_ONLY(message),
-	int32 _SCRIPTING_ONLY(index), BMessage *_SCRIPTING_ONLY(specifier),
-	int32 _SCRIPTING_ONLY(form), const char *_SCRIPTING_ONLY(property))
+TTracker::ResolveSpecifier(BMessage *message, int32 index,
+	BMessage *specifier, int32 form, const char *property)
 {
-#if _SUPPORTS_FEATURE_SCRIPTING
 	BPropertyInfo propertyInfo(const_cast<property_info *>(kTrackerPropertyList));
 
 	int32 result = propertyInfo.FindMatch(message, index, specifier, form, property);
 	if (result < 0) {
-//		PRINT(("FindMatch result %d %s\n", result, strerror(result)));
+		//PRINT(("FindMatch result %d %s\n", result, strerror(result)));
 		return _inherited::ResolveSpecifier(message, index, specifier,
 			form, property);
 	}
 
 	return this;
-#else
-	return NULL;
-#endif
 }
 
+
 bool
-TTracker::HandleScriptingMessage(BMessage *_SCRIPTING_ONLY(message))
+TTracker::HandleScriptingMessage(BMessage *message)
 {
-#if _SUPPORTS_FEATURE_SCRIPTING
 	if (message->what != B_GET_PROPERTY
 		&& message->what != B_SET_PROPERTY
 		&& message->what != B_CREATE_PROPERTY
@@ -156,9 +140,9 @@ TTracker::HandleScriptingMessage(BMessage *_SCRIPTING_ONLY(message))
 
 	if (result != B_OK || index == -1) 
 		return false;
-	
+
 	ASSERT(property);
-	
+
 	switch (message->what) {
 		case B_CREATE_PROPERTY:
 			handled = CreateProperty(message, &specifier, form, property, &reply);
@@ -167,11 +151,11 @@ TTracker::HandleScriptingMessage(BMessage *_SCRIPTING_ONLY(message))
 		case B_GET_PROPERTY:
 			handled = GetProperty(&specifier, form, property, &reply);
 			break;
-		
+
 		case B_SET_PROPERTY:
 			handled = SetProperty(message, &specifier, form, property, &reply);
 			break;
-			
+
 		case B_COUNT_PROPERTIES:
 			handled = CountProperty(&specifier, form, property, &reply);
 			break;
@@ -179,34 +163,24 @@ TTracker::HandleScriptingMessage(BMessage *_SCRIPTING_ONLY(message))
 		case B_DELETE_PROPERTY:
 			handled = DeleteProperty(&specifier, form, property, &reply);
 			break;
-		
+
 		case B_EXECUTE_PROPERTY:
 			handled = ExecuteProperty(&specifier, form, property, &reply);
 			break;
 	}
-	
+
 	if (handled) 
 		// done handling message, send a reply
 		message->SendReply(&reply);
 
 	return handled;
-#else
-	return false;
-#endif
 }
 
 
 bool
-TTracker::ExecuteProperty(BMessage *, int32 , const char *, BMessage *)
+TTracker::CreateProperty(BMessage *message, BMessage *, int32 form,
+	const char *property, BMessage *reply)
 {
-	return false;
-}
-
-bool
-TTracker::CreateProperty(BMessage *_SCRIPTING_ONLY(message), BMessage *, int32 _SCRIPTING_ONLY(form),
-	const char *_SCRIPTING_ONLY(property), BMessage *_SCRIPTING_ONLY(reply))
-{
-#if _SUPPORTS_FEATURE_SCRIPTING
 	bool handled = false;
 	status_t error = B_OK;
 	if (strcmp(property, kPropertyFolder) == 0) {
@@ -215,8 +189,8 @@ TTracker::CreateProperty(BMessage *_SCRIPTING_ONLY(message), BMessage *, int32 _
 
 		// create new empty folders
 		entry_ref ref;
-		for (int32 index = 0; message->FindRef("data", index, &ref)
-			== B_OK; index++) {
+		for (int32 index = 0;
+			message->FindRef("data", index, &ref) == B_OK; index++) {
 
 			BEntry entry(&ref);
 			if (!entry.Exists()) 
@@ -228,21 +202,18 @@ TTracker::CreateProperty(BMessage *_SCRIPTING_ONLY(message), BMessage *, int32 _
 
 		handled = true;
 	}
-	
+
 	if (error != B_OK)
 		reply->AddInt32("error", error);
 
 	return handled;
-#else
-	return false;
-#endif
 }
 
+
 bool
-TTracker::DeleteProperty(BMessage */*specifier*/, int32 _SCRIPTING_ONLY(form),
-	const char *_SCRIPTING_ONLY(property), BMessage *)
+TTracker::DeleteProperty(BMessage */*specifier*/, int32 form,
+	const char *property, BMessage */*reply*/)
 {
-#if _SUPPORTS_FEATURE_SCRIPTING
 	if (strcmp(property, kPropertyTrash) == 0) {
 		// deleting on a selection is handled as removing a part of the selection
 		// not to be confused with deleting a selected item
@@ -257,10 +228,57 @@ TTracker::DeleteProperty(BMessage */*specifier*/, int32 _SCRIPTING_ONLY(form),
 
 	}
 	return false;		
-#else
-	return false;
-#endif
 }
+
+#else	/* _SUPPORTS_FEATURE_SCRIPTING */
+
+status_t
+TTracker::GetSupportedSuites(BMessage */*data*/)
+{
+	return B_UNSUPPORTED;
+}
+
+
+BHandler *
+TTracker::ResolveSpecifier(BMessage */*message*/,
+	int32 /*index*/, BMessage */*specifier*/,
+	int32 /*form*/, const char */*property*/)
+{
+	return NULL;
+}
+
+
+bool
+TTracker::HandleScriptingMessage(BMessage */*message*/)
+{
+	return false;
+}
+
+
+bool
+TTracker::CreateProperty(BMessage */*message*/, BMessage *, int32 /*form*/,
+	const char */*property*/, BMessage */*reply*/)
+{
+	return false;
+}
+
+
+bool
+TTracker::DeleteProperty(BMessage */*specifier*/, int32 /*form*/,
+	const char */*property*/, BMessage *)
+{
+	return false;
+}
+
+#endif	/* _SUPPORTS_FEATURE_SCRIPTING */
+
+
+bool
+TTracker::ExecuteProperty(BMessage *, int32 , const char *, BMessage *)
+{
+	return false;
+}
+
 
 bool
 TTracker::CountProperty(BMessage *, int32, const char *, BMessage *)
@@ -268,11 +286,13 @@ TTracker::CountProperty(BMessage *, int32, const char *, BMessage *)
 	return false;		
 }
 
+
 bool
 TTracker::GetProperty(BMessage *, int32, const char *,	BMessage *)
 {
 	return false;		
 }
+
 
 bool
 TTracker::SetProperty(BMessage *, BMessage *, int32, const char *, BMessage *)
