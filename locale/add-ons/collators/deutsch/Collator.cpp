@@ -12,6 +12,32 @@
 #include <ctype.h>
 
 
+/**	This implements a German DIN-2 collator. It replaces German umlauts
+ *	like "ä" with "ae", or "ö" with "oe", etc.
+ *	For all other characters, it does the same as its parent class,
+ *	BCollatorAddOn.
+ *	This method is intended for sorting names (while DIN-1 is intended
+ *	for words, BCollatorAddOn is already compatible with that method).
+ *	It is used in German telephone books, for example.
+ */
+
+class CollatorDeutsch : public BCollatorAddOn {
+	public:
+		CollatorDeutsch();
+		CollatorDeutsch(BMessage *archive);
+		~CollatorDeutsch();
+		
+		virtual void GetSortKey(const char *string, BString *key, int8 strength,
+							bool ignorePunctuation);
+		virtual int Compare(const char *a, const char *b, int32 length, int8 strength,
+							bool ignorePunctuation);
+
+		// (un-)archiving API
+		virtual status_t Archive(BMessage *archive, bool deep);
+		static BArchivable *Instantiate(BMessage *archive);
+};
+
+
 struct input_context {
 	input_context(bool ignorePunctuation)
 		:
@@ -122,35 +148,6 @@ putPrimarySortKey(const char *string, char *buffer, int32 length, bool ignorePun
 
 
 //	#pragma mark -
-
-// ToDo: should probably override B_COLLATE_SECONDARY & B_COLLATE_TERTIARY,
-//		and not B_COLLATE_PRIMARY!
-// ToDo: specify the length in BString::UnlockBuffer() to speed things up!
-
-/**	The German collator just utilizes the BCollatorAddOn class for most
- *	collator strengths, it only implements B_COLLATE_PRIMARY.
- *	When you specify this strength, "ä" will be replaced by "ae", "ö"
- *	by "oe" and so on for all the German umlauts. For all other characters,
- *	it will do the exact same thing as it's parent class.
- *	This method is called DIN-2 and its intended usage is for sorting names.
- *	It is used in German telephone books, for example.
- */
-
-class CollatorDeutsch : public BCollatorAddOn {
-	public:
-		CollatorDeutsch();
-		CollatorDeutsch(BMessage *archive);
-		~CollatorDeutsch();
-		
-		virtual void GetSortKey(const char *string, BString *key, int8 strength,
-							bool ignorePunctuation);
-		virtual int Compare(const char *a, const char *b, int32 length, int8 strength,
-							bool ignorePunctuation);
-
-		// (un-)archiving API
-		virtual status_t Archive(BMessage *archive, bool deep);
-		static BArchivable *Instantiate(BMessage *archive);
-};
 
 
 CollatorDeutsch::CollatorDeutsch()
