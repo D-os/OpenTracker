@@ -2010,27 +2010,24 @@ BPoseView::MessageReceived(BMessage *message)
 		case kFSClipboardChanges:
 		{
 			node_ref node;
-			bool clearClipboard = false;
-			message->FindInt32("device",&node.device);
-			message->FindInt64("directory",&node.node);
-			message->FindBool("clearClipboard",&clearClipboard);
-			
-			if (clearClipboard) {
-				if (*TargetModel()->NodeRef() == node)
-					UpdatePosesClipboardModeFromClipboard(message);
-				else if (HasPosesInClipboard()) {
-					SetHasPosesInClipboard(false);
-					SetPosesClipboardMode(0);
-				}
-			} else if (*TargetModel()->NodeRef() == node)
+			message->FindInt32("device", &node.device);
+			message->FindInt64("directory", &node.node);
+
+			if (*TargetModel()->NodeRef() == node)
 				UpdatePosesClipboardModeFromClipboard(message);
+			else if (message->FindBool("clearClipboard")
+				&& HasPosesInClipboard()) {
+				// just remove all poses from clipboard
+				SetHasPosesInClipboard(false);
+				SetPosesClipboardMode(0);
+			}
 			break;
 		}
-			
+
 		case kInvertSelection:
 			InvertSelection();
 			break;
-			
+
 		case kShowSelectionWindow:
 			ShowSelectionWindow();
 			break;
@@ -2747,10 +2744,11 @@ BPoseView::UpdatePosesClipboardModeFromClipboard(BMessage *clipboardReport)
 	bool fullInvalidateNeeded = false;
 
 	node_ref node;
+	clipboardReport->FindInt32("device", &node.device);
+	clipboardReport->FindInt64("directory", &node.node);
+
 	bool clearClipboard = false;
-	clipboardReport->FindInt32("device",&node.device);
-	clipboardReport->FindInt64("directory",&node.node);
-	clipboardReport->FindBool("clearClipboard",&clearClipboard);
+	clipboardReport->FindBool("clearClipboard", &clearClipboard);
 
 	if (clearClipboard && fHasPosesInClipboard) {
 		// clear all poses
@@ -2767,42 +2765,48 @@ BPoseView::UpdatePosesClipboardModeFromClipboard(BMessage *clipboardReport)
 
 	BRect bounds(Bounds());
 	BPoint loc(0, 0);
-
 	bool hasPosesInClipboard = false;
-	int32 index = 0;
 	int32 foundNodeIndex = 0;
-	TClipboardNodeRef *tcnode = NULL;
+
+	TClipboardNodeRef *clipNode = NULL;
 	ssize_t size;
-	while (clipboardReport->FindData("tcnode", T_CLIPBOARD_NODE, index, (const void**)&tcnode, &size) == B_OK) {
-		BPose *pose = fPoseList->FindPose(&tcnode->node, &foundNodeIndex);
-		if (pose != NULL && (tcnode->moveMode != pose->ClipboardMode() || pose->IsSelected())) {
-			pose->SetClipboardMode(tcnode->moveMode);
+	for (int32 index = 0; clipboardReport->FindData("tcnode", T_CLIPBOARD_NODE, index,
+		(const void **)&clipNode, &size) == B_OK; index++) {
+		BPose *pose = fPoseList->FindPose(&clipNode->node, &foundNodeIndex);
+		if (pose == NULL)
+			continue;
+
+		if (clipNode->moveMode != pose->ClipboardMode() || pose->IsSelected()) {
+			pose->SetClipboardMode(clipNode->moveMode);
 			pose->Select(false);
+
 			if (!fullInvalidateNeeded) {
 				if (ViewMode() == kListMode) {
 					loc.y = foundNodeIndex * fListElemHeight;
-					if (loc.y <= bounds.bottom && loc.y >= bounds.top) {
+					if (loc.y <= bounds.bottom && loc.y >= bounds.top)
 						Invalidate(pose->CalcRect(loc, this, false));
-					}
-				}
-				else {
+				} else {
 					BRect poseRect(pose->CalcRect(this));
-					if (bounds.Contains(poseRect.LeftTop()) || bounds.Contains(poseRect.LeftBottom()) || bounds.Contains(poseRect.RightBottom()) || bounds.Contains(poseRect.RightTop())) {
-						if (!EraseWidgetTextBackground() || tcnode->moveMode == kMoveSelectionTo)
+					if (bounds.Contains(poseRect.LeftTop())
+						|| bounds.Contains(poseRect.LeftBottom())
+						|| bounds.Contains(poseRect.RightBottom())
+						|| bounds.Contains(poseRect.RightTop())) {
+						if (!EraseWidgetTextBackground()
+							|| clipNode->moveMode == kMoveSelectionTo)
 							Invalidate(poseRect);
 						else
 							pose->Draw(poseRect, this, false);
 					}
 				}
 			}
-			if (tcnode->moveMode) hasPosesInClipboard = true;
+			if (clipNode->moveMode)
+				hasPosesInClipboard = true;
 		}
-		index++;
 	}
 
 	fSelectionList->MakeEmpty();
 	fMimeTypesInSelectionCache.MakeEmpty();
-	
+
 	SetHasPosesInClipboard(hasPosesInClipboard | fHasPosesInClipboard);
 
 	if (fullInvalidateNeeded)
