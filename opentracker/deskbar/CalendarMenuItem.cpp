@@ -19,7 +19,7 @@ static const int32 kDaysPerMonth[] = {31, 28, 31, 30, 31, 30, 30, 31, 30, 31, 30
 static const int32 kTitleFontSize = 9;
 
 static const int32 kTitleGap = 3;
-static const int32 kColumnGap = 2;
+static const int32 kColumnGap = 9;
 static const int32 kRowGap = 2;
 
 
@@ -70,8 +70,8 @@ CalendarMenuItem::DrawContent()
 	Menu()->PushState();
 	Menu()->SetOrigin(ContentLocation());
 
-	rgb_color dayColor = tint_color(Menu()->HighColor(), B_DARKEN_1_TINT);
-	rgb_color titleColor = tint_color(Menu()->HighColor(), B_LIGHTEN_1_TINT);
+	rgb_color dayColor = tint_color(Menu()->HighColor(), B_DARKEN_2_TINT);
+	rgb_color titleColor = Menu()->HighColor();
 
 	BFont font;
 	Menu()->GetFont(&font);
@@ -116,11 +116,20 @@ CalendarMenuItem::DrawContent()
 
 		sprintf(text, "%ld", day);
 		width = Menu()->StringWidth(text);
-		Menu()->DrawString(text, BPoint(fColumnWidth * column + (fColumnWidth - width) / 2,
-			2 * (fTitleHeight + kTitleGap) + row * fRowHeight));
+		BPoint point(fColumnWidth * column + (fColumnWidth - width) / 2,
+			2 * (fTitleHeight + kTitleGap) + row * fRowHeight);
 
-		if (today)
+		Menu()->DrawString(text, point);
+
+		if (today) {
+			// draw a rectangle around today's day number
+			Menu()->SetHighColor(ui_color(B_KEYBOARD_NAVIGATION_COLOR));
+			Menu()->StrokeRect(BRect(point.x - 2, point.y - 1 - fFontHeight,
+				point.x + width + 1, point.y + 2));
+			Menu()->SetHighColor(dayColor);
+
 			Menu()->SetFont(be_plain_font);
+		}
 
 		day++;
 		if (column == 6)
@@ -147,7 +156,8 @@ CalendarMenuItem::GetContentSize(float *_width, float *_height)
 	font = be_plain_font;
 	font.GetHeight(&fontHeight);
 	fRowHeight = ceil(fontHeight.ascent + fontHeight.descent + fontHeight.leading + kRowGap);
-	fColumnWidth = font.StringWidth("WW") + kColumnGap;
+	fFontHeight = ceil(fontHeight.ascent);
+	fColumnWidth = font.StringWidth("99") + kColumnGap;
 
 	fFirstWeekday = first_weekday_of_month(tm);
 	fRows = (fFirstWeekday + days_per_month(tm) + 6) / 7;

@@ -18,7 +18,7 @@ class CalendarMenuItem : public BMenuItem {
 		virtual void GetContentSize(float *_width, float *_height);
 
 	private:
-		float	fTitleHeight, fRowHeight, fColumnWidth;
+		float	fTitleHeight, fRowHeight, fColumnWidth, fFontHeight;
 		int32	fRows, fFirstWeekday;
 };
 
