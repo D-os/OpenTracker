@@ -18,6 +18,9 @@ struct CatKey {
 	size_t fHashVal;
 		// the hash-value of fKey
 	CatKey(const char *str, const char *ctx, const char *cmt);
+	CatKey(uint32 id);
+	CatKey();
+	bool operator== (const CatKey& right) const;
 };
 
 __STL_TEMPLATE_NULL struct hash<CatKey>
@@ -41,12 +44,17 @@ class DefaultCatalog : public BCatalogAddOn {
 					const char *context=NULL, const char *comment=NULL);
 		status_t SetString(uint32 id, const char *translated);
 
-		status_t LoadFromDisk(const char *path);
+		status_t ReadFromDisk(const char *path);
 		status_t WriteToDisk(const char *path = NULL) const;
+
+		void MakeEmpty();
 
 		static BCatalogAddOn *Instantiate(const char *signature,
 								const char *language);
 		static const uint8 DefaultCatalog::gDefaultCatalogAddOnPriority;
+
+void resize( size_t sz) { fCatMap.resize(sz); }
+size_t size() const { return fCatMap.size(); }
 
 	private:
 		typedef hash_map<CatKey, BString> CatMap;

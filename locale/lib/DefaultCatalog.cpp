@@ -8,6 +8,7 @@
 #include <Directory.h>
 #include <File.h>
 #include <FindDirectory.h>
+#include <DataIO.h>
 #include <Message.h>
 #include <Path.h>
 #include <Roster.h>
@@ -20,6 +21,10 @@
  *  Alternatively, this could be used as a full add-on, but currently this
  *  is provided as part of liblocale.so.
  */
+
+static const char *kCatFolder = "catalogs";
+static const char *kCatExtension = ".catalog";
+
 size_t hash<CatKey>::operator()(const CatKey &key) const 
 {
 	return key.fHashVal;
@@ -51,34 +56,52 @@ CatKey::CatKey(const char *str, const char *ctx, const char *cmt)
 		keyBuf += cmtLen;
 	}
 	fKey.UnlockBuffer(keyLen);
+	fHashVal = __stl_hash_string(fKey.String());
+}
+
+CatKey::CatKey(uint32 id)
+	:
+	fHashVal(id)
+{
+}
+
+CatKey::CatKey()
+	:
+	fHashVal(0)
+{
+}
+
+bool 
+CatKey::operator== (const CatKey& right) const
+{
+	return fHashVal == right.fHashVal
+		&& fKey == right.fKey;
 }
 
 DefaultCatalog::DefaultCatalog(const char *signature, const char *language)
 	:
 	BCatalogAddOn(signature, language)
 {
-	static const char *catFolder = "catalogs";
-	static const char *catExtension = ".catalog";
 	app_info appInfo;
 	be_app->GetAppInfo(&appInfo); 
 	node_ref nref;
 	nref.device = appInfo.ref.device;
 	nref.node = appInfo.ref.directory;
 	BDirectory appDir(&nref);
-	BString catalogName(catFolder);
-	catalogName << "/" << fLanguageName << "/" << fSignature << catExtension;
+	BString catalogName(kCatFolder);
+	catalogName << "/" << fLanguageName << "/" << fSignature << kCatExtension;
 	BPath catalogPath(&appDir, catalogName.String());
-	status_t status = LoadFromDisk( catalogPath.Path());
+	status_t status = ReadFromDisk( catalogPath.Path());
 
 	if (status != B_OK) {
 		BPath commonEtcPath;
 		find_directory(B_COMMON_ETC_DIRECTORY, &commonEtcPath);
 		if (commonEtcPath.InitCheck() == B_OK) {
 			catalogName = BString(commonEtcPath.Path()) 
-							<< "/locale/" << catFolder 
+							<< "/locale/" << kCatFolder 
 							<< "/" << fLanguageName 
-							<< "/" << fSignature << catExtension;
-			status = LoadFromDisk(catalogName.String());
+							<< "/" << fSignature << kCatExtension;
+			status = ReadFromDisk(catalogName.String());
 		}
 	}
 
@@ -87,10 +110,10 @@ DefaultCatalog::DefaultCatalog(const char *signature, const char *language)
 		find_directory(B_BEOS_ETC_DIRECTORY, &systemEtcPath);
 		if (systemEtcPath.InitCheck() == B_OK) {
 			catalogName = BString(systemEtcPath.Path()) 
-							<< "/locale/" << catFolder 
+							<< "/locale/" << kCatFolder 
 							<< "/" << fLanguageName
-							<< "/" << fSignature << catExtension;
-			status = LoadFromDisk(catalogName.String());
+							<< "/" << fSignature << kCatExtension;
+			status = ReadFromDisk(catalogName.String());
 		}
 	}
 
@@ -103,7 +126,7 @@ DefaultCatalog::DefaultCatalog(const char *signature, const char *language,
 	BCatalogAddOn(signature, language),
 	fPath(path)
 {
-	fInitCheck = LoadFromDisk(path);
+	fInitCheck = ReadFromDisk(path);
 	if (fInitCheck != B_OK && create && path)
 		// catalog not found, but we shall create it, so we say we're ok:
 		fInitCheck = B_OK;
@@ -114,7 +137,7 @@ DefaultCatalog::~DefaultCatalog()
 }
 
 status_t
-DefaultCatalog::LoadFromDisk(const char *path)
+DefaultCatalog::ReadFromDisk(const char *path)
 {
 	if (!path)
 		return B_BAD_VALUE;
@@ -125,14 +148,45 @@ DefaultCatalog::LoadFromDisk(const char *path)
 		return res;
 
 	fPath = path;
-	BMessage catalogMsg;
-	res = catalogMsg.Unflatten(&catalogFile);
+
+	off_t sz = 0;
+	res = catalogFile.GetSize( &sz);
 	if (res != B_OK)
 		return res;
 
-	// ToDo: create hash-map from catalogMsg
-	fCatMap.clear();
+	char *buf = new char [sz];
+	res = catalogFile.Read( buf, sz);
+	if (res >= 0) {
+		BMemoryIO memIO( buf, sz);
+
+		// create hash-map from mem-IO:
+		BMessage archiveMsg;
+		archiveMsg.Unflatten(&memIO);
 	
+		fCatMap.clear();
+		res = B_OK;
+		int32 count = archiveMsg.FindInt32("c:sz");
+		if (count > 0) {
+			CatKey key;
+			const char *keyStr;
+			const char *translated;
+			fCatMap.resize(count);
+			for (int i=0; res==B_OK && i<count; ++i) {
+				res = archiveMsg.Unflatten(&memIO);
+				if (res == B_OK) {
+					res = archiveMsg.FindString("c:key", &keyStr)
+						|| archiveMsg.FindInt32("c:hash", (int32*)&key.fHashVal)
+						|| archiveMsg.FindString("c:tstr", &translated);
+				}
+				if (res == B_OK) {
+					key.fKey = keyStr;
+					fCatMap.insert(make_pair(key, translated));
+				}
+			}
+		}
+	}
+	delete [] buf;
+	return res;
 }
 
 status_t
@@ -140,46 +194,81 @@ DefaultCatalog::WriteToDisk(const char *path) const
 {
 	status_t res = B_OK;
 	BMessage archive;
-	CatMap::const_iterator iter;
-	for (iter = fCatMap.begin(); res==B_OK && iter!=fCatMap.end(); ++iter) {
-		res = archive.AddString( "c:key", iter->first.fKey.String())
-			|| archive.AddInt32( "c:hash", iter->first.fHashVal)
-			|| archive.AddString( "c:tstr", iter->second.String());
-	}
 
+	BFile catalogFile;
 	if (res == B_OK) {
 		if (path)
 			fPath = path;
-		BFile catalogFile;
 		res = catalogFile.SetTo(fPath.String(), 
 			B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE);
 	}
+
+	int32 count=fCatMap.size();
+	res = archive.AddInt32("c:sz", count);
+	if (res == B_OK)
+		res = archive.Flatten(&catalogFile);
+	CatMap::const_iterator iter;
+
+	BMallocIO mallocIO;
+	mallocIO.SetBlockSize( count*20);
+		// set a largish block-size in order to avoid reallocs
+
+	for (iter = fCatMap.begin(); res==B_OK && iter!=fCatMap.end(); ++iter) {
+		archive.MakeEmpty();
+		res = archive.AddString("c:key", iter->first.fKey.String())
+			|| archive.AddInt32("c:hash", iter->first.fHashVal)
+			|| archive.AddString("c:tstr", iter->second.String());
+		if (res == B_OK)
+			res = archive.Flatten(&mallocIO);
+	}
+	catalogFile.Write( mallocIO.Buffer(), mallocIO.BufferLength());
+
 	return res;
+}
+
+void
+DefaultCatalog::MakeEmpty()
+{
+	fCatMap.clear();
 }
 
 const char *
 DefaultCatalog::GetString(const char *string, const char *context, 
 	const char *comment)
 {
-	return "default-string-by-string";
+	CatKey key(string, context, comment);
+	CatMap::const_iterator iter = fCatMap.find(key);
+	if (iter != fCatMap.end())
+		return iter->second.String();
+	else
+		return NULL;
 }
 
 const char *
 DefaultCatalog::GetString(uint32 id)
 {
-	return "default-string-by-id";
+	CatMap::const_iterator iter = fCatMap.find(id);
+	if (iter != fCatMap.end())
+		return iter->second.String();
+	else
+		return NULL;
 }
 
 status_t
 DefaultCatalog::SetString(const char *string, const char *translated, 
 	const char *context, const char *comment)
 {
+	CatKey key(string, context, comment);
+	fCatMap[key] = translated;
+		// overwrite existing element
 	return B_OK;
 }
 
 status_t
 DefaultCatalog::SetString(uint32 id, const char *translated)
 {
+	fCatMap[id] = translated;
+		// overwrite existing element
 	return B_OK;
 }
 
