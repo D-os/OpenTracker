@@ -70,6 +70,7 @@ CalendarMenuItem::DrawContent()
 	Menu()->PushState();
 	Menu()->SetOrigin(ContentLocation());
 
+	rgb_color todayBackgroundColor = tint_color(Menu()->LowColor(), B_LIGHTEN_2_TINT);
 	rgb_color dayColor = tint_color(Menu()->HighColor(), B_DARKEN_2_TINT);
 	rgb_color titleColor = Menu()->HighColor();
 
@@ -119,15 +120,19 @@ CalendarMenuItem::DrawContent()
 		BPoint point(fColumnWidth * column + (fColumnWidth - width) / 2,
 			2 * (fTitleHeight + kTitleGap) + row * fRowHeight);
 
+		if (today) {
+			// draw a rectangle around today's day number
+			Menu()->SetLowColor(todayBackgroundColor);
+			Menu()->FillRect(BRect(point.x - 2, point.y - 1 - fFontHeight,
+				point.x + width + 1, point.y + 2), B_SOLID_LOW);
+
+			Menu()->SetHighColor(dayColor);
+		}
+
 		Menu()->DrawString(text, point);
 
 		if (today) {
-			// draw a rectangle around today's day number
-			Menu()->SetHighColor(ui_color(B_KEYBOARD_NAVIGATION_COLOR));
-			Menu()->StrokeRect(BRect(point.x - 2, point.y - 1 - fFontHeight,
-				point.x + width + 1, point.y + 2));
-			Menu()->SetHighColor(dayColor);
-
+			Menu()->SetLowColor(ui_color(B_MENU_BACKGROUND_COLOR));
 			Menu()->SetFont(be_plain_font);
 		}
 
