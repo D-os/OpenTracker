@@ -1370,15 +1370,13 @@ AttributeView::CheckAndSetSize()
 		off_t capacity = volume.Capacity();
 		char buffer[500];
 		if (capacity >= kGBSize)
-			sprintf(buffer, "%.1f GB (%.1f MB used -- %.1f MB free)",
-				(float)capacity / kGBSize,
-				(float)(capacity - fFreeBytes) / kMBSize,
-				(float)fFreeBytes / kMBSize);
+			sprintf(buffer, "%.1f G", (float)capacity / kGBSize);
 		else
-			sprintf(buffer, "%.1f MB (%.1f MB used -- %.1f MB free)",
-				(float)capacity / kMBSize,
-				(float)(capacity - fFreeBytes) / kMBSize,
-				(float)fFreeBytes / kMBSize);
+			sprintf(buffer, "%.1f M", (float)capacity / kMBSize);
+		
+		sprintf(buffer + strlen(buffer), "B (%.1f MB used -- %.1f MB free)",
+			(float)(capacity - fFreeBytes) / kMBSize,
+			(float)fFreeBytes / kMBSize);
 	
 		fSizeStr = buffer;
 	} else if (fModel->IsFile()) {
