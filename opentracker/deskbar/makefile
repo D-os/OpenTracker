@@ -232,7 +232,7 @@ LDFLAGS += $(LINKER_FLAGS)
 
 
 #	define the actual work to be done	
-default: $(TARGET)
+default deskbar all: $(TARGET)
 
 $(TARGET):	$(OBJ_DIR) $(OBJS) $(RAW_RSRCS) $(RSRCS)
 		$(LD) -o $@ $(OBJS) $(LDFLAGS)
