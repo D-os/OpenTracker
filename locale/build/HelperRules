@@ -27,3 +27,25 @@ rule Filter
 	return $(newList) ;
 }
 
+rule SplitPath
+{
+	# SplitPath <path> ;
+	#
+	# Decomposes a path into its components.
+	#
+	# <path>: The path to be decomposed.
+	#
+	local path = $(1:G=) ;
+
+	local components ;
+	# $(path:D) for "/" is "/". Therefore the second condition.
+	while $(path:D) && $(path:D) != $(path)
+	{
+		# Note: $(path:B) returns "." for "..", but $(path:D=) is fine.
+		components = $(path:D=) $(components) ;
+		path = $(path:D) ;
+	}
+	components = $(path) $(components) ;
+	return $(components) ;
+}
+
