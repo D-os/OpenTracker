@@ -1,36 +1,36 @@
+/*
+Open Tracker License
 
-// Open Tracker License
-//
-// Terms and Conditions
-//
-// Copyright (c) 1991-2000, Be Incorporated. All rights reserved.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy of
-// this software and associated documentation files (the "Software"), to deal in
-// the Software without restriction, including without limitation the rights to
-// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-// of the Software, and to permit persons to whom the Software is furnished to do
-// so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice applies to all licensees
-// and shall be included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF TITLE, MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-// BE INCORPORATED BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
-// AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-// Except as contained in this notice, the name of Be Incorporated shall not be
-// used in advertising or otherwise to promote the sale, use or other dealings in
-// this Software without prior written authorization from Be Incorporated.
-// 
-// Tracker(TM), Be(R), BeOS(R), and BeIA(TM) are trademarks or registered trademarks
-// of Be Incorporated in the United States and other countries. Other brand product
-// names are registered trademarks or trademarks of their respective holders.
-// All rights reserved.
+Terms and Conditions
 
+Copyright (c) 1991-2000, Be Incorporated. All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice applies to all licensees
+and shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF TITLE, MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+BE INCORPORATED BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
+AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Except as contained in this notice, the name of Be Incorporated shall not be
+used in advertising or otherwise to promote the sale, use or other dealings in
+this Software without prior written authorization from Be Incorporated.
+
+Tracker(TM), Be(R), BeOS(R), and BeIA(TM) are trademarks or registered trademarks
+of Be Incorporated in the United States and other countries. Other brand product
+names are registered trademarks or trademarks of their respective holders.
+All rights reserved.
+*/
 
 #include <Application.h>
 #include <Box.h>
@@ -89,6 +89,37 @@ const char *kDragNDropActionSpecifiers [] = { "Create a Query", "Create a Query 
 
 namespace BPrivate {
 
+class MostUsedNames {
+	public:
+		MostUsedNames(const char *fileName,const char *directory,int32 maxCount = 5);
+		~MostUsedNames();
+		
+		bool ObtainList(BList *list);
+		void ReleaseList();
+
+		void AddName(const char *);
+
+	protected:
+		struct list_entry {
+			char *name;
+			int32 count;
+		};
+
+		static int CompareNames(const void *a, const void *b);
+		void LoadList();
+		void UpdateList();
+
+		const char 	*fFileName;
+		const char	*fDirectory;
+		bool		fLoaded;
+		mutable Benaphore fLock;
+		BList		fList;
+		int32		fCount;
+};
+
+MostUsedNames gMostUsedMimeTypes("MostUsedMimeTypes", "Tracker");
+
+
 void 
 MoreOptionsStruct::EndianSwap(void *)
 {
@@ -121,7 +152,9 @@ MoreOptionsStruct::QueryTemporary(const BNode *node)
 	return saveMoreOptions.temporary;
 }
 
+
 //#pragma mark -
+
 
 FindWindow::FindWindow(const entry_ref *newRef, bool editIfTemplateOnly)
 	:	BWindow(kInitialRect, "Find", B_TITLED_WINDOW, B_NOT_RESIZABLE | B_NOT_ZOOMABLE),
@@ -601,6 +634,7 @@ FindWindow::MessageReceived(BMessage *message)
 	}
 }
 
+
 //#pragma mark -
 
 const float kMoreOptionsDelta = 20;
@@ -991,8 +1025,13 @@ FindPanel::MessageReceived(BMessage *message)
 		case kMIMETypeItem:
 			{
 				BMenuItem *item;
-				if (message->FindPointer("source",(void **)&item) == B_OK)
+				if (message->FindPointer("source",(void **)&item) == B_OK) {
+					// don't add the "All files and folders" to the list
+					if (message->FindInt32("index") > 0)
+						gMostUsedMimeTypes.AddName(item->Label());
+
 					SetCurrentMimeType(item);
+				}
 
 				// mime type switched 
 				if (fMode != kByAttributeItem)
@@ -1370,6 +1409,11 @@ FindPanel::CurrentMimeType(const char **type) const
 {
 	// search for marked item in the list
 	BMenuItem *item = MimeTypeMenu()->FindMarked();
+
+	// if it's one of the most used items, ignore it
+	if (item != NULL && MimeTypeMenu()->IndexOf(item) != 0 && item->Submenu() == NULL)
+		item = NULL;
+
 	if (item == NULL) {
 		for (int32 index = MimeTypeMenu()->CountItems();index-- > 0;) {
 			BMenu *submenu = MimeTypeMenu()->ItemAt(index)->Submenu();
@@ -1392,13 +1436,41 @@ FindPanel::CurrentMimeType(const char **type) const
 status_t 
 FindPanel::SetCurrentMimeType(BMenuItem *item)
 {
+	// unmark old MIME type (in most used list, and the tree)
+
 	BMenuItem *marked = CurrentMimeType();
-	if (marked != NULL)
+	if (marked != NULL) {
 		marked->SetMarked(false);
+
+		if ((marked = MimeTypeMenu()->FindMarked()) != NULL)
+			marked->SetMarked(false);
+	}
+
+	// mark new MIME type (in most used list, and the tree)
 
 	if (item != NULL) {
 		item->SetMarked(true);
 		fMimeTypeField->MenuItem()->SetLabel(item->Label());
+		
+		BMenuItem *search;
+		for (int32 i = 2;(search = MimeTypeMenu()->ItemAt(i)) != NULL;i++) {
+			if (item == search || !search->Label())
+				continue;
+			if (!strcmp(item->Label(),search->Label())) {
+				search->SetMarked(true);
+				break;
+			}
+			BMenu *submenu = search->Submenu();
+			if (submenu) {
+				for (int32 j = submenu->CountItems();j-- > 0;) {
+					BMenuItem *sub = submenu->ItemAt(j);
+					if (!strcmp(item->Label(),sub->Label())) {
+						sub->SetMarked(true);
+						break;
+					}
+				}
+			}
+		}
 	}
 	return B_OK;
 }
@@ -1406,21 +1478,30 @@ FindPanel::SetCurrentMimeType(BMenuItem *item)
 status_t 
 FindPanel::SetCurrentMimeType(const char *label)
 {
+	// unmark old MIME type (in most used list, and the tree)
+
 	BMenuItem *marked = CurrentMimeType();
-	if (marked != NULL)
+	if (marked != NULL) {
 		marked->SetMarked(false);
 
-	fMimeTypeField->MenuItem()->SetLabel(label);
+		if ((marked = MimeTypeMenu()->FindMarked()) != NULL)
+			marked->SetMarked(false);
+	}
 
-	for (int32 index = MimeTypeMenu()->CountItems(); index-- > 0;)  {
+	// mark new MIME type (in most used list, and the tree)
+
+	fMimeTypeField->MenuItem()->SetLabel(label);
+	bool found = false;
+
+	for (int32 index = MimeTypeMenu()->CountItems(); index-- > 0;) {
 		BMenuItem *item = MimeTypeMenu()->ItemAt(index);
 		BMenu *submenu = item->Submenu();
-		if (submenu != NULL) {
+		if (submenu != NULL && !found) {
 			for (int32 subIndex = submenu->CountItems(); subIndex-- > 0;) {
 				BMenuItem *subItem = submenu->ItemAt(subIndex);
 				if (strcmp(label, subItem->Label()) == 0) {
 					subItem->SetMarked(true);
-					return B_OK;
+					found = true;
 				}
 			}
 		}
@@ -1430,7 +1511,7 @@ FindPanel::SetCurrentMimeType(const char *label)
 		}
 	}
 
-	return B_ENTRY_NOT_FOUND;
+	return found ? B_OK : B_ENTRY_NOT_FOUND;
 }
 
 bool
@@ -1464,6 +1545,33 @@ FindPanel::AddMimeTypesToMenu()
 	MimeTypeMenu()->AddSeparatorItem();
 	MimeTypeMenu()->ItemAt(0)->SetMarked(true);
 
+	// add recent MIME types
+
+	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
+
+	BList list;
+	if (gMostUsedMimeTypes.ObtainList(&list) && tracker) {
+		int32 index = 0;
+		for (;index < list.CountItems();index++) {
+			const char *name = (const char *)list.ItemAt(index);
+
+			const ShortMimeInfo *info;
+			if ((info = tracker->MimeTypes()->FindMimeType(name)) == NULL)
+				continue;
+
+			BMessage *message = new BMessage(kMIMETypeItem);
+			message->AddString("mimetype",info->InternalName());
+
+			MimeTypeMenu()->AddItem(new BMenuItem(name,message));
+		}
+		if (index > 0)
+			MimeTypeMenu()->AddSeparatorItem();
+
+		gMostUsedMimeTypes.ReleaseList();
+	}
+
+	// add MIME type tree list
+
 	BMessage types;
 	if (BMimeType::GetInstalledSupertypes(&types) == B_OK) {
 		const char *superType;
@@ -1482,7 +1590,6 @@ FindPanel::AddMimeTypesToMenu()
 		}
 	}
 
-	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
 	if (tracker) 
 		tracker->MimeTypes()->EachCommonType(&FindPanel::AddOneMimeTypeToMenu,
 			MimeTypeMenu());
@@ -1722,7 +1829,7 @@ FindPanel::AddAttrView()
 	} else {
 		bounds = box->Bounds();
 		bounds.InsetBy(5, 5);
-		bounds.bottom = bounds.top + 20;
+		bounds.bottom = bounds.top + 25;
 	}
 	AddOneAttributeItem(box, bounds);
 
@@ -2068,7 +2175,7 @@ FindPanel::AddByAttributeItems(const BNode *node)
 
 	BRect rect(bounds);
 	rect.InsetBy(5, 5);
-	rect.bottom = rect.top + 20;
+	rect.bottom = rect.top + 25;
 
 	for (int32 index = 0; index < numAttributes; index ++) {
 		AddOneAttributeItem(box, rect);
@@ -2137,7 +2244,9 @@ FindPanel::ShowOrHideMimeTypeMenu()
 		menuField->Show();
 }
 
+
 // #pragma mark -
+
 
 TAttrView::TAttrView(BRect frame, int32 index)
 	:	BView(frame, "AttrView", B_FOLLOW_NONE, B_WILL_DRAW)
@@ -2157,25 +2266,14 @@ TAttrView::TAttrView(BRect frame, int32 index)
 	BMenuItem *item = new BMenuItem(submenu, message);
 	menu->AddItem(item);
 
-	message = new BMessage(kAttributeItem);
-	message->AddInt32("operator", B_CONTAINS);
-	submenu->AddItem(new BMenuItem("contains", message));
-
-	message = new BMessage(kAttributeItem);
-	message->AddInt32("operator", B_EQ);
-	submenu->AddItem(new BMenuItem("is", message));
-
-	message = new BMessage(kAttributeItem);
-	message->AddInt32("operator", B_NE);
-	submenu->AddItem(new BMenuItem("is not", message));
-
-	message = new BMessage(kAttributeItem);
-	message->AddInt32("operator", B_BEGINS_WITH);
-	submenu->AddItem(new BMenuItem("starts with", message));
-
-	message = new BMessage(kAttributeItem);
-	message->AddInt32("operator", B_ENDS_WITH);
-	submenu->AddItem(new BMenuItem("ends with", message));
+	const int32 operators[] = {B_CONTAINS, B_EQ, B_NE, B_BEGINS_WITH, B_ENDS_WITH};
+	const char *operatorLabels[] = {"contains", "is", "is not", "starts with", "ends with"};
+	
+	for (int32 i = 0;i < 5;i++) {
+		message = new BMessage(kAttributeItem);
+		message->AddInt32("operator", operators[i]);
+		submenu->AddItem(new BMenuItem(operatorLabels[i], message));
+	}
 
 	// mark first item
 	menu->ItemAt(0)->SetMarked(true);
@@ -2544,7 +2642,9 @@ TAttrView::AddMimeTypeAttrs(BMenu *menu)
 	}
 }
 
+
 // #pragma mark -
+
 
 DeleteTransientQueriesTask::DeleteTransientQueriesTask()
 	:	state(kInitial),
@@ -2701,7 +2801,9 @@ DeleteTransientQueriesTask::StartUpTransientQueryCleaner()
 		10 * 1000000);
 }
 
+
 //#pragma mark -
+
 
 RecentFindItemsMenu::RecentFindItemsMenu(const char *title, const BMessenger *target,
 	uint32 what)
@@ -2732,7 +2834,9 @@ TrackerBuildRecentFindItemsMenu(const char *title)
 	return new RecentFindItemsMenu(title, &tracker, B_REFS_RECEIVED);
 }
 
+
 //#pragma mark -
+
 
 DraggableQueryIcon::DraggableQueryIcon(BRect frame, const char *name,
 	const BMessage *message, BMessenger messenger, uint32 resizeFlags, uint32 flags)
@@ -2757,4 +2861,190 @@ DraggableQueryIcon::DragStarted(BMessage *dragMessage)
 }
 
 
+//#pragma mark -
+
+
+MostUsedNames::MostUsedNames(const char *fileName,const char *directory,int32 maxCount)
+	:
+	fFileName(fileName),
+	fDirectory(directory),
+	fLoaded(false),
+	fCount(maxCount)
+{
 }
+
+MostUsedNames::~MostUsedNames()
+{
+	// write most used list to file
+
+	BPath path;
+	if (find_directory(B_USER_SETTINGS_DIRECTORY, &path, true) != B_OK)
+		return;
+
+	path.Append(fDirectory);
+	path.Append(fFileName);
+	BFile file(path.Path(),B_WRITE_ONLY | B_CREATE_FILE);
+	if (file.InitCheck() == B_OK) {
+		for (int32 i = 0;i < fList.CountItems();i++) {
+			list_entry *entry = static_cast<list_entry *>(fList.ItemAt(i));
+
+			char line[B_FILE_NAME_LENGTH + 5];
+			sprintf(line,"%ld %s\n",entry->count,entry->name);
+			if (file.Write(line,strlen(line)) < B_OK)
+				break;
+		}
+	}
+	file.Unset();
+		
+	// free data
+
+	for (int32 i = fList.CountItems();i-- > 0;) {
+		list_entry *entry = static_cast<list_entry *>(fList.ItemAt(i));
+		free(entry->name);
+		delete entry;
+	}
+}
+
+bool
+MostUsedNames::ObtainList(BList *list)
+{
+	if (!list)
+		return false;
+
+	if (!fLoaded)
+		UpdateList();
+
+	AutoLock<Benaphore> locker(fLock);
+
+	list->MakeEmpty();
+	for (int32 i = 0; i < fCount; i++) {
+		list_entry *entry = static_cast<list_entry *>(fList.ItemAt(i));
+		if (entry == NULL)
+			return true;
+
+		list->AddItem(entry->name);
+	}	
+	return true;
+}
+
+void 
+MostUsedNames::ReleaseList()
+{
+	fLock.Unlock();
+}
+
+void 
+MostUsedNames::AddName(const char *name)
+{
+	fLock.Lock();
+
+	if (!fLoaded)
+		LoadList();
+
+	// remove last entry if there are more than
+	// 2*fCount entries in the list
+
+	list_entry *entry = NULL;
+
+	if (fList.CountItems() > fCount * 2) {
+		entry = static_cast<list_entry *>(fList.RemoveItem(fList.CountItems() - 1));
+
+		// is this the name we want to add here?
+		if (strcmp(name,entry->name)) {
+			free(entry->name);
+			delete entry;
+			entry = NULL;
+		} else
+			fList.AddItem(entry);
+	}
+
+	if (entry == NULL) {
+		for (int32 i = 0;(entry = static_cast<list_entry *>(fList.ItemAt(i))) != NULL;i++)
+			if (!strcmp(entry->name,name))
+				break;
+	}
+		
+	if (entry == NULL) {
+		entry = new list_entry;		
+		entry->name = strdup(name);
+		entry->count = 1;
+		
+		fList.AddItem(entry);
+	} else
+		entry->count++;
+	
+	fLock.Unlock();
+	UpdateList();
+}
+
+int
+MostUsedNames::CompareNames(const void *a,const void *b)
+{
+	list_entry *entryA = *(list_entry **)a;
+	list_entry *entryB = *(list_entry **)b;
+
+	if (entryA->count == entryB->count)
+		return strcasecmp(entryA->name,entryB->name);
+
+	return entryB->count - entryA->count;
+}
+
+void 
+MostUsedNames::LoadList()
+{
+	if (fLoaded)
+		return;
+	fLoaded = true;
+
+	// load the most used names list
+
+	BPath path;
+	if (find_directory(B_USER_SETTINGS_DIRECTORY, &path, true) != B_OK)
+		return;
+
+	path.Append(fDirectory);
+	path.Append(fFileName);
+	
+	FILE *file = fopen(path.Path(),"r");
+	if (file == NULL)
+		return;
+
+	char line[B_FILE_NAME_LENGTH + 5];
+	while (fgets(line,sizeof(line),file) != NULL) {
+		int32 length = strlen(line) - 1;
+		if (length >= 0 && line[length] == '\n')
+			line[length] = '\0';
+
+		int32 count = atoi(line);
+		if (count < 1)
+			continue;
+		
+		char *name = strchr(line,' ');
+		if (name == NULL || *(++name) == '\0')
+			continue;
+		
+		list_entry *entry = new list_entry;
+		entry->name = strdup(name);
+		entry->count = count;
+
+		fList.AddItem(entry);
+	}
+	fclose(file);
+}
+
+
+void 
+MostUsedNames::UpdateList()
+{
+	AutoLock<Benaphore> locker(fLock);
+
+	if (!fLoaded)
+		LoadList();
+
+	// sort list items
+
+	fList.SortItems(MostUsedNames::CompareNames);	
+}
+
+}	// namespace BPrivate
+

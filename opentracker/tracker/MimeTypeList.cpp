@@ -89,6 +89,9 @@ ShortMimeInfo::IsCommonMimeType() const
 }
 
 
+//	#pragma mark -
+
+
 MimeTypeList::MimeTypeList()
 	:	fMimeList(100, true),
 		fCommonMimeList(30, false),
