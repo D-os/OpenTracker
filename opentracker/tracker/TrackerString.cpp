@@ -122,10 +122,16 @@ TrackerString::MatchesGlob(const char *string, bool caseSensitivity) const
 bool
 TrackerString::EndsWith(const char *string, bool caseSensitivity) const
 {
+	// If "string" is longer than "this",
+	// we should simply return false
+	int32 position = Length() - (int32)strlen(string);
+	if (position < 0)
+		return false;
+		
 	if (caseSensitivity)
-		return FindLast(string) == Length() - (int32)strlen(string);
+		return FindLast(string) == position;
 	else
-		return IFindLast(string) == Length() - (int32)strlen(string);
+		return IFindLast(string) == position;
 }
 
 
