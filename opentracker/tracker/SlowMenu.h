@@ -47,30 +47,30 @@ All rights reserved.
 namespace BPrivate {
 
 class BSlowMenu : public BMenu {
-public:
-	BSlowMenu(const char *title, menu_layout layout = B_ITEMS_IN_COLUMN);
+	public:
+		BSlowMenu(const char *title, menu_layout layout = B_ITEMS_IN_COLUMN);
 
-protected:
-	virtual bool StartBuildingItemList();
-		// set up state to start building the item list
-		// returns false if setup failed
-	virtual bool AddNextItem() = 0;
-		// returns false if done
-	virtual void DoneBuildingItemList() = 0;
-		// default version adds items from itemList to menu and deletes
-		// the list; override to sort items first, etc.
-	
-	virtual void ClearMenuBuildingState() = 0;
+	protected:
+		virtual bool StartBuildingItemList();
+			// set up state to start building the item list
+			// returns false if setup failed
+		virtual bool AddNextItem() = 0;
+			// returns false if done
+		virtual void DoneBuildingItemList() = 0;
+			// default version adds items from itemList to menu and deletes
+			// the list; override to sort items first, etc.
 
-protected:
-	virtual bool AddDynamicItem(add_state state);
-		// this is the callback from BMenu, you shouldn't need to override this
+		virtual void ClearMenuBuildingState() = 0;
 
-	bool fMenuBuilt;
+	protected:
+		virtual bool AddDynamicItem(add_state state);
+			// this is the callback from BMenu, you shouldn't need to override this
+
+		bool fMenuBuilt;
 };
 
 } // namespace BPrivate
 
 using namespace BPrivate;
 
-#endif
+#endif	/* __SLOW_MENU__ */

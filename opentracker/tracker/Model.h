@@ -72,217 +72,218 @@ enum {
 };
 
 class Model {
-public:
-	Model();
-	Model(const Model &);
-	Model(const BEntry *entry, bool open = false, bool writable = false);
-	Model(const entry_ref *, bool traverse = false, bool open = false,
-		bool writable = false);
-	Model(const node_ref *dirNode, const node_ref *node, const char *name,
-		bool open = false, bool writable = false);
-	~Model();
+	public:
+		Model();
+		Model(const Model &);
+		Model(const BEntry *entry, bool open = false, bool writable = false);
+		Model(const entry_ref *, bool traverse = false, bool open = false,
+			bool writable = false);
+		Model(const node_ref *dirNode, const node_ref *node, const char *name,
+			bool open = false, bool writable = false);
+		~Model();
 
-	Model& operator=(const Model &);
+		Model& operator=(const Model &);
 
-	status_t InitCheck() const;
+		status_t InitCheck() const;
 
-	status_t SetTo(const BEntry *, bool open = false, bool writable = false);
-	status_t SetTo(const entry_ref *, bool traverse = false, bool open = false,
-		bool writable = false);
-	status_t SetTo(const node_ref *dirNode, const node_ref *node, const char *name,
-		bool open = false, bool writable = false);
+		status_t SetTo(const BEntry *, bool open = false, bool writable = false);
+		status_t SetTo(const entry_ref *, bool traverse = false, bool open = false,
+			bool writable = false);
+		status_t SetTo(const node_ref *dirNode, const node_ref *node, const char *name,
+			bool open = false, bool writable = false);
 
-	int CompareFolderNamesFirst(const Model *compareModel) const;
+		int CompareFolderNamesFirst(const Model *compareModel) const;
 
-	// node management
-	status_t OpenNode(bool writable = false);
-		// also used to switch from read-only to writable
-	void CloseNode();
-	bool IsNodeOpen() const;
-	bool IsNodeOpenForWriting() const;
-	
-	status_t UpdateStatAndOpenNode(bool writable = false);
-		// like OpenNode, called on zombie poses to check if they turned
-		// real, starts by rereading the stat structure
-	
-	// basic getters
-	const char *Name() const;
-	const entry_ref *EntryRef() const;
-	const node_ref *NodeRef() const;
-	const StatStruct *StatBuf() const;
+		// node management
+		status_t OpenNode(bool writable = false);
+			// also used to switch from read-only to writable
+		void CloseNode();
+		bool IsNodeOpen() const;
+		bool IsNodeOpenForWriting() const;
 
-	BNode *Node() const;
-		// returns null if not Open
-	void GetPath(BPath *) const;	
-	void GetEntry(BEntry *) const;	
-	
-	const char *MimeType() const;
-	const char *PreferredAppSignature() const;
-		// only not-null if not default for type and not self for app
-	void SetPreferredAppSignature(const char *);
-	
-	void GetPreferredAppForBrokenSymLink(BString &result);
-		// special purpose call - if a symlink is unresolvable, it makes sense
-		// to be able to get at it's preferred handler which may be different
-		// from the Tracker. Used by the network neighborhood.
+		status_t UpdateStatAndOpenNode(bool writable = false);
+			// like OpenNode, called on zombie poses to check if they turned
+			// real, starts by rereading the stat structure
 
-	// type getters
-	bool IsFile() const;
-	bool IsDirectory() const;
-	bool IsQuery() const;
-	bool IsQueryTemplate() const;
-	bool IsContainer() const;
-	bool IsExecutable() const;
-	bool IsSymLink() const;
-	bool IsRoot() const;
-	bool IsVolume() const;
+		// basic getters
+		const char *Name() const;
+		const entry_ref *EntryRef() const;
+		const node_ref *NodeRef() const;
+		const StatStruct *StatBuf() const;
 
-	IconSource IconFrom() const;
-	void SetIconFrom(IconSource);
-		// where is this model getting it's icon from
+		BNode *Node() const;
+			// returns null if not Open
+		void GetPath(BPath *) const;	
+		void GetEntry(BEntry *) const;	
 
-	void ResetIconFrom();
-		// called from the attribute changed calls to force a lookup of
-		// a new icon
+		const char *MimeType() const;
+		const char *PreferredAppSignature() const;
+			// only not-null if not default for type and not self for app
+		void SetPreferredAppSignature(const char *);
 
-	// symlink handling calls, mainly used by the IconCache
-	const Model *ResolveIfLink() const;
-	Model *ResolveIfLink();
-		// works on anything
-	Model *LinkTo() const;
-		// fast, works only on symlinks
-	void SetLinkTo(Model *);
-	
-	status_t GetLongVersionString(BString &, version_kind);
-	status_t AttrAsString(BString &, int64 *value, const char *attributeName,
-		uint32 attributeType);
+		void GetPreferredAppForBrokenSymLink(BString &result);
+			// special purpose call - if a symlink is unresolvable, it makes sense
+			// to be able to get at it's preferred handler which may be different
+			// from the Tracker. Used by the network neighborhood.
 
-	// Node monitor update call
-	void UpdateEntryRef(const node_ref *dirRef, const char *name);
-	bool AttrChanged(const char *);
-		// returns true if pose needs to update it's icon, etc.
-		// pass null to force full update
-	bool StatChanged();
-		// returns true if pose needs to update it's icon
+		// type getters
+		bool IsFile() const;
+		bool IsDirectory() const;
+		bool IsQuery() const;
+		bool IsQueryTemplate() const;
+		bool IsContainer() const;
+		bool IsExecutable() const;
+		bool IsSymLink() const;
+		bool IsRoot() const;
+		bool IsVolume() const;
 
-	status_t WatchVolumeAndMountPoint(uint32, BHandler *);
-		// correctly handles boot volume name watching
-	
-	bool IsDropTarget(const Model *forDocument = 0,
-		bool traverse = false) const;
-		// if nonzero <forDocument> passed, mime info is used to
-		// resolve if document can be opened
-		// if zero, all executables, directories and volumes pass
-		// if traverse, dereference symlinks
-	bool IsDropTargetForList(const BObjectList<BString> *list) const;
-		// <list> contains mime types of all documents about to be handled
-		// by model
-	
-#if DEBUG
-	void PrintToStream(int32 level = 1, bool deep = false);
-	void TrackIconSource(icon_size);
-#endif
+		IconSource IconFrom() const;
+		void SetIconFrom(IconSource);
+			// where is this model getting it's icon from
 
-	bool IsSuperHandler() const;
-	int32 SupportsMimeType(const char *type, const BObjectList<BString> *list,
-		bool exactReason = false) const;
-		// pass in one string in <type> or a bunch in <list>
-		// if <exactReason> false, returns as soon as it figures out that
-		// app supports a given type, if true, returns an exact reason
-	
+		void ResetIconFrom();
+			// called from the attribute changed calls to force a lookup of
+			// a new icon
 
-	// get rid of this??
-	ssize_t WriteAttr(const char *attr, type_code type, off_t,
-		const void *buffer, size_t );
-		// cover call, creates a writable node and writes out attributes
-		// into it; work around for file nodes not being writeable
-	ssize_t WriteAttrKillForegin(const char *attr, const char *foreignAttr,
-		type_code type, off_t, const void *buffer, size_t);
+		// symlink handling calls, mainly used by the IconCache
+		const Model *ResolveIfLink() const;
+		Model *ResolveIfLink();
+			// works on anything
+		Model *LinkTo() const;
+			// fast, works only on symlinks
+		void SetLinkTo(Model *);
 
-	bool Mimeset(bool force);
-		// returns true if mime type changed
-private:
-	status_t OpenNodeCommon(bool writable);
-	void SetupBaseType();
-	void FinishSettingUpType();
-	void DeletePreferredAppVolumeNameLinkTo();
+		status_t GetLongVersionString(BString &, version_kind);
+		status_t AttrAsString(BString &, int64 *value, const char *attributeName,
+			uint32 attributeType);
 
-	status_t FetchOneQuery(const BQuery *, BHandler *target,
-		BObjectList<BQuery>*, BVolume *);
+		// Node monitor update call
+		void UpdateEntryRef(const node_ref *dirRef, const char *name);
+		bool AttrChanged(const char *);
+			// returns true if pose needs to update it's icon, etc.
+			// pass null to force full update
+		bool StatChanged();
+			// returns true if pose needs to update it's icon
 
-	enum CanHandleResult {
-		kCanHandle,
-		kCannotHandle,
-		kNeedToCheckType
-	};
+		status_t WatchVolumeAndMountPoint(uint32, BHandler *);
+			// correctly handles boot volume name watching
 
-	CanHandleResult CanHandleDrops() const;
+		bool IsDropTarget(const Model *forDocument = 0,
+			bool traverse = false) const;
+			// if nonzero <forDocument> passed, mime info is used to
+			// resolve if document can be opened
+			// if zero, all executables, directories and volumes pass
+			// if traverse, dereference symlinks
+		bool IsDropTargetForList(const BObjectList<BString> *list) const;
+			// <list> contains mime types of all documents about to be handled
+			// by model
 
-	enum NodeType {
-		kPlainNode,
-		kExecutableNode,
-		kDirectoryNode,
-		kLinkNode,
-		kQueryNode,
-		kQueryTemplateNode,
-		kVolumeNode,
-		kRootNode,
-		kUnknownNode
-	};
+	#if DEBUG
+		void PrintToStream(int32 level = 1, bool deep = false);
+		void TrackIconSource(icon_size);
+	#endif
 
-	entry_ref fEntryRef;
-	StatStruct fStatBuf;
-	BString fMimeType;		// should use string that may be shared for common types
+		bool IsSuperHandler() const;
+		int32 SupportsMimeType(const char *type, const BObjectList<BString> *list,
+			bool exactReason = false) const;
+			// pass in one string in <type> or a bunch in <list>
+			// if <exactReason> false, returns as soon as it figures out that
+			// app supports a given type, if true, returns an exact reason
 
-	// bit of overloading hackery here to save on footprint
-	union {
-		char *fPreferredAppName;	// used if we are neither a volume nor a symlink
-		char *fVolumeName;			// used if we are a volume
-		Model *fLinkTo;				// used if we are a symlink
-	};
+		// get rid of this??
+		ssize_t WriteAttr(const char *attr, type_code type, off_t,
+			const void *buffer, size_t );
+			// cover call, creates a writable node and writes out attributes
+			// into it; work around for file nodes not being writeable
+		ssize_t WriteAttrKillForegin(const char *attr, const char *foreignAttr,
+			type_code type, off_t, const void *buffer, size_t);
 
-	uint8 fBaseType;
-	uint8 fIconFrom;
-	bool fWritable;
-	BNode *fNode;
-	status_t fStatus;
+		bool Mimeset(bool force);
+			// returns true if mime type changed
+	private:
+		status_t OpenNodeCommon(bool writable);
+		void SetupBaseType();
+		void FinishSettingUpType();
+		void DeletePreferredAppVolumeNameLinkTo();
+
+		status_t FetchOneQuery(const BQuery *, BHandler *target,
+			BObjectList<BQuery>*, BVolume *);
+
+		enum CanHandleResult {
+			kCanHandle,
+			kCannotHandle,
+			kNeedToCheckType
+		};
+
+		CanHandleResult CanHandleDrops() const;
+
+		enum NodeType {
+			kPlainNode,
+			kExecutableNode,
+			kDirectoryNode,
+			kLinkNode,
+			kQueryNode,
+			kQueryTemplateNode,
+			kVolumeNode,
+			kRootNode,
+			kUnknownNode
+		};
+
+		entry_ref fEntryRef;
+		StatStruct fStatBuf;
+		BString fMimeType;		// should use string that may be shared for common types
+
+		// bit of overloading hackery here to save on footprint
+		union {
+			char *fPreferredAppName;	// used if we are neither a volume nor a symlink
+			char *fVolumeName;			// used if we are a volume
+			Model *fLinkTo;				// used if we are a symlink
+		};
+
+		uint8 fBaseType;
+		uint8 fIconFrom;
+		bool fWritable;
+		BNode *fNode;
+		status_t fStatus;
 };
+
 
 class ModelNodeLazyOpener {
 	// a utility open state manager, usefull to allocate on stack
 	// and have close up model when done, etc.
-public:
-
-	// consider failing when open does not succeed
+	public:
+		// consider failing when open does not succeed
 	
-	ModelNodeLazyOpener(Model *model, bool writable = false, bool openLater = true);
-	~ModelNodeLazyOpener();
+		ModelNodeLazyOpener(Model *model, bool writable = false, bool openLater = true);
+		~ModelNodeLazyOpener();
 
-	bool IsOpen() const;
-	bool IsOpenForWriting() const;
-	bool IsOpen(bool forWriting) const;
-	Model *TargetModel() const;
-	status_t OpenNode(bool writable = false);
-	
-private:
-	Model *fModel;
-	bool fWasOpen;
-	bool fWasOpenForWriting;
+		bool IsOpen() const;
+		bool IsOpenForWriting() const;
+		bool IsOpen(bool forWriting) const;
+		Model *TargetModel() const;
+		status_t OpenNode(bool writable = false);
+
+	private:
+		Model *fModel;
+		bool fWasOpen;
+		bool fWasOpenForWriting;
 };
 
 // handy flavors of openers
 class BModelOpener : public ModelNodeLazyOpener {
-public:
-	BModelOpener(Model *model)
+	public:
+		BModelOpener(Model *model)
 		:	ModelNodeLazyOpener(model, false, false)
-		{}
+		{
+		}
 };
 
 class BModelWriteOpener : public ModelNodeLazyOpener {
-public:
-	BModelWriteOpener(Model *model)
+	public:
+		BModelWriteOpener(Model *model)
 		:	ModelNodeLazyOpener(model, true, false)
-		{}
+		{
+		}
 };
 
 
@@ -312,6 +313,7 @@ Model::EntryRef() const
 inline const node_ref *
 Model::NodeRef() const
 {
+	// the stat structure begins with a node_ref
 	return (node_ref *)&fStatBuf;
 }
 

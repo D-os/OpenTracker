@@ -83,24 +83,28 @@ _IMPEXP_BE
 bool CheckNodeIconHintPrivate(const BNode *, bool);
 }
 
+
 Model::Model()
-	:	fPreferredAppName(NULL),
-		fBaseType(kUnknownNode),
-		fIconFrom(kUnknownSource),
-		fWritable(false),
-		fNode(NULL),
-		fStatus(B_NO_INIT)
+	:
+	fPreferredAppName(NULL),
+	fBaseType(kUnknownNode),
+	fIconFrom(kUnknownSource),
+	fWritable(false),
+	fNode(NULL),
+	fStatus(B_NO_INIT)
 {
 }
 
+
 Model::Model(const Model &cloneThis)
-	:	fEntryRef(cloneThis.fEntryRef),
-		fMimeType(cloneThis.fMimeType),
-		fPreferredAppName(NULL),
-		fBaseType(cloneThis.fBaseType),
-		fIconFrom(cloneThis.fIconFrom),
-		fWritable(false),
-		fNode(NULL)
+	:
+	fEntryRef(cloneThis.fEntryRef),
+	fMimeType(cloneThis.fMimeType),
+	fPreferredAppName(NULL),
+	fBaseType(cloneThis.fBaseType),
+	fIconFrom(cloneThis.fIconFrom),
+	fWritable(false),
+	fNode(NULL)
 {
 	fStatBuf.st_dev = cloneThis.NodeRef()->device;
 	fStatBuf.st_ino = cloneThis.NodeRef()->node;
@@ -119,36 +123,42 @@ Model::Model(const Model &cloneThis)
 		CloseNode();
 }
 
+
 Model::Model(const node_ref *dirNode, const node_ref *node, const char *name,
 	bool open, bool writable)
-	:	fPreferredAppName(NULL),
-		fWritable(false),
-		fNode(NULL)
+	:
+	fPreferredAppName(NULL),
+	fWritable(false),
+	fNode(NULL)
 {
 	SetTo(dirNode, node, name, open, writable);
 }
 
+
 Model::Model(const BEntry *entry, bool open, bool writable)
-	:	fPreferredAppName(NULL),
-		fWritable(false),
-		fNode(NULL)
+	:
+	fPreferredAppName(NULL),
+	fWritable(false),
+	fNode(NULL)
 {
 	SetTo(entry, open, writable);
 }
 
 
 Model::Model(const entry_ref *ref, bool traverse, bool open, bool writable)
-	:	fPreferredAppName(NULL),
-		fBaseType(kUnknownNode),
-		fIconFrom(kUnknownSource),
-		fWritable(false),
-		fNode(NULL)
+	:
+	fPreferredAppName(NULL),
+	fBaseType(kUnknownNode),
+	fIconFrom(kUnknownSource),
+	fWritable(false),
+	fNode(NULL)
 {
 	BEntry entry(ref, traverse);
 	fStatus = entry.InitCheck();
 	if (fStatus == B_OK)
 		SetTo(&entry, open, writable);
 }
+
 
 void 
 Model::DeletePreferredAppVolumeNameLinkTo()
@@ -166,6 +176,7 @@ Model::DeletePreferredAppVolumeNameLinkTo()
 
 	fPreferredAppName = NULL;
 }
+
 
 Model::~Model()
 {
@@ -188,6 +199,7 @@ Model::~Model()
 
 	delete fNode;
 }
+
 
 status_t 
 Model::SetTo(const BEntry *entry, bool open, bool writable)
@@ -213,6 +225,7 @@ Model::SetTo(const BEntry *entry, bool open, bool writable)
 	
 	return fStatus;
 }
+
 
 status_t 
 Model::SetTo(const entry_ref *newRef, bool traverse, bool open, bool writable)
@@ -244,6 +257,7 @@ Model::SetTo(const entry_ref *newRef, bool traverse, bool open, bool writable)
 	
 	return fStatus;
 }
+
 
 status_t 
 Model::SetTo(const node_ref *dirNode, const node_ref *nodeRef, const char *name,
@@ -279,11 +293,13 @@ Model::SetTo(const node_ref *dirNode, const node_ref *nodeRef, const char *name,
 	return fStatus;
 }
 
+
 status_t 
 Model::InitCheck() const
 {
 	return fStatus;
 }
+
 
 int
 Model::CompareFolderNamesFirst(const Model *compareModel) const
@@ -309,6 +325,7 @@ Model::CompareFolderNamesFirst(const Model *compareModel) const
 	return strcasecmp(Name(), compareModel->Name());
 }
 
+
 const char *
 Model::Name() const
 {
@@ -323,6 +340,7 @@ Model::Name() const
 	return fEntryRef.name;
 }
 
+
 status_t 
 Model::OpenNode(bool writable)
 {
@@ -332,6 +350,7 @@ Model::OpenNode(bool writable)
 	OpenNodeCommon(writable);
 	return fStatus;
 }
+
 
 status_t 
 Model::UpdateStatAndOpenNode(bool writable)
@@ -352,7 +371,6 @@ Model::UpdateStatAndOpenNode(bool writable)
 	OpenNodeCommon(writable);
 	return fStatus;
 }
-
 
 
 status_t
@@ -402,10 +420,10 @@ Model::OpenNodeCommon(bool writable)
 #endif
 			TRESPASS();
 				// this can only happen if GetStat failed before, in which case
-				// we shouln't be here 
+				// we shouldn't be here 
 			return B_ERROR;
 	}
-	
+
 	fStatus = fNode->InitCheck();
 	if (fStatus != B_OK) {
 		delete fNode;
@@ -415,10 +433,10 @@ Model::OpenNodeCommon(bool writable)
 	}
 
 	fWritable = writable;
-	
+
 	if (!fMimeType.Length())
 		FinishSettingUpType();
-	
+
 #ifdef CHECK_OPEN_MODEL_LEAKS
 	if (fWritable) {
 		if (!writableOpenModelList) {
@@ -438,6 +456,7 @@ Model::OpenNodeCommon(bool writable)
 	return fStatus;
 }
 
+
 void 
 Model::CloseNode()
 {
@@ -456,17 +475,21 @@ Model::CloseNode()
 	fNode = NULL;
 }
 
+
 bool 
 Model::IsNodeOpen() const
 {
 	return fNode != NULL;
 }
 
+
+
 bool 
 Model::IsNodeOpenForWriting() const
 {
 	return fNode != NULL && fWritable;
 }
+
 
 void
 Model::SetupBaseType()
@@ -498,6 +521,7 @@ Model::SetupBaseType()
 	}
 }
 
+
 void
 Model::FinishSettingUpType()
 {
@@ -510,20 +534,20 @@ Model::FinishSettingUpType()
 	// disk again for models that do not have an icon defined by the node
 	if (IsNodeOpen()
 		&& fBaseType != kLinkNode
-		&& !CheckNodeIconHintPrivate(fNode, dynamic_cast<TTracker *>(be_app) == NULL))
+		&& !CheckNodeIconHintPrivate(fNode, dynamic_cast<TTracker *>(be_app) == NULL)) {
 			// when checking for the node icon hint, if we are libtracker, only check
 			// for small icons - checking for the large icons is a little more
 			// work for the filesystem and this will speed up the test.
 			// This makes node icons only work if there is a small and a large node
 			// icon on a file - for libtracker that is not a problem though
-		
 		fIconFrom = kUnknownNotFromNode;
-	
+	}
+
 	if (fBaseType != kDirectoryNode
 		&& fBaseType != kLinkNode
 		&& IsNodeOpen()) {
 		BNodeInfo info(fNode);
-		
+
 		// check if a specific mime type is set
 		if (info.GetType(mimeString) == B_OK) {
 			// node has a specific mime type
@@ -532,11 +556,11 @@ Model::FinishSettingUpType()
 				fBaseType = kQueryNode;
 			else if (strcmp(mimeString, B_QUERY_TEMPLATE_MIMETYPE) == 0)
 				fBaseType = kQueryTemplateNode;
-				
+
 			if (info.GetPreferredApp(mimeString) == B_OK) {
 				if (fPreferredAppName)
 					DeletePreferredAppVolumeNameLinkTo();
-					
+
 				if (mimeString[0])
 					fPreferredAppName = strdup(mimeString); 
 			}
@@ -555,7 +579,6 @@ Model::FinishSettingUpType()
 
 			fMimeType = B_DIR_MIMETYPE;	// should use a shared string here
 			if (IsNodeOpen()) {
-			
 				BNodeInfo info(fNode);
 				if (info.GetType(mimeString) == B_OK)
 					fMimeType = mimeString;
@@ -573,13 +596,13 @@ Model::FinishSettingUpType()
 					fMimeType = B_VOLUME_MIMETYPE;
 					if (fIconFrom == kUnknownNotFromNode)
 						fIconFrom = kVolume;
-	
+
 					char name[B_FILE_NAME_LENGTH];
 					BVolume	volume(NodeRef()->device);
 					if (volume.InitCheck() == B_OK && volume.GetName(name) == B_OK) {
 						if (fVolumeName)
 							DeletePreferredAppVolumeNameLinkTo();
-	
+
 						fVolumeName = strdup(name);
 					}
 #if DEBUG
@@ -587,14 +610,14 @@ Model::FinishSettingUpType()
 						PRINT(("get volume name failed for %s\n", fEntryRef.name));
 #endif
 				} 
-					
+
 			}
 			break;
-			
+
 		case kLinkNode:
 			fMimeType = B_LINK_MIMETYPE;	// should use a shared string here
 			break;
-		
+
 		case kExecutableNode:
 			if (IsNodeOpen()) {
 				char signature[B_MIME_TYPE_LENGTH];
@@ -618,6 +641,7 @@ Model::FinishSettingUpType()
 			break;
 	}
 }
+
 
 void 
 Model::ResetIconFrom()
@@ -651,6 +675,7 @@ Model::PreferredAppSignature() const
 	return fPreferredAppName ? fPreferredAppName : "";
 }
 
+
 void 
 Model::SetPreferredAppSignature(const char *signature)
 {
@@ -665,6 +690,7 @@ Model::SetPreferredAppSignature(const char *signature)
 		fPreferredAppName = NULL;
 }
 
+
 const Model *
 Model::ResolveIfLink() const
 {
@@ -676,6 +702,7 @@ Model::ResolveIfLink() const
 
 	return fLinkTo;
 }
+
 
 Model *
 Model::ResolveIfLink()
@@ -689,6 +716,7 @@ Model::ResolveIfLink()
 	return fLinkTo;
 }
 
+
 void 
 Model::SetLinkTo(Model *model)
 {
@@ -699,6 +727,7 @@ Model::SetLinkTo(Model *model)
 		delete fLinkTo;
 	fLinkTo = model;
 }
+
 
 void 
 Model::GetPreferredAppForBrokenSymLink(BString &result)
@@ -736,9 +765,10 @@ Model::UpdateEntryRef(const node_ref *dirNode, const char *name)
 
 	if (fEntryRef.name && strcmp(fEntryRef.name, name) == 0)
 		return;
-	
+
 	fEntryRef.set_name(name);
 }
+
 
 status_t 
 Model::WatchVolumeAndMountPoint(uint32 , BHandler *target)
@@ -756,11 +786,11 @@ Model::WatchVolumeAndMountPoint(uint32 , BHandler *target)
 		TTracker::WatchNode(mountPointModel.NodeRef(), B_WATCH_NAME
 			| B_WATCH_STAT | B_WATCH_ATTR, target);
 	}
-	
-	
+
 	return TTracker::WatchNode(NodeRef(), B_WATCH_NAME | B_WATCH_STAT
 		| B_WATCH_ATTR, target);
 }
+
 
 bool 
 Model::AttrChanged(const char *attrName)
@@ -775,10 +805,9 @@ Model::AttrChanged(const char *attrName)
 			|| strcmp(attrName, kAttrLargeIcon) == 0)) 
 		return true;
 
-
 	if (!attrName
-		|| strcmp(attrName , kAttrMIMEType) == 0
-			|| strcmp(attrName , kAttrPreferredApp) == 0) {
+		|| strcmp(attrName, kAttrMIMEType) == 0
+		|| strcmp(attrName, kAttrPreferredApp) == 0) {
 		char mimeString[B_MIME_TYPE_LENGTH];
 		BNodeInfo info(fNode);
 		if (info.GetType(mimeString) != B_OK)
@@ -799,15 +828,16 @@ Model::AttrChanged(const char *attrName)
 		else
 			PRINT(("not updating icon even thoug type changed "
 				"because icon from node\n"));
-		
+
 #endif
 
 		return fIconFrom != kNode;
 		// update icon unless it is comming from a node
 	}
-	
+
 	return attrName == NULL;
 }
+
 
 bool 
 Model::StatChanged()
@@ -836,7 +866,7 @@ Model::IsDropTarget(const Model *forDocument, bool traverse) const
 
 		case kCannotHandle:
 			return false;
-		
+
 		default:
 			break;
 	}
@@ -850,7 +880,7 @@ Model::IsDropTarget(const Model *forDocument, bool traverse) const
 
 		BFile file(&entry, O_RDONLY);
 		BNodeInfo mime(&file);
-		
+
 		if (mime.InitCheck() != B_OK)
 			return false;
 
@@ -866,6 +896,7 @@ Model::IsDropTarget(const Model *forDocument, bool traverse) const
 
 	return SupportsMimeType(documentMimeType, 0) != kDoesNotSupportType;
 }
+
 
 Model::CanHandleResult 
 Model::CanHandleDrops() const
@@ -900,11 +931,13 @@ Model::CanHandleDrops() const
 	return kCannotHandle;
 }
 
+
 inline bool
 IsSuperHandlerSignature(const char *signature)
 {
 	return strcasecmp(signature, B_FILE_MIMETYPE) == 0;
 }
+
 
 enum {
 	kDontMatch = 0,
@@ -943,6 +976,7 @@ MatchMimeTypeString(/*const */BString *documentType, const char *handlerType)
 
 	return kDontMatch;
 }
+
 
 int32 
 Model::SupportsMimeType(const char *type, const BObjectList<BString> *list,
@@ -1004,6 +1038,7 @@ Model::SupportsMimeType(const char *type, const BObjectList<BString> *list,
 	return result;
 }
 
+
 bool 
 Model::IsDropTargetForList(const BObjectList<BString> *list) const
 {
@@ -1019,6 +1054,7 @@ Model::IsDropTargetForList(const BObjectList<BString> *list) const
 	}
 	return SupportsMimeType(0, list) != kDoesNotSupportType;
 }
+
 
 bool 
 Model::IsSuperHandler() const
@@ -1046,11 +1082,13 @@ Model::IsSuperHandler() const
 	return false;
 }
 
+
 void 
 Model::GetEntry(BEntry *entry) const
 {
 	entry->SetTo(EntryRef());
 }
+
 
 void 
 Model::GetPath(BPath *path) const
@@ -1058,6 +1096,7 @@ Model::GetPath(BPath *path) const
 	BEntry entry(EntryRef());
 	entry.GetPath(path);
 }
+
 
 bool 
 Model::Mimeset(bool force)
@@ -1080,6 +1119,7 @@ Model::Mimeset(bool force)
 	return !oldType.ICompare(MimeType());
 }
 
+
 ssize_t 
 Model::WriteAttr(const char *attr, type_code type, off_t offset,
 	const void *buffer, size_t length)
@@ -1091,6 +1131,7 @@ Model::WriteAttr(const char *attr, type_code type, off_t offset,
 	ssize_t result = fNode->WriteAttr(attr, type, offset, buffer, length);
 	return result;
 }
+
 
 ssize_t 
 Model::WriteAttrKillForegin(const char *attr, const char *foreignAttr,
@@ -1107,6 +1148,7 @@ Model::WriteAttrKillForegin(const char *attr, const char *foreignAttr,
 	return result;
 }
 
+
 status_t 
 Model::GetLongVersionString(BString &result, version_kind kind)
 {
@@ -1114,12 +1156,12 @@ Model::GetLongVersionString(BString &result, version_kind kind)
 	status_t error = file.InitCheck();
 	if (error != B_OK)
 		return error;
-	
+
 	BAppFileInfo info(&file);
 	error = info.InitCheck();
 	if (error != B_OK)
 		return error;
-		
+
 	version_info version;
 	error = info.GetVersionInfo(&version, kind);
 	if (error != B_OK)
@@ -1142,21 +1184,21 @@ Model::PrintToStream(int32 level, bool deep)
 		NodeRef()->device,
 		EntryRef()->directory));
 	PRINT(("type %s \n", MimeType()));
-	
+
 	PRINT(("model type: "));
 	switch (fBaseType) {
 		case kPlainNode:
 			PRINT(("plain\n"));
 			break;
-			
+
 		case kQueryNode:
 			PRINT(("query\n"));
 			break;
-			
+
 		case kQueryTemplateNode:
 			PRINT(("query template\n"));
 			break;
-			
+
 		case kExecutableNode:
 			PRINT(("exe\n"));
 			break;
@@ -1187,7 +1229,7 @@ Model::PrintToStream(int32 level, bool deep)
 
 	if (!IsVolume())
 		PRINT(("preferred app %s\n", fPreferredAppName ? fPreferredAppName : ""));
-		
+
 	PRINT(("icon from: "));
 	switch (IconFrom()) {
 		case kUnknownSource:
@@ -1227,7 +1269,7 @@ Model::PrintToStream(int32 level, bool deep)
 		fNode->GetNodeRef(&nodeRef);
 		PRINT(("node ref of open Node %Lx %x\n", nodeRef.node, nodeRef.device));
 	}
-		
+
 	if (deep && IsSymLink()) {
 		BEntry tmpEntry(EntryRef(), true);
 		Model tmp(&tmpEntry);
@@ -1237,6 +1279,7 @@ Model::PrintToStream(int32 level, bool deep)
 	TrackIconSource(B_MINI_ICON);
 	TrackIconSource(B_LARGE_ICON);
 }
+
 
 void
 Model::TrackIconSource(icon_size size)
@@ -1265,70 +1308,63 @@ Model::TrackIconSource(icon_size size)
 		}
 	}
 
-	switch (fBaseType) {
-		case kVolumeNode:
-			{
-				BVolume volume(NodeRef()->device);
-				status_t result = volume.GetIcon(&bitmap, size);
-				PRINT(("getting icon from volume %s\n", strerror(result)));
-				break;
+	if (fBaseType == kVolumeNode) {
+		BVolume volume(NodeRef()->device);
+		status_t result = volume.GetIcon(&bitmap, size);
+		PRINT(("getting icon from volume %s\n", strerror(result)));
+	} else {
+		BNodeInfo nodeInfo(Node());
+
+		status_t err = nodeInfo.GetIcon(&bitmap, size);
+		if (err == B_OK) {
+			// file knew which icon to use, we are done
+			PRINT(("track icon - got icon from file\n"));
+			return;
+		}
+
+		char preferredApp[B_MIME_TYPE_LENGTH];
+		err = nodeInfo.GetPreferredApp(preferredApp);
+		if (err == B_OK && preferredApp[0]) {
+			BMimeType preferredAppType(preferredApp);
+			err = preferredAppType.GetIconForType(MimeType(), &bitmap, size);
+			if (err == B_OK) {
+				PRINT(("track icon - got icon for type %s from preferred app %s for file\n",
+					MimeType(), preferredApp));
+				return;
 			}
-		default:
-			{
-				BNodeInfo nodeInfo(Node());
-	
-				status_t err = nodeInfo.GetIcon(&bitmap, size);
-				if (err == B_OK) {
-					// file knew which icon to use, we are done
-					PRINT(("track icon - got icon from file\n"));
-					return;
-				}
-			
-				char preferredApp[B_MIME_TYPE_LENGTH];
-				err = nodeInfo.GetPreferredApp(preferredApp);
-				if (err == B_OK && preferredApp[0]) {
-					BMimeType preferredAppType(preferredApp);
-					err = preferredAppType.GetIconForType(MimeType(), &bitmap, size);
-					if (err == B_OK) {
-						PRINT(("track icon - got icon for type %s from preferred app %s for file\n",
-							MimeType(), preferredApp));
-						return;
-					}
-				}
-			
-				BMimeType mimeType(MimeType());
-				err = mimeType.GetIcon(&bitmap, size);
-				if (err == B_OK) {
-					// the system knew what icon to use for the type, we are done
-					PRINT(("track icon - signature %s, got icon from system\n",
-						MimeType()));
-					return;
-				}
-				
-				err = mimeType.GetPreferredApp(preferredApp);
-				if (err != B_OK) {
-					// no preferred App for document, give up
-					PRINT(("track icon - signature %s, no prefered app, error %s\n",
-						MimeType(), strerror(err)));
-					return;
-				}
-			
-				BMimeType preferredAppType(preferredApp);
-				err = preferredAppType.GetIconForType(MimeType(), &bitmap, size);
-				if (err == B_OK) {
-					// the preferred app knew icon to use for the type, we are done
-					PRINT(("track icon - signature %s, got icon from preferred app %s\n",
-						MimeType(), preferredApp));
-					return;
-				}
-				PRINT(("track icon - signature %s, preferred app %s, no icon, error %s\n",
-					MimeType(), preferredApp, strerror(err)));
-			}
-			break;
+		}
+
+		BMimeType mimeType(MimeType());
+		err = mimeType.GetIcon(&bitmap, size);
+		if (err == B_OK) {
+			// the system knew what icon to use for the type, we are done
+			PRINT(("track icon - signature %s, got icon from system\n",
+				MimeType()));
+			return;
+		}
+
+		err = mimeType.GetPreferredApp(preferredApp);
+		if (err != B_OK) {
+			// no preferred App for document, give up
+			PRINT(("track icon - signature %s, no prefered app, error %s\n",
+				MimeType(), strerror(err)));
+			return;
+		}
+
+		BMimeType preferredAppType(preferredApp);
+		err = preferredAppType.GetIconForType(MimeType(), &bitmap, size);
+		if (err == B_OK) {
+			// the preferred app knew icon to use for the type, we are done
+			PRINT(("track icon - signature %s, got icon from preferred app %s\n",
+				MimeType(), preferredApp));
+			return;
+		}
+		PRINT(("track icon - signature %s, preferred app %s, no icon, error %s\n",
+			MimeType(), preferredApp, strerror(err)));
 	}
 }
 
-#endif
+#endif	// DEBUG
 
 #ifdef CHECK_OPEN_MODEL_LEAKS
 
@@ -1339,7 +1375,6 @@ void
 DumpOpenModels(bool extensive)
 {
 	if (readOnlyOpenModelList) {
-	
 		int32 count = readOnlyOpenModelList->CountItems();
 		printf("%ld models open read-only:\n", count);
 		printf("==========================\n");
@@ -1366,6 +1401,7 @@ DumpOpenModels(bool extensive)
 	}
 }
 
+
 void
 InitOpenModelDumping()
 {
@@ -1373,6 +1409,6 @@ InitOpenModelDumping()
 	writableOpenModelList = 0;
 }
 
-}
+}	// namespace BPrivate
 
-#endif
+#endif	// CHECK_OPEN_MODEL_LEAKS

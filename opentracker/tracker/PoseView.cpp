@@ -1918,7 +1918,7 @@ BPoseView::MessageReceived(BMessage *message)
 			}
 			break;
 		}
-		
+
 		case kAddNewPoses:
 		{
 			AddPosesResult *currentPoses;
@@ -1936,7 +1936,7 @@ BPoseView::MessageReceived(BMessage *message)
 			delete currentPoses;
 			break;
 		}
-			
+
 		case kRestoreBackgroundImage:
 			ContainerWindow()->UpdateBackgroundImage();
 			break;
@@ -2457,13 +2457,10 @@ BPoseView::ReadPoseInfo(Model *model, PoseInfo *poseInfo)
 			if (ViewMode() == kListMode)
 				break;
 				
-			StatStruct statbuf;
-			// ToDo:
-			// replace the following with direct access of models stat
-			model->Node()->GetStat(&statbuf);
-			if (statbuf.st_crtime != statbuf.st_mtime)
+			const StatStruct *stat = model->StatBuf();
+			if (stat->st_crtime != stat->st_mtime)
 				break;
-			
+
 			// PRINT(("retrying to read pose info for %s, %d\n", model->Name(), count));
 
 			snooze(10000);
@@ -3930,10 +3927,9 @@ BPoseView::HandleDropCommon(BMessage *message, Model *targetModel, BPose *target
 						break;
 					reply.AddString("be:filetypes", type);
 				}
-	
+
 				message->SendReply(&reply);
 				return true;
-	
 			}
 		}	
 
@@ -3946,8 +3942,7 @@ BPoseView::HandleDropCommon(BMessage *message, Model *targetModel, BPose *target
 			if (!targetModel->IsDirectory())
 				// bail if we are not a directory
 				return false;
-			
-			
+
 			bool canRelativeLink = false;
 			if (!canCopy && !canMove && !canLink && containerWindow) {
 				if (((buttons & B_SECONDARY_MOUSE_BUTTON)
@@ -3956,19 +3951,15 @@ BPoseView::HandleDropCommon(BMessage *message, Model *targetModel, BPose *target
 						case kCreateRelativeLink:
 							canRelativeLink = true;
 							break;
-							
 						case kCreateLink:
 							canLink = true;
 							break;
-			
 						case kMoveSelectionTo:
 							canMove = true;
 							break;
-			
 						case kCopySelectionTo:
 							canCopy = true;
 							break;
-			
 						case kCancelButton:
 						default:
 							// user canceled context menu
@@ -4002,7 +3993,7 @@ BPoseView::HandleDropCommon(BMessage *message, Model *targetModel, BPose *target
 					break;
 				entryList->AddItem(new entry_ref(ref));
 			}
-			
+
 			int32 count = entryList->CountItems();
 			if (count) {
 				BList *pointList = 0;
@@ -4019,14 +4010,14 @@ BPoseView::HandleDropCommon(BMessage *message, Model *targetModel, BPose *target
 						}
 					}
 				}
-				
+
 				// perform asynchronous copy
 				FSMoveToFolder(entryList, new BEntry(targetModel->EntryRef()),
 					moveMode, pointList);
 
 				return true;
 			}
-			
+
 			// nothing to copy, list doesn't get consumed
 			delete entryList;
 			return true;
@@ -4047,10 +4038,10 @@ BPoseView::HandleDropCommon(BMessage *message, Model *targetModel, BPose *target
 			char name[B_FILE_NAME_LENGTH];
 
 			BFile file;
-			if (CreateClippingFile(poseView, file, name, &targetDirectory, message, "Untitled clipping",
-				!targetPose, dropPt) != B_OK)
+			if (CreateClippingFile(poseView, file, name, &targetDirectory, message,
+					"Untitled clipping", !targetPose, dropPt) != B_OK)
 				return false;
-	
+
 			// write out the file
 			if (file.Seek(0, SEEK_SET) == B_ERROR
 				|| file.Write(text, (size_t)textLength) < 0
@@ -4061,7 +4052,7 @@ BPoseView::HandleDropCommon(BMessage *message, Model *targetModel, BPose *target
 				entry.Remove();
 				PRINT(("error writing text into file %s\n", name));
 			}
-			
+
 			// pick up TextView styles if available and save them with the file
 			const text_run_array *textRuns = NULL;
 			int32 dataSize = 0;
@@ -4080,7 +4071,7 @@ BPoseView::HandleDropCommon(BMessage *message, Model *targetModel, BPose *target
 			// set the file type
 			BNodeInfo info(&file);
 			info.SetType(kPlainTextMimeType);
-			
+
 			return true;
 		}
 		if (message->HasData(kBitmapMimeType, B_MESSAGE_TYPE)
@@ -4096,7 +4087,7 @@ BPoseView::HandleDropCommon(BMessage *message, Model *targetModel, BPose *target
 				&& message->FindMessage(kLargeIconType, &embeddedBitmap) != B_OK
 				&& message->FindMessage(kMiniIconType, &embeddedBitmap) != B_OK)
 				return false;
-			
+
 			char name[B_FILE_NAME_LENGTH];
 
 			BFile file;
@@ -4111,7 +4102,7 @@ BPoseView::HandleDropCommon(BMessage *message, Model *targetModel, BPose *target
 
 			char *buffer = new char [size];
 			embeddedBitmap.Flatten(buffer, size);
-			
+
 			// write out the file
 			if (file.Seek(0, SEEK_SET) == B_ERROR
 				|| file.Write(buffer, (size_t)size) < 0
@@ -4122,7 +4113,7 @@ BPoseView::HandleDropCommon(BMessage *message, Model *targetModel, BPose *target
 				entry.Remove();
 				PRINT(("error writing bitmap into file %s\n", name));
 			}
-			
+
 			// mark as a clipping file
 			int32 tmp;
 			file.WriteAttr(kAttrClippingFile, B_RAW_TYPE, 0, &tmp, sizeof(int32));
@@ -4130,7 +4121,7 @@ BPoseView::HandleDropCommon(BMessage *message, Model *targetModel, BPose *target
 			// set the file type
 			BNodeInfo info(&file);
 			info.SetType(kBitmapMimeType);
-			
+
 			return true;
 		}
 		return false;
@@ -4142,7 +4133,7 @@ BPoseView::HandleDropCommon(BMessage *message, Model *targetModel, BPose *target
 		containerWindow->UpdateIfNeeded();
 		poseView->ResetPosePlacementHint();
 	}
-	
+
 	if (srcWindow == containerWindow && DragSelectionContains(targetPose, message)) {
 		// drop on self
 		targetModel = NULL;
@@ -6041,7 +6032,7 @@ BPoseView::ShowContextMenu(BPoint where)
 	BContainerWindow *window = ContainerWindow();
 	if (!window)
 		return;
-	
+
 	// handle pose selection
 	int32 index;
 	BPose *pose = FindPose(where, &index);
@@ -6256,22 +6247,22 @@ AddPoseRefToMessage(BPose *, Model *model, BMessage *message)
 
 
 void
-BPoseView::DragSelectedPoses(const BPose *clicked_pose, BPoint clickPt)
+BPoseView::DragSelectedPoses(const BPose *pose, BPoint clickPoint)
 {
 	if (!fDragEnabled)
 		return;
 
-	ASSERT(clicked_pose);
+	ASSERT(pose);
 
 	// make sure pose is selected, it could have been deselected as part of
 	// a click during selection extention
-	if (!clicked_pose->IsSelected())
+	if (!pose->IsSelected())
 		return;
-		
+
 	// setup tracking rect by unioning all selected pose rects
 	BMessage message(B_SIMPLE_DATA);
 	message.AddPointer("src_window", Window());
-	message.AddPoint("click_pt", clickPt);
+	message.AddPoint("click_pt", clickPoint);
 
 	// add Tracker token so that refs received recipients can script us
 	message.AddMessenger("TrackerViewToken", BMessenger(this));
@@ -6296,7 +6287,7 @@ BPoseView::DragSelectedPoses(const BPose *clicked_pose, BPoint clickPt)
 				&& file.ReadAttr(kAttrClippingFile, B_RAW_TYPE, 0,
 					&tmp, sizeof(int32)) == sizeof(int32)) {
 				// and a clipping file
-				
+
 				file.Seek(0, SEEK_SET);
 				off_t size = 0;
 				file.GetSize(&size);
@@ -6345,26 +6336,27 @@ BPoseView::DragSelectedPoses(const BPose *clicked_pose, BPoint clickPt)
 
 	// make sure button is still down
 	uint32 button;
-	BPoint tmpLoc;
-	GetMouse(&tmpLoc, &button);
+	BPoint tempLoc;
+	GetMouse(&tempLoc, &button);
 	if (button) {
-		int32 index = fPoseList->IndexOf(clicked_pose);
+		int32 index = fPoseList->IndexOf(pose);
 		message.AddInt32("buttons", (int32)button);
 		BRect dragRect(GetDragRect(index));
 		BBitmap *dragBitmap = NULL;
+		BPoint offset;
 
-		// The bitmap is now always created - ToDo: find a better
-		// location for the handle of the dragged bitmap
+		// The bitmap is now always created (if DRAG_FRAME is not defined)
 
-//		if (dragRect.Width() < kTransparentDragThreshold.x
-//			&& dragRect.Height() < kTransparentDragThreshold.y) 
-			dragBitmap = MakeDragBitmap(dragRect, index);
+#ifdef DRAG_FRAME
+		if (dragRect.Width() < kTransparentDragThreshold.x
+			&& dragRect.Height() < kTransparentDragThreshold.y)
+#endif
+			dragBitmap = MakeDragBitmap(dragRect, clickPoint, index, offset);
 
-		if (dragBitmap)
-			DragMessage(&message, dragBitmap, B_OP_ALPHA,
-				clickPt - dragRect.LeftTop());
+		if (dragBitmap) {
+			DragMessage(&message, dragBitmap, B_OP_ALPHA, offset);
 				// this DragMessage supports alpha blending
-		else
+		} else
 			DragMessage(&message, dragRect);
 
 		// turn on auto scrolling
@@ -6375,23 +6367,39 @@ BPoseView::DragSelectedPoses(const BPose *clicked_pose, BPoint clickPt)
 
 
 BBitmap *
-BPoseView::MakeDragBitmap(BRect dragRect, int32 clickedPoseIndex)
+BPoseView::MakeDragBitmap(BRect dragRect, BPoint clickedPoint, int32 clickedPoseIndex, BPoint &offset)
 {
-	BRect rect(dragRect);
-	rect.OffsetTo(B_ORIGIN);
+	BRect inner(clickedPoint.x - kTransparentDragThreshold.x / 2,
+		clickedPoint.y - kTransparentDragThreshold.x / 2,
+		clickedPoint.x + kTransparentDragThreshold.x / 2,
+		clickedPoint.y + kTransparentDragThreshold.x / 2);
+	inner = inner & dragRect;
 
 	// If the selection is bigger than the specified limit, the
-	// contents will fade out when they come near the right or
-	// bottom border
-	bool fadeVertical = false, fadeHorizontal = false;
-	if (rect.Width() > kTransparentDragThreshold.x) {
-		rect.right = min(rect.right, kTransparentDragThreshold.x + 32);
-		fadeHorizontal = true;
+	// contents will fade out when they come near the borders
+	bool fadeTop = false, fadeBottom = false, fadeLeft = false, fadeRight = false, fade = false;
+	if (inner.left > dragRect.left) {
+		inner.left = max(inner.left - 32, dragRect.left);
+		fade = fadeLeft = true;
 	}
-	if (rect.Height() > kTransparentDragThreshold.y) {
-		rect.bottom = min(rect.bottom, kTransparentDragThreshold.y + 32);
-		fadeVertical = true;
+	if (inner.right < dragRect.right) {
+		inner.right = min(inner.right + 32, dragRect.right);
+		fade = fadeRight = true;
 	}
+	if (inner.top > dragRect.top) {
+		inner.top = max(inner.top - 32, dragRect.top);
+		fade = fadeTop = true;
+	}
+	if (inner.bottom < dragRect.bottom) {
+		inner.bottom = min(inner.bottom + 32, dragRect.bottom);
+		fade = fadeBottom = true;
+	}
+
+	// set the offset for the dragged bitmap (for the BView::DragMessage() call)
+	offset = clickedPoint - inner.LeftTop();
+
+	BRect rect(inner);
+	rect.OffsetTo(B_ORIGIN);
 
 	BBitmap *bitmap = new BBitmap(rect, B_RGBA32, true);
 	bitmap->Lock();
@@ -6406,14 +6414,14 @@ BPoseView::MakeDragBitmap(BRect dragRect, int32 clickedPoseIndex)
 	view->ConstrainClippingRegion(&newClip);
 
 	// Transparent draw magic
-	view->SetHighColor(0, 0, 0, (fadeHorizontal || fadeVertical) ? 10 : 0);
+	view->SetHighColor(0, 0, 0, fade ? 10 : 0);
 	view->FillRect(view->Bounds());
 	view->Sync();
 
-	if (fadeHorizontal || fadeVertical) {
-		// If we fade out the right or bottom of the selection, the
-		// background is slightly darker, but we let also fade out
-		// the edges so that everything looks smooth
+	if (fade) {
+		// If we fade out any border of the selection, the background
+		// will be slightly darker, and we will also fade out the
+		// edges so that everything looks smooth
 		uint32 *bits = (uint32 *)bitmap->Bits();
 		int32 width = bitmap->BytesPerRow() / 4;
 
@@ -6427,7 +6435,7 @@ BPoseView::MakeDragBitmap(BRect dragRect, int32 clickedPoseIndex)
 	}
 
 	view->SetDrawingMode(B_OP_ALPHA);
-	view->SetHighColor(0, 0, 0, (fadeHorizontal || fadeVertical) ? 164 : 128);
+	view->SetHighColor(0, 0, 0, fade ? 164 : 128);
 		// set the level of transparency by value
 	view->SetBlendingMode(B_CONSTANT_ALPHA, B_ALPHA_COMPOSITE);
 
@@ -6435,7 +6443,6 @@ BPoseView::MakeDragBitmap(BRect dragRect, int32 clickedPoseIndex)
 
 	BPose *pose = fPoseList->ItemAt(clickedPoseIndex);
 	if (ViewMode() == kListMode) {
-
 		int32 count = fPoseList->CountItems();
 		int32 startIndex = (int32)(bounds.top / fListElemHeight);
 		BPoint loc(0, startIndex * fListElemHeight);
@@ -6444,8 +6451,10 @@ BPoseView::MakeDragBitmap(BRect dragRect, int32 clickedPoseIndex)
 			pose = fPoseList->ItemAt(index);
 			if (pose->IsSelected()) {
 				BRect poseRect(pose->CalcRect(loc, this, true));
-				BPoint offsetBy(-dragRect.LeftTop().x, -dragRect.LeftTop().y);
-				pose->Draw(poseRect, this, view, true, 0, offsetBy, false);
+				if (poseRect.Intersects(inner)) {
+					BPoint offsetBy(-inner.LeftTop().x, -inner.LeftTop().y);
+					pose->Draw(poseRect, this, view, true, 0, offsetBy, false);
+				}
 			}
 			loc.y += fListElemHeight;
 			if (loc.y > bounds.bottom)
@@ -6460,7 +6469,10 @@ BPoseView::MakeDragBitmap(BRect dragRect, int32 clickedPoseIndex)
 			pose = fVSPoseList->ItemAt(index);
 			if (pose && pose->IsSelected()) {
 				BRect poseRect(pose->CalcRect(this));
-				BPoint offsetBy(-dragRect.LeftTop().x, -dragRect.LeftTop().y);
+				if (!poseRect.Intersects(inner))
+					continue;
+
+				BPoint offsetBy(-inner.LeftTop().x, -inner.LeftTop().y);
 				pose->Draw(poseRect, this, view, true, 0, offsetBy, false);
 			}
 		}
@@ -6469,19 +6481,21 @@ BPoseView::MakeDragBitmap(BRect dragRect, int32 clickedPoseIndex)
 	view->Sync();
 
 	// Fade out the contents if necessary
-	if (fadeHorizontal) {
+	if (fade) {
 		uint32 *bits = (uint32 *)bitmap->Bits();
 		int32 width = bitmap->BytesPerRow() / 4;
-		
-		FadeRGBA32Horizontal(bits, width, int32(rect.bottom),
-			int32(rect.right), int32(rect.right) - 64);
-	}
-	if (fadeVertical) {
-		uint32 *bits = (uint32 *)bitmap->Bits();
-		int32 width = bitmap->BytesPerRow() / 4;
-		
-		FadeRGBA32Vertical(bits, width, int32(rect.bottom),
-			int32(rect.bottom), int32(rect.bottom) - 64);
+
+		if (fadeLeft)
+			FadeRGBA32Horizontal(bits, width, int32(rect.bottom), 0, 64);
+		if (fadeRight)
+			FadeRGBA32Horizontal(bits, width, int32(rect.bottom),
+				int32(rect.right), int32(rect.right) - 64);
+
+		if (fadeTop)
+			FadeRGBA32Vertical(bits, width, int32(rect.bottom), 0, 64);
+		if (fadeBottom)
+			FadeRGBA32Vertical(bits, width, int32(rect.bottom),
+				int32(rect.bottom), int32(rect.bottom) - 64);
 	}
 
 	bitmap->Unlock();
