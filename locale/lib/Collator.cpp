@@ -156,13 +156,13 @@ BCollator::IgnorePunctuation() const
 }
 
 
-void
+status_t
 BCollator::GetSortKey(const char *string, BString *key, int8 strength)
 {
 	if (strength == B_COLLATE_DEFAULT)
 		strength = fStrength;
 
-	fCollator->GetSortKey(string, key, strength, fIgnorePunctuation);
+	return fCollator->GetSortKey(string, key, strength, fIgnorePunctuation);
 }
 
 
@@ -290,7 +290,7 @@ BCollatorAddOn::PrimaryKeyLength(size_t length)
 }
 
 
-void 
+status_t 
 BCollatorAddOn::GetSortKey(const char *string, BString *key, int8 strength,
 	bool ignorePunctuation)
 {
@@ -306,6 +306,8 @@ BCollatorAddOn::GetSortKey(const char *string, BString *key, int8 strength,
 		case B_COLLATE_PRIMARY:
 		{
 			char *begin = key->LockBuffer(PrimaryKeyLength(length));
+			if (begin == NULL)
+				return B_NO_MEMORY;
 
 			char *end = PutPrimaryKey(string, begin, length, ignorePunctuation);
 			*end = '\0';
@@ -318,6 +320,8 @@ BCollatorAddOn::GetSortKey(const char *string, BString *key, int8 strength,
 		{
 			char *begin = key->LockBuffer(PrimaryKeyLength(length) + length + 1);
 				// the primary key + the secondary key + separator char
+			if (begin == NULL)
+				return B_NO_MEMORY;
 
 			char *buffer = PutPrimaryKey(string, begin, length, ignorePunctuation);
 			*buffer++ = '\01';
@@ -342,6 +346,8 @@ BCollatorAddOn::GetSortKey(const char *string, BString *key, int8 strength,
 		{
 			char *begin = key->LockBuffer(PrimaryKeyLength(length) + length + 1);
 				// the primary key + the tertiary key + separator char
+			if (begin == NULL)
+				return B_NO_MEMORY;
 
 			char *buffer = PutPrimaryKey(string, begin, length, ignorePunctuation);
 			*buffer++ = '\01';
@@ -361,8 +367,10 @@ BCollatorAddOn::GetSortKey(const char *string, BString *key, int8 strength,
 		case B_COLLATE_IDENTICAL:
 		default:
 			key->SetTo(string, length);
+				// is there any way to check if BString::SetTo() actually succeeded?
 			break;
 	}
+	return B_OK;
 }
 
 

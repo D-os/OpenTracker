@@ -35,7 +35,7 @@ class FrenchCollator : public BCollatorAddOn {
 		FrenchCollator(BMessage *archive);
 		~FrenchCollator();
 
-		virtual void GetSortKey(const char *string, BString *key, int8 strength,
+		virtual status_t GetSortKey(const char *string, BString *key, int8 strength,
 						bool ignorePunctuation);
 		virtual int Compare(const char *a, const char *b, int32 length, int8 strength,
 						bool ignorePunctuation);
@@ -105,20 +105,19 @@ FrenchCollator::CompareSecondary(compare_context &context)
 }
 
 
-void 
+status_t 
 FrenchCollator::GetSortKey(const char *string, BString *key, int8 strength,
 	bool ignorePunctuation)
 {
-	if (strength == B_COLLATE_PRIMARY) {
-		_inherited::GetSortKey(string, key, strength, ignorePunctuation);
-		return;
-	}
+	if (strength == B_COLLATE_PRIMARY)
+		return _inherited::GetSortKey(string, key, strength, ignorePunctuation);
 
 	size_t length = strlen(string);
 
 	if (strength > B_COLLATE_QUATERNARY) {
 		key->SetTo(string, length);
-		return;
+		return B_OK;
+			// what can we do about that?
 	}
 
 	if (strength >= B_COLLATE_QUATERNARY) {
@@ -135,6 +134,9 @@ FrenchCollator::GetSortKey(const char *string, BString *key, int8 strength,
 	}
 
 	char *begin = key->LockBuffer(keyLength);
+	if (begin == NULL)
+		return B_NO_MEMORY;
+
 	char *buffer = PutPrimaryKey(string, begin, length, ignorePunctuation);
 	*buffer++ = '\01';
 		// separator
@@ -180,6 +182,8 @@ FrenchCollator::GetSortKey(const char *string, BString *key, int8 strength,
 
 	*buffer = '\0';
 	key->UnlockBuffer(buffer - begin);
+
+	return B_OK;
 }
 
 

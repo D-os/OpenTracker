@@ -35,7 +35,7 @@ class BCollator : public BArchivable {
 		void SetIgnorePunctuation(bool ignore);
 		bool IgnorePunctuation() const;
 
-		void GetSortKey(const char *string, BString *key, int8 strength = B_COLLATE_DEFAULT);
+		status_t GetSortKey(const char *string, BString *key, int8 strength = B_COLLATE_DEFAULT);
 
 		int Compare(const char *, const char *, int32 len = -1, int8 strength = B_COLLATE_DEFAULT);
 		bool Equal(const char *, const char *, int32 len = -1, int8 strength = B_COLLATE_DEFAULT);
@@ -85,7 +85,7 @@ class BCollatorAddOn : public BArchivable {
 		BCollatorAddOn(BMessage *archive);
 		virtual ~BCollatorAddOn();
 
-		virtual void GetSortKey(const char *string, BString *key, int8 strength,
+		virtual status_t GetSortKey(const char *string, BString *key, int8 strength,
 						bool ignorePunctuation);
 		virtual int Compare(const char *a, const char *b, int32 length, int8 strength,
 						bool ignorePunctuation);
