@@ -2601,7 +2601,7 @@ BContainerWindow::EachAddon(BPath &path, bool (*eachAddon)(const Model *,
 	dir.Rewind();
 	while (dir.GetNextEntry(&entry) == B_OK) {
 		bool primary = false;
-	
+
 		if (entry.IsSymLink()) {
 			// resolve symlinks if needed
 			entry_ref ref;
@@ -2622,18 +2622,15 @@ BContainerWindow::EachAddon(BPath &path, bool (*eachAddon)(const Model *,
 			if (file.InitCheck() == B_OK) {
 				BAppFileInfo info(&file);
 				if (info.InitCheck() == B_OK) {
-					bool secondary = false;
+					bool secondary = true;
 
 					// does this add-on has types set at all?
 					BMessage message;
 					if (info.GetSupportedTypes(&message) == B_OK) {
 						type_code type;
 						int32 count;
-						if (message.GetInfo("types", &type, &count) != B_OK)
-							secondary = true;
-						else {
-							// check if 
-						}
+						if (message.GetInfo("types", &type, &count) == B_OK)
+							secondary = false;
 					}
 
 					// check all supported types if it has some set
