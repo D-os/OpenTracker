@@ -87,6 +87,7 @@ CalcFreeSpace(dev_t device)
 BPose::BPose(Model *model, BPoseView *view, bool selected)
 	:	fModel(model),
 		fWidgetList(4, true),
+		fPercent(-1),
 		fIsSelected(selected),
 		fDelayedEdit(true),
 		fHasLocation(false),
@@ -94,8 +95,7 @@ BPose::BPose(Model *model, BPoseView *view, bool selected)
 		fListModeInited(false),
 		fWasAutoPlaced(false),
 		fBrokenSymLink(false),
-		fBackgroundClean(false),
-		fPercent(-1)
+		fBackgroundClean(false)
 {
 	CreateWidgets(view);
 
