@@ -1143,7 +1143,6 @@ BPoseView::AddPosesTask(void *castToParams)
 #endif
 
 	try {
-
 		for (;;) {
 			lock.Unlock();
 

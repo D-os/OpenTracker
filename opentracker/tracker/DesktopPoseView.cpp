@@ -229,7 +229,6 @@ DesktopPoseView::Represents(const node_ref *ref) const
 		deviceDesktop.GetNodeRef(&nref);
 		return nref == *ref;
 	}
-		
 	
 	return _inherited::Represents(ref);
 }
@@ -429,8 +428,4 @@ DesktopPoseView::UpdateNonBootDesktopPoses(bool integrateNonBootBeOSDesktops)
 		nonBootDesktopPosesAlreadyAdded = true;
 	}
 }
-
-
-
-
 

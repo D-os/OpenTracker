@@ -77,8 +77,8 @@ CalcFreeSpace(dev_t device)
 }
 
 // SymLink handling:
-// symlink pose uses the resolved model to retrive the icon, if not broken
-// everything else, like the attributes, etc. is retrived directly from the
+// symlink pose uses the resolved model to retrieve the icon, if not broken
+// everything else, like the attributes, etc. is retrieved directly from the
 // symlink itself
 
 BPose::BPose(Model *model, BPoseView *view, bool selected)

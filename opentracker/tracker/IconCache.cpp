@@ -934,7 +934,7 @@ IconCache::Preload(AutoLock<SimpleIconCache> *nodeCacheLocker,
 				case kPreferredAppForNode:
 					resultingOpenCache = sharedCacheLocker;
 					resultingOpenCache->Lock();
-	
+
 					entry = GetIconFromFileTypes(&modelOpener, source, mode, size,
 						&lazyBitmap, 0);
 					ASSERT(!entry || entry->HaveIconBitmap(mode, size));

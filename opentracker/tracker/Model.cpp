@@ -628,7 +628,7 @@ Model::ResetIconFrom()
 		return;
 
 	// mirror the logic from FinishSettingUpType
-	if (fBaseType == kDirectoryNode
+	if ((fBaseType == kDirectoryNode || fBaseType == kVolumeNode)
 		&& !CheckNodeIconHintPrivate(fNode, dynamic_cast<TTracker *>(be_app) == NULL)) {
 		if (WellKnowEntryList::Match(NodeRef()) > (directory_which)-1) {
 			fIconFrom = kTrackerSupplied;
