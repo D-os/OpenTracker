@@ -8,8 +8,8 @@
 #include <Application.h>
 
 #include <Catalog.h>
+#include <DefaultCatalog.h>
 #include <Locale.h>
-
 
 int
 main(int argc, char **argv)
@@ -24,6 +24,39 @@ main(int argc, char **argv)
 	if (cat2.InitCheck() == B_OK) {
 		printf("translating %s in cat2 yields %s\n", "test", cat2.GetString( "test"));
 	}
+	status_t res;
+	BString s;
+	DefaultCatalog catalog("TestCat", "german", "./TestCat.catalog", true);
+	if (catalog.InitCheck() == B_OK) {
+		res = catalog.SetString("string", "Schnur");
+		assert( res == B_OK);
+		res = catalog.SetString("string", "String", "programming");
+		assert( res == B_OK);
+		res = catalog.SetString("string", "Textpuffer", "programming", "Deutsches Fachbuch");
+		assert( res == B_OK);
+		res = catalog.SetString("string", "Leine", "", "Deutsches Fachbuch");
+		assert( res == B_OK);
+		res = catalog.WriteToDisk();
+		assert( res == B_OK);
+		s = catalog.GetString("string");
+		assert( s == "Schnur");
+		s = catalog.GetString("string", "programming");
+		assert( s == "String");
+		s = catalog.GetString("string", "programming", "Deutsches Fachbuch");
+		assert( s == "Textpuffer");
+		s = catalog.GetString("string", "", "Deutsches Fachbuch");
+		assert( s == "Leine");
+	}
+	DefaultCatalog catalog2("TestCat", "german");
+	if (catalog2.InitCheck() == B_OK) {
+		s = catalog2.GetString("string");
+		assert( s == "Schnur");
+		s = catalog2.GetString("string", "programming");
+		assert( s == "String");
+		s = catalog2.GetString("string", "programming", "Deutsches Fachbuch");
+		assert( s == "Textpuffer");
+		s = catalog2.GetString("string", "", "Deutsches Fachbuch");
+		assert( s == "Leine");
+	}
 	delete testApp;
 }
-
