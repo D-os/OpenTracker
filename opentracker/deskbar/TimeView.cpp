@@ -310,7 +310,11 @@ TTimeView::MouseDown(BPoint point)
 	if (fShowingDate)
 		fLastTime = time(NULL);
 
-	Update();
+	// invalidate last time/date strings and call the pulse
+	// method directly to change the display instantly
+	fLastDateStr[0] = '\0';
+	fLastTimeStr[0] = '\0';
+	Pulse();
 }
 
 
