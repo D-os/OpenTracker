@@ -43,6 +43,7 @@ All rights reserved.
 
 #include <Alert.h>
 #include <Application.h>
+#include <Clipboard.h>
 #include <Debug.h>
 #include <Dragger.h>
 #include <Screen.h>
@@ -71,6 +72,7 @@ All rights reserved.
 #include "DirMenu.h"
 #include "EntryIterator.h"
 #include "FilePanelPriv.h"
+#include "FSClipboard.h"
 #include "FSUtils.h"
 #include "FunctionObject.h"
 #include "MimeTypes.h"
@@ -120,6 +122,17 @@ enum {
 	kInsertAfter
 };
 
+const BPoint kTransparentDragTreshold(256, 128);
+	// maximum size of the transparent drag bitmap, use a drag rect
+	// if larger in any direction
+
+const char *kNoCopyToTrashStr = "Sorry, you can't copy items to the Trash.";
+const char *kNoLinkToTrashStr = "Sorry, you can't create links in the Trash.";
+const char *kNoCopyToRootStr = "You must drop items on one of the disk icons "
+	"in the \"Disks\" window.";
+const char *kOkToMoveStr = "Are you sure you want to move or copy the selected "
+	"item(s) to this folder?";
+
 struct AddPosesResult {
 	~AddPosesResult();
 	void ReleaseModels();
@@ -145,16 +158,8 @@ AddPosesResult::ReleaseModels(void)
 }
 
 
-const BPoint kTransparentDragTreshold(256, 128);
-	// maximum size of the transparent drag bitmap, use a drag rect
-	// if larger in any direction
+// #pragma mark -
 
-const char *noCopyToTrashStr = "Sorry, you can't copy items to the Trash.";
-const char *noLinkToTrashStr = "Sorry, you can't create links in the Trash.";
-const char *noCopyToRootStr = "You must drop items on one of the disk icons "
-	"in the \"Disks\" window.";
-const char *okToMoveStr = "Are you sure you want to move or copy the selected "
-	"item(s) to this folder?";
 
 BPoseView::BPoseView(Model *model, BRect bounds, uint32 viewMode, uint32 resizeMask)
 	:	BView(bounds, "PoseView", resizeMask, B_WILL_DRAW | B_PULSE_NEEDED),
@@ -205,7 +210,8 @@ BPoseView::BPoseView(Model *model, BRect bounds, uint32 viewMode, uint32 resizeM
 		fEnsurePosesVisible(false),
 		fShouldAutoScroll(true),
 		fIsDesktopWindow(false),
-		fIsWatchingDateFormatChange(false)
+		fIsWatchingDateFormatChange(false),
+		fHasPosesInClipboard(false)
 {
 	
 	fViewState->SetViewMode(viewMode);
@@ -302,6 +308,10 @@ BPoseView::InitCommon()
 		AddPoses(TargetModel());
 
 	UpdateScrollRange();
+	
+	// receive messages from ClipboardRefsWatcher
+	if (dynamic_cast<TTracker *>(be_app) != NULL)
+		((TTracker *)be_app)->ClipboardRefsWatcher()->AddToNotifyList(this);
 }
 
 
@@ -787,6 +797,10 @@ BPoseView::DetachedFromWindow()
 	StopWatching();
 	CommitActivePose();
 	SavePoseLocations();
+
+	//stop receiving messages from ClipboardRefsWatcher
+	if (dynamic_cast<TTracker *>(be_app) != NULL)
+		((TTracker *)be_app)->ClipboardRefsWatcher()->RemoveFromNotifyList(this);
 }
 
 
@@ -841,6 +855,8 @@ BPoseView::AttachedToWindow()
 	// add Option-Return as a shortcut filter because AddShortcut doesn't allow
 	// us to have shortcuts without Command yet
 	AddFilter(new ShortcutFilter(B_RETURN, B_OPTION_KEY, kOpenSelection, this));
+	// Escape key, currently used only to abort an on-going clipboard cut
+	AddFilter(new ShortcutFilter(B_ESCAPE, 0, B_CANCEL, this));
 
 	fLastLeftTop = LeftTop();
 	BFont font(be_plain_font);
@@ -1293,11 +1309,6 @@ BPoseView::AddPosesTask(void *castToParams)
 				
 				posesResult = new AddPosesResult;
 				posesResult->fCount = 0;
-
-#if DEBUG
-				for (int32 index = 0; index < kMaxAddPosesChunk; index++)
-					modelArray[index] = (Model *)0xdeadbeef;
-#endif
 			}
 			
 			if (!count)
@@ -1567,60 +1578,60 @@ BPoseView::CreatePoses(Model **models, PoseInfo *poseInfoArray, int32 count,
 	
 		switch (ViewMode()) {
 			case kListMode:
-				{
-					poseIndex = fPoseList->CountItems();
-		
-					bool havePoseBounds = false;
-					bool addedItem = false;
-	
-					if (insertionSort && fPoseList->CountItems()) {
-						int32 orientation = BSearchList(pose, &poseIndex);
-						
-						if (orientation == kInsertAfter)
-							poseIndex++;
-	
-						poseBounds = CalcPoseRect(pose, poseIndex);
-						havePoseBounds = true;
-						BRect srcRect(Extent());
-						srcRect.top = poseBounds.top;
-						srcRect = srcRect & viewBounds;
-						BRect destRect(srcRect);
-						destRect.OffsetBy(0, fListElemHeight);
-					
-						if (srcRect.Intersects(viewBounds)
-							|| destRect.Intersects(viewBounds)) {
-							if (srcRect.top == viewBounds.top
-								&& srcRect.bottom == viewBounds.bottom) {
-								// if new pose above current view bounds, cache up
-								// the draw and do it later
-								listViewScrollBy += fListElemHeight;
-								forceDraw = false;
-							} else {
-								FinishPendingScroll(listViewScrollBy, viewBounds);
-								fPoseList->AddItem(pose, poseIndex);
-								fMimeTypeListIsDirty = true;
-								addedItem = true;
-								CopyBits(srcRect, destRect);
-								srcRect.bottom = destRect.top;
-								SynchronousUpdate(srcRect);
-							}
-						}
-					}
-					if (!addedItem) {
-						fPoseList->AddItem(pose, poseIndex);
-						fMimeTypeListIsDirty = true;
-					}
+			{
+				poseIndex = fPoseList->CountItems();
 
-					if (forceDraw) {
-						if (!havePoseBounds)
-							poseBounds = CalcPoseRect(pose, poseIndex);
-			 			if (viewBounds.Intersects(poseBounds)) {
-							FillRect(poseBounds, B_SOLID_LOW);
-							pose->Draw(poseBounds, this);
+				bool havePoseBounds = false;
+				bool addedItem = false;
+
+				if (insertionSort && fPoseList->CountItems()) {
+					int32 orientation = BSearchList(pose, &poseIndex);
+
+					if (orientation == kInsertAfter)
+						poseIndex++;
+
+					poseBounds = CalcPoseRect(pose, poseIndex);
+					havePoseBounds = true;
+					BRect srcRect(Extent());
+					srcRect.top = poseBounds.top;
+					srcRect = srcRect & viewBounds;
+					BRect destRect(srcRect);
+					destRect.OffsetBy(0, fListElemHeight);
+
+					if (srcRect.Intersects(viewBounds)
+						|| destRect.Intersects(viewBounds)) {
+						if (srcRect.top == viewBounds.top
+							&& srcRect.bottom == viewBounds.bottom) {
+							// if new pose above current view bounds, cache up
+							// the draw and do it later
+							listViewScrollBy += fListElemHeight;
+							forceDraw = false;
+						} else {
+							FinishPendingScroll(listViewScrollBy, viewBounds);
+							fPoseList->AddItem(pose, poseIndex);
+							fMimeTypeListIsDirty = true;
+							addedItem = true;
+							CopyBits(srcRect, destRect);
+							srcRect.bottom = destRect.top;
+
+							//SynchronousUpdate(srcRect);
+							Invalidate(srcRect);
 						}
 					}
-					break;
 				}
+				if (!addedItem) {
+					fPoseList->AddItem(pose, poseIndex);
+					fMimeTypeListIsDirty = true;
+				}
+
+				if (forceDraw) {
+					if (!havePoseBounds)
+						poseBounds = CalcPoseRect(pose, poseIndex);
+		 			if (viewBounds.Intersects(poseBounds))
+						Invalidate(poseBounds);
+				}
+				break;
+			}
 				
 			case kIconMode:
 			case kMiniIconMode:
@@ -1660,7 +1671,7 @@ BPoseView::CreatePoses(Model **models, PoseInfo *poseInfoArray, int32 count,
 				}
 	
 	 			if (forceDraw && viewBounds.Intersects(poseBounds))
-					pose->Draw(poseBounds, this);
+					Invalidate(poseBounds);
 	
 				// if this is the first item then we set extent here
 				if (fPoseList->CountItems() == 1)
@@ -1881,39 +1892,39 @@ BPoseView::MessageReceived(BMessage *message)
 
 	switch (message->what) {
 		case kContextMenuDragNDrop:
-			{
-				BContainerWindow *window = ContainerWindow();
-				if (window && window->Dragging()) {
-					BPoint droppoint, dropoffset;
-					if (message->FindPoint("_drop_point_", &droppoint) == B_OK) {
-						BMessage* dragmessage = window->DragMessage();
-						dragmessage->FindPoint("click_pt", &dropoffset);
-						dragmessage->AddPoint("_drop_point_", droppoint);
-						dragmessage->AddPoint("_drop_offset_", dropoffset);
-						HandleMessageDropped(dragmessage);
-					}
-					DragStop();
+		{
+			BContainerWindow *window = ContainerWindow();
+			if (window && window->Dragging()) {
+				BPoint droppoint, dropoffset;
+				if (message->FindPoint("_drop_point_", &droppoint) == B_OK) {
+					BMessage* dragmessage = window->DragMessage();
+					dragmessage->FindPoint("click_pt", &dropoffset);
+					dragmessage->AddPoint("_drop_point_", droppoint);
+					dragmessage->AddPoint("_drop_offset_", dropoffset);
+					HandleMessageDropped(dragmessage);
 				}
+				DragStop();
 			}
 			break;
+		}
 		
 		case kAddNewPoses:
-			{
-				AddPosesResult *currentPoses;
-				entry_ref ref;
-				message->FindPointer("currentPoses", reinterpret_cast<void **>(&currentPoses));
-				message->FindRef("ref", &ref);
-				
-				// check if CreatePoses should be called (abort if dir has been switched
-				// under normal circumstances, ignore in several special cases
-				if (AddPosesThreadValid(&ref)) {
-					CreatePoses(currentPoses->fModels, currentPoses->fPoseInfos,
-						currentPoses->fCount, NULL, true, 0, 0, true);
-					currentPoses->ReleaseModels();
-				} 
-				delete currentPoses;
-			}
+		{
+			AddPosesResult *currentPoses;
+			entry_ref ref;
+			message->FindPointer("currentPoses", reinterpret_cast<void **>(&currentPoses));
+			message->FindRef("ref", &ref);
+			
+			// check if CreatePoses should be called (abort if dir has been switched
+			// under normal circumstances, ignore in several special cases
+			if (AddPosesThreadValid(&ref)) {
+				CreatePoses(currentPoses->fModels, currentPoses->fPoseInfos,
+					currentPoses->fCount, NULL, true, 0, 0, true);
+				currentPoses->ReleaseModels();
+			} 
+			delete currentPoses;
 			break;
+		}
 			
 		case kRestoreBackgroundImage:
 			ContainerWindow()->UpdateBackgroundImage();
@@ -1945,6 +1956,57 @@ BPoseView::MessageReceived(BMessage *message)
 				SelectAll();
 			break;
 		}
+
+		case B_CUT:
+			if (FSClipboardAddPoses(TargetModel()->NodeRef(), fSelectionList, kMoveSelectionTo, true) > 0)
+				SetHasPosesInClipboard(true);
+			break;
+
+		case kCutMoreSelectionToClipboard:
+			if (FSClipboardAddPoses(TargetModel()->NodeRef(), fSelectionList, kMoveSelectionTo, false) > 0)
+				SetHasPosesInClipboard(true);
+			break;
+
+		case B_COPY:
+			if (FSClipboardAddPoses(TargetModel()->NodeRef(),fSelectionList,kCopySelectionTo,true) > 0)
+				SetHasPosesInClipboard(true);
+			break;
+
+		case kCopyMoreSelectionToClipboard:
+			if (FSClipboardAddPoses(TargetModel()->NodeRef(),fSelectionList,kCopySelectionTo,false) > 0)
+				SetHasPosesInClipboard(true);
+			break;
+
+		case B_PASTE:
+			FSClipboardPaste(TargetModel());
+			break;
+
+		case B_CANCEL:
+			if (FSClipboardHasRefs())
+				FSClipboardClear();
+			break;
+
+		case kClipboardPosesChanged:
+		{
+			node_ref node;
+			bool clearClipboard = false;
+			message->FindInt32("device",&node.device);
+			message->FindInt64("directory",&node.node);
+			message->FindBool("clearClipboard",&clearClipboard);
+			
+			if (clearClipboard) {
+				if (*TargetModel()->NodeRef() == node)
+					UpdatePosesClipboardModeFromClipboard();
+				else if (HasPosesInClipboard()) {
+					SetHasPosesInClipboard(false);
+					SetPosesClipboardMode(0);
+				}
+			} else if (*TargetModel()->NodeRef() == node)
+				UpdatePosesClipboardModeFromClipboard();
+
+			break;
+		}
+			
 		case kInvertSelection:
 			InvertSelection();
 			break;
@@ -2610,6 +2672,114 @@ BPoseView::MapToNewIconMode(BPose *pose, BPoint oldGrid, BPoint oldOffset)
 	poseLoc += fOffset;
 	pose->SetLocation(poseLoc);
 	pose->SetSaveLocation();
+}
+
+
+inline bool
+BPoseView::HasPosesInClipboard()
+{
+	return fHasPosesInClipboard;
+}
+
+
+inline void
+BPoseView::SetHasPosesInClipboard(bool hasPoses)
+{
+	fHasPosesInClipboard = hasPoses;
+}
+
+
+void
+BPoseView::SetPosesClipboardMode(uint32 clipboardMode)
+{
+	int32 count = fPoseList->CountItems();
+	if (ViewMode() == kListMode) {
+		BPoint loc(0,0);
+		for (int32 index = 0; index < count; index++) {
+			BPose *pose = fPoseList->ItemAt(index);
+			if (pose->ClipboardMode() != clipboardMode) {
+				pose->SetClipboardMode(clipboardMode);
+				Invalidate(pose->CalcRect(loc,this,false));
+			}
+			loc.y += fListElemHeight;
+		}
+	} else {
+		for (int32 index = 0; index < count; index++) {
+			BPose *pose = fPoseList->ItemAt(index);
+			if (pose->ClipboardMode() != clipboardMode) {
+				pose->SetClipboardMode(clipboardMode);
+				BRect poseRect(pose->CalcRect(this));
+				Invalidate(poseRect);
+			}
+		}
+	}
+}
+
+
+void
+BPoseView::UpdatePosesClipboardModeFromClipboard()
+{
+	CommitActivePose();
+	fSelectionPivotPose = NULL;
+	fRealPivotPose = NULL;
+	
+	// scan all visible poses first
+	BRect bounds(Bounds());
+	uint32 clipboardMode = 0;
+	bool hasPosesInClipboard = false;
+
+	if (ViewMode() == kListMode) {
+		int32 startIndex = (int32)(bounds.top / fListElemHeight);
+		BPoint loc(0, startIndex * fListElemHeight);
+		int32 count = fPoseList->CountItems();
+		for (int32 index = startIndex; index < count; index++) {
+			BPose *pose = fPoseList->ItemAt(index);
+			clipboardMode = FSClipboardFindNodeMode(pose->TargetModel(),true);
+			if (clipboardMode != pose->ClipboardMode() || pose->IsSelected()) {
+				pose->SetClipboardMode(clipboardMode);
+				pose->Select(false);
+				Invalidate(pose->CalcRect(loc, this, false));
+			}
+
+			loc.y += fListElemHeight;
+			if (loc.y > bounds.bottom)
+				break;
+		}
+	} else {
+		int32 startIndex = FirstIndexAtOrBelow((int32)(bounds.top - IconPoseHeight()), true);
+		int32 count = fVSPoseList->CountItems();
+		for (int32 index = startIndex; index < count; index++) {
+			BPose *pose = fVSPoseList->ItemAt(index);
+			if (pose) {
+				clipboardMode = FSClipboardFindNodeMode(pose->TargetModel(),true);
+				if (clipboardMode != pose->ClipboardMode() || pose->IsSelected()) {
+					pose->SetClipboardMode(clipboardMode);
+					pose->Select(false);
+
+					BRect poseRect(pose->CalcRect(this));
+					if (EraseWidgetTextBackground() || clipboardMode == kMoveSelectionTo)
+						Invalidate(poseRect);
+					else
+						pose->Draw(poseRect,this,false);
+				}
+				if (pose->Location().y > bounds.bottom)
+					break;
+			}
+		}
+	}
+
+	// clear selection state in all poses
+	int32 count = fPoseList->CountItems();
+	for (int32 index = 0; index < count; index++) {
+		BPose *pose = fPoseList->ItemAt(index);
+		pose->Select(false);
+		pose->SetClipboardMode(FSClipboardFindNodeMode(pose->TargetModel(),true));
+		if (pose->ClipboardMode()) hasPosesInClipboard = true;
+	}
+	fSelectionList->MakeEmpty();
+	fMimeTypesInSelectionCache.MakeEmpty();
+	
+	SetHasPosesInClipboard(hasPosesInClipboard);
 }
 
 
@@ -4126,21 +4296,21 @@ BPoseView::MoveSelectionInto(Model *destFolder, BContainerWindow *srcWindow,
 	bool okToMove = true;
 
 	if (destFolder->IsRoot()) {
-		(new BAlert("", noCopyToRootStr, "Cancel", NULL, NULL,
+		(new BAlert("", kNoCopyToRootStr, "Cancel", NULL, NULL,
 			B_WIDTH_AS_USUAL, B_WARNING_ALERT))->Go();
 		okToMove = false;
 	}
 
 	// can't copy items into the trash
 	if (forceCopy && destIsTrash) {
-		(new BAlert("", noCopyToTrashStr, "Cancel", NULL, NULL,
+		(new BAlert("", kNoCopyToTrashStr, "Cancel", NULL, NULL,
 			B_WIDTH_AS_USUAL, B_WARNING_ALERT))->Go();
 		okToMove = false;
 	}
 
 	// can't create symlinks into the trash
 	if (createLink && destIsTrash) {
-		(new BAlert("", noLinkToTrashStr, "Cancel", NULL, NULL,
+		(new BAlert("", kNoLinkToTrashStr, "Cancel", NULL, NULL,
 			B_WIDTH_AS_USUAL, B_WARNING_ALERT))->Go();
 		okToMove = false;
 	}
@@ -4149,7 +4319,7 @@ BPoseView::MoveSelectionInto(Model *destFolder, BContainerWindow *srcWindow,
 	if (srcWindow->TargetModel()->IsQuery()
 		&& !forceCopy && !destIsTrash && !createLink) {
 		srcWindow->UpdateIfNeeded();
-		okToMove = (new BAlert("", okToMoveStr, "Cancel", "Move", NULL,
+		okToMove = (new BAlert("", kOkToMoveStr, "Cancel", "Move", NULL,
 			B_WIDTH_AS_USUAL, B_WARNING_ALERT))->Go() == 1;
 	}
 
@@ -4283,20 +4453,20 @@ BPoseView::MoveSelectionTo(BPoint dropPt, BPoint clickPt,
 			&& !createLink
 			&& !destIsTrash) {
 			srcWindow->UpdateIfNeeded();
-			okToMove = (new BAlert("", okToMoveStr, "Cancel", "Move", NULL,
+			okToMove = (new BAlert("", kOkToMoveStr, "Cancel", "Move", NULL,
 				B_WIDTH_AS_USUAL, B_WARNING_ALERT))->Go() == 1;
 		}
 
 		// can't copy items into the trash
 		if (forceCopy && destIsTrash) {
-			(new BAlert("", noCopyToTrashStr, "Cancel", NULL, NULL,
+			(new BAlert("", kNoCopyToTrashStr, "Cancel", NULL, NULL,
 				B_WIDTH_AS_USUAL, B_WARNING_ALERT))->Go();
 			okToMove = false;
 		}
 
 		// can't create symlinks into the trash
 		if ((createLink || createRelativeLink) && destIsTrash) {
-			(new BAlert("", noLinkToTrashStr, "Cancel", NULL, NULL,
+			(new BAlert("", kNoLinkToTrashStr, "Cancel", NULL, NULL,
 				B_WIDTH_AS_USUAL, B_WARNING_ALERT))->Go();
 			okToMove = false;
 		}
@@ -5484,7 +5654,9 @@ BPoseView::KeyDown(const char *bytes, int32 count)
 		{
 			int32 index;
 			BPose *pose = FindNearbyPose(key, &index);
-			
+			if (pose == NULL)
+				break;
+
 			if (fMultipleSelection && modifiers() & B_SHIFT_KEY) {
 				if (pose->IsSelected()) {
 					RemovePoseFromSelection(fSelectionList->LastItem());
@@ -5732,6 +5904,10 @@ BPoseView::FindNearbyPose(char arrowKey, int32 *poseIndex)
 				if (selectedPose) {
 					resultingIndex = fPoseList->IndexOf(selectedPose) - 1;
 					poseToSelect = fPoseList->ItemAt(resultingIndex);
+					if (!poseToSelect && arrowKey == B_LEFT_ARROW) {
+						resultingIndex = fPoseList->CountItems() - 1;
+						poseToSelect = fPoseList->LastItem();
+					}
 				} else {
 					resultingIndex = fPoseList->CountItems() - 1;
 					poseToSelect = fPoseList->LastItem();
@@ -5743,6 +5919,10 @@ BPoseView::FindNearbyPose(char arrowKey, int32 *poseIndex)
 				if (selectedPose) {
 					resultingIndex = fPoseList->IndexOf(selectedPose) + 1;
 					poseToSelect = fPoseList->ItemAt(resultingIndex);
+					if (!poseToSelect && arrowKey == B_RIGHT_ARROW) {
+						resultingIndex = 0;
+						poseToSelect = fPoseList->FirstItem();
+					}
 				} else {
 					resultingIndex = 0;
 					poseToSelect = fPoseList->FirstItem();
@@ -5750,7 +5930,7 @@ BPoseView::FindNearbyPose(char arrowKey, int32 *poseIndex)
 				break;
 		}
 		*poseIndex = resultingIndex;
-		return poseToSelect ? poseToSelect : selectedPose;
+		return poseToSelect;
 	}
 
 	// must be in one of the icon modes
@@ -6141,7 +6321,6 @@ BPoseView::DragSelectedPoses(const BPose *clicked_pose, BPoint clickPt)
 						if (embeddedBitmap.Unflatten(buffer) == B_OK) 
 							message.AddMessage(kBitmapMimeType, &embeddedBitmap);
 							// add bitmap into drag message
-
 					}
 					delete [] buffer;
 				}
@@ -6329,14 +6508,13 @@ BPoseView::DragSelectionRect(BPoint startPoint, bool shouldExtend)
 	SetDrawingMode(B_OP_INVERT);
 	StrokeRect(selectionRect, B_MIXED_COLORS);
 	SetDrawingMode(B_OP_OVER);
-	
+
 	BList *selectionList = new BList;
 
 	BPoint oldMousePoint(startPoint);
 	while (button) {
 		GetMouse(&newMousePoint, &button);
 		if (newMousePoint != oldMousePoint) {
-
 			oldMousePoint = newMousePoint;
 			BRect oldRect = selectionRect;
 			selectionRect.top = std::min(newMousePoint.y, startPoint.y);
@@ -6348,17 +6526,18 @@ BPoseView::DragSelectionRect(BPoint startPoint, bool shouldExtend)
 			SetDrawingMode(B_OP_INVERT);
 			StrokeRect(oldRect, B_MIXED_COLORS);
 			SetDrawingMode(B_OP_OVER);
-			
+
 			fIsDrawingSelectionRect = true;
-			
+
 			CheckAutoScroll(newMousePoint, true, true);
-			Window()->UpdateIfNeeded();
 
 			// use current selection rectangle to scan poses
 			if (ViewMode() == kListMode)
 				SelectPosesListMode(selectionRect, &selectionList);
 			else
 				SelectPosesIconMode(selectionRect, &selectionList);
+
+			Window()->UpdateIfNeeded();
 
 			// draw new sel rect
 			SetDrawingMode(B_OP_INVERT);
