@@ -5685,20 +5685,27 @@ BPoseView::KeyDown(const char *bytes, int32 count)
 				SelectPose(pose, index);
 			break;
 		}
-			
+
 		case B_RETURN:
 			OpenSelection();
 			break;
 
 		case B_HOME:
-			if (fVScrollBar)
+			// select the first entry (if in listview mode), and
+			// scroll to the top of the view
+			if (ViewMode() == kListMode)
+				SelectPose(fPoseList->FirstItem(), 0);
+			else if (fVScrollBar)
 				fVScrollBar->SetValue(0);
 			break;
 
 		case B_END:
-			if (fVScrollBar) {
-				float max;
-				float min;
+			// select the last entry (if in listview mode), and
+			// scroll to the bottom of the view
+			if (ViewMode() == kListMode)
+				SelectPose(fPoseList->LastItem(), fPoseList->CountItems() - 1);
+			else if (fVScrollBar) {
+				float max, min;
 				fVScrollBar->GetRange(&min, &max);
 				fVScrollBar->SetValue(max);
 			}
@@ -5706,8 +5713,7 @@ BPoseView::KeyDown(const char *bytes, int32 count)
 
 		case B_PAGE_UP:
 			if (fVScrollBar) {
-				float max;
-				float min;
+				float max, min;
 				fVScrollBar->GetSteps(&min, &max);
 				fVScrollBar->SetValue(fVScrollBar->Value() - max);
 			}
@@ -5715,8 +5721,7 @@ BPoseView::KeyDown(const char *bytes, int32 count)
 
 		case B_PAGE_DOWN:
 			if (fVScrollBar) {
-				float max;
-				float min;
+				float max, min;
 				fVScrollBar->GetSteps(&min, &max);
 				fVScrollBar->SetValue(fVScrollBar->Value() + max);
 			}
@@ -5788,6 +5793,7 @@ BPoseView::KeyDown(const char *bytes, int32 count)
 				SelectPose(pose, index);
 			}
 			break;
+
 		default:
 		{
 			// handle typeahead selection
