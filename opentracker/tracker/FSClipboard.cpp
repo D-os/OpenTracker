@@ -128,7 +128,7 @@ FSClipboardStopWatch(BMessenger target)
 static void
 MakeNodeFromName(node_ref *node, char *name)
 {
-	char *nodeString = strchr(name,'_');
+	char *nodeString = strchr(name, '_');
 	if (nodeString != NULL) {
 		node->node = strtoll(nodeString + 1, (char **)NULL, 10);
 		node->device = atoi(name + 1);
@@ -196,100 +196,99 @@ FSClipboardAddPoses(const node_ref *directory, PoseList *list, uint32 moveMode,
 	bool clearClipboard)
 {
 	uint32 refsAdded = 0;
-	int32 listSize = list->CountItems();
+	int32 listCount = list->CountItems();
 
-	if (listSize && be_clipboard->Lock()) {
-		// start raport
-		BMessage *report = new BMessage(kFSClipboardChanges);
-		report->AddInt32("device", directory->device);
-		report->AddInt64("directory", directory->node);
-		report->AddBool("clearClipboard", clearClipboard);
-		TClipboardNodeRef tcnode;
-		tcnode.moveMode = moveMode;
+	if (listCount == 0 || !be_clipboard->Lock())
+		return 0;
 
-		if (clearClipboard) {
-			be_clipboard->Clear();
-		}
+	// update message to be send to all listeners
+	BMessage updateMessage(kFSClipboardChanges);
+	updateMessage.AddInt32("device", directory->device);
+	updateMessage.AddInt64("directory", directory->node);
+	updateMessage.AddBool("clearClipboard", clearClipboard);
 
-		BMessage *clip = be_clipboard->Data();
-		if (clip != NULL) {
-			char refName[64];
-			char modeName[64];
+	TClipboardNodeRef clipNode;
+	clipNode.moveMode = moveMode;
 
-			for (int32 index = 0; index < listSize; index++) {
-				BPose *pose = (BPose *)list->ItemAt(index);
-				Model *model = pose->TargetModel();
-				const node_ref *node = model->NodeRef();
+	if (clearClipboard)
+		be_clipboard->Clear();
 
-				BEntry entry;
-				model->GetEntry(&entry);
-				if (model->IsVolume()
-					|| model->IsRoot()
-					|| FSIsTrashDir(&entry)
-					|| FSIsDeskDir(&entry))
-					continue;
+	BMessage *clip = be_clipboard->Data();
+	if (clip != NULL) {
+		for (int32 index = 0; index < listCount; index++) {
+			char refName[64], modeName[64];
+			BPose *pose = (BPose *)list->ItemAt(index);
+			Model *model = pose->TargetModel();
+			const node_ref *node = model->NodeRef();
 
-				MakeRefName(refName, node);
-				MakeModeNameFromRefName(modeName, refName);
-				
-				if (clearClipboard) {
-					if (clip->AddInt32(modeName, (int32)moveMode) == B_OK)
-						if (clip->AddRef(refName, model->EntryRef()) == B_OK) {
-							pose->SetClipboardMode(moveMode);
-							
-							tcnode.node = *node;
-							report->AddData("tcnode", T_CLIPBOARD_NODE, &tcnode, sizeof(tcnode), true, listSize);
+			BEntry entry;
+			model->GetEntry(&entry);
+			if (model->IsVolume()
+				|| model->IsRoot()
+				|| FSIsTrashDir(&entry)
+				|| FSIsDeskDir(&entry))
+				continue;
 
-							refsAdded++;
-						} else
-							clip->RemoveName(modeName);
-				} else {
-					if (clip->ReplaceInt32(modeName, (int32)moveMode) == B_OK) {
-						// replace old mode if entry already exists in clipboard
-						if (clip->ReplaceRef(refName, model->EntryRef()) == B_OK) {
-							pose->SetClipboardMode(moveMode);
-							
-							tcnode.node = *node;
-							report->AddData("tcnode", T_CLIPBOARD_NODE, &tcnode, sizeof(tcnode), true, listSize);
+			MakeRefName(refName, node);
+			MakeModeNameFromRefName(modeName, refName);
 
-							refsAdded++;
-						} else {
-							clip->RemoveName(modeName);
-							
-							tcnode.node = *node;
-							tcnode.moveMode = kDelete;	// note removing node
-							report->AddData("tcnode", T_CLIPBOARD_NODE, &tcnode, sizeof(tcnode), true, listSize);
-							tcnode.moveMode = moveMode; // set it back to current value
-						}
+			if (clearClipboard) {
+				if (clip->AddInt32(modeName, (int32)moveMode) == B_OK)
+					if (clip->AddRef(refName, model->EntryRef()) == B_OK) {
+						pose->SetClipboardMode(moveMode);
+
+						clipNode.node = *node;
+						updateMessage.AddData("tcnode", T_CLIPBOARD_NODE, &clipNode,
+							sizeof(TClipboardNodeRef), true, listCount);
+
+						refsAdded++;
+					} else
+						clip->RemoveName(modeName);
+			} else {
+				if (clip->ReplaceInt32(modeName, (int32)moveMode) == B_OK) {
+					// replace old mode if entry already exists in clipboard
+					if (clip->ReplaceRef(refName, model->EntryRef()) == B_OK) {
+						pose->SetClipboardMode(moveMode);
+
+						clipNode.node = *node;
+						updateMessage.AddData("tcnode", T_CLIPBOARD_NODE, &clipNode,
+							sizeof(TClipboardNodeRef), true, listCount);
+
+						refsAdded++;
 					} else {
-						// add if it doesn't exist
-						if (clip->AddRef(refName, model->EntryRef()) == B_OK
-							&& clip->AddInt32(modeName, (int32)moveMode) == B_OK) {
-							pose->SetClipboardMode(moveMode);
-							
-							tcnode.node = *node;
-							report->AddData("tcnode", T_CLIPBOARD_NODE, &tcnode, sizeof(tcnode), true, listSize);
+						clip->RemoveName(modeName);
+						
+						clipNode.node = *node;
+						clipNode.moveMode = kDelete;	// note removing node
+						updateMessage.AddData("tcnode", T_CLIPBOARD_NODE, &clipNode,
+							sizeof(TClipboardNodeRef), true, listCount);
+						clipNode.moveMode = moveMode; // set it back to current value
+					}
+				} else {
+					// add if it doesn't exist
+					if (clip->AddRef(refName, model->EntryRef()) == B_OK
+						&& clip->AddInt32(modeName, (int32)moveMode) == B_OK) {
+						pose->SetClipboardMode(moveMode);
+						
+						clipNode.node = *node;
+						updateMessage.AddData("tcnode", T_CLIPBOARD_NODE, &clipNode,
+							sizeof(TClipboardNodeRef), true, listCount);
 
-							refsAdded++;
-						} else {
-							clip->RemoveName(modeName);
-							clip->RemoveName(refName);
-							// here raporting delete isn't needed as node didn't exist in clipboard
-						}
+						refsAdded++;
+					} else {
+						clip->RemoveName(modeName);
+						clip->RemoveName(refName);
+						// here notifying delete isn't needed as node didn't exist in clipboard
 					}
 				}
 			}
-			be_clipboard->Commit();
-		}	
-		be_clipboard->Unlock();
-
-		// send raport to tracker's clipboard watcher, which will resend it to views to update them
-		BMessenger messenger(kTrackerSignature);
-		if (messenger.IsValid()) {
-			messenger.SendMessage(report);
 		}
-		delete report;
-	}
+		be_clipboard->Commit();
+	}	
+	be_clipboard->Unlock();
+
+	BMessenger(kTrackerSignature).SendMessage(&updateMessage);
+		// Tracker will notify all listeners
 
 	return refsAdded;
 }
@@ -298,51 +297,53 @@ FSClipboardAddPoses(const node_ref *directory, PoseList *list, uint32 moveMode,
 uint32
 FSClipboardRemovePoses(const node_ref *directory, PoseList *list)
 {
+
+	if (!be_clipboard->Lock())
+		return 0;
+
+	// update message to be send to all listeners
+	BMessage updateMessage(kFSClipboardChanges);
+	updateMessage.AddInt32("device", directory->device);
+	updateMessage.AddInt64("directory", directory->node);
+	updateMessage.AddBool("clearClipboard", false);
+
+	TClipboardNodeRef clipNode;
+	clipNode.moveMode = kDelete;
+
 	uint32 refsRemoved = 0;
-	int32 listSize = list->CountItems();
 
-	if (be_clipboard->Lock()) {
-		// start raport
-		BMessage report(kFSClipboardChanges);
-		report.AddInt32("device", directory->device);
-		report.AddInt64("directory", directory->node);
-		report.AddBool("clearClipboard", false);
-		TClipboardNodeRef tcnode;
-		tcnode.moveMode = kDelete;
+	BMessage *clip = be_clipboard->Data();
+	if (clip != NULL) {
+		int32 listCount = list->CountItems();
 
-		BMessage *clip = be_clipboard->Data();
-		if (clip != NULL) {
-			char refName[64];
+		for (int32 index = 0; index < listCount; index++) {
+			char refName[64], modeName[64];
+			BPose *pose = (BPose *)list->ItemAt(index);
 
-			for (int32 index = 0; index < listSize; index++) {
-				BPose *pose = (BPose *)list->ItemAt(index);
-				Model *model = pose->TargetModel();
-				const node_ref *node = model->NodeRef();
-				tcnode.node = *node;
+			clipNode.node = *pose->TargetModel()->NodeRef();
+			MakeRefName(refName, &clipNode.node);
+			MakeModeName(modeName);
 
-				status_t found = B_ERROR;
-				MakeRefName(refName, node);
-				found = clip->RemoveName(refName);
-				MakeModeName(refName);
-				found = clip->RemoveName(refName);
-				if (found == B_OK) {
-					report.AddData("tcnode", T_CLIPBOARD_NODE, &tcnode, sizeof(tcnode), true, listSize);
-					refsRemoved++;
-				}
+			if (clip->RemoveName(refName) == B_OK && clip->RemoveName(modeName)) {
+				updateMessage.AddData("tcnode", T_CLIPBOARD_NODE, &clipNode,
+					sizeof(TClipboardNodeRef), true, listCount);
+				refsRemoved++;
 			}
-			be_clipboard->Commit();
-		}	
-		be_clipboard->Unlock();
-
-		// send report to tracker's clipboard watcher, which will resend it to views to update them
-		BMessenger messenger(kTrackerSignature);
-		if (messenger.IsValid())
-			messenger.SendMessage(&report);
+		}
+		be_clipboard->Commit();
 	}
+	be_clipboard->Unlock();
+
+	BMessenger(kTrackerSignature).SendMessage(&updateMessage);
+		// Tracker will notify all listeners
 
 	return refsRemoved;
 }
 
+
+/** Pastes entries from the clipboard to the target model's directory.
+ *	Updates moveModes and notifies listeners if necessary.
+ */
 
 bool
 FSClipboardPaste(Model *model, uint32 linksMode)
@@ -350,163 +351,148 @@ FSClipboardPaste(Model *model, uint32 linksMode)
 	if (!FSClipboardHasRefs())
 		return false;
 
-	BMessenger messenger(kTrackerSignature);
+	BMessenger tracker(kTrackerSignature);
 
-	// start report
-	BMessage *report = NULL;
-	node_ref currentFolderNode;
-	currentFolderNode.device = currentFolderNode.node = 0;
-	TClipboardNodeRef tcnode;
+	node_ref *destNodeRef = (node_ref *)model->NodeRef();
 
-	int32 refsPasted = 0;
-
-	BEntry *destMoveEntry = new BEntry();
-	model->GetEntry(destMoveEntry);
-	BEntry *destCopyEntry = new BEntry();
-	model->GetEntry(destCopyEntry);
-	
-	node_ref *destNodeRef = (node_ref*)model->NodeRef();
-
-	bool destIsTrash = FSIsTrashDir(destMoveEntry);
-
-	bool okToMove = true;
-	int32 moveCount = 0;
-	int32 copyCount = 0;
-
-	BObjectList<entry_ref> *srcMoveList = NULL;
-	BObjectList<entry_ref> *srcCopyList = NULL;
+	// these will be passed to the asynchronous copy/move process
+	BObjectList<entry_ref> *moveList = new BObjectList<entry_ref>(0, true);
+	BObjectList<entry_ref> *copyList = new BObjectList<entry_ref>(0, true);
 
 	if ((be_clipboard->Lock())) {
 		BMessage *clip = be_clipboard->Data();
 		if (clip != NULL) {
-			// srcMoveList is also used if user just paste as links
-			srcMoveList = new BObjectList<entry_ref>(0, true);
-			srcCopyList = new BObjectList<entry_ref>(0, true);
-
-			BEntry checkEntry;
 			char modeName[64];
-			int32 moveMode = 0;
+			uint32 moveMode = 0;
 
-			int32 index = 0;
+			BMessage *updateMessage = NULL;
+			node_ref updateNodeRef;
+			updateNodeRef.device = -1;
+
 			char *refName;
 			type_code type;
 			int32 count;
-			while (clip->GetInfo(B_REF_TYPE, index,
+			for (int32 index = 0; clip->GetInfo(B_REF_TYPE, index,
 #ifdef B_BEOS_VERSION_DANO
 				(const char **)
 #endif
-				&refName, &type, &count) == B_OK) {
+				&refName, &type, &count) == B_OK; index++) {
 				entry_ref ref;
 				if (clip->FindRef(refName, &ref) != B_OK)
 					continue;
 
-				// Do we have to do anything? (if target and source directory are
-				// equal, we are almost done)
-				if (destNodeRef->node != ref.directory) {
-					// If different directory send report and start new one for new directory
-					if (currentFolderNode.device != ref.device
-						&& currentFolderNode.node != ref.directory) {
-						if (report != NULL && messenger.IsValid()) {
-							messenger.SendMessage(report);
-							delete report;
-						}
-						report = new BMessage(kFSClipboardChanges);
-						report->AddInt32("device", ref.device);
-						report->AddInt64("directory", ref.directory);
+				// If the entry_ref's directory has changed, send previous notification
+				// (if any), and start new one for the new directory
+				if (updateNodeRef.device != ref.device
+					|| updateNodeRef.node != ref.directory) {
+					if (updateMessage != NULL) {
+						tracker.SendMessage(updateMessage);
+						delete updateMessage;
 					}
 
-					// If pasting links
-					if (linksMode) {
-						checkEntry.SetTo(&ref);
-						if (checkEntry.Exists()) {
-							srcMoveList->AddItem(new entry_ref(ref));
-							moveCount++;
-						}
-					} else {
-						MakeModeNameFromRefName(modeName, refName);
-						if (clip->FindInt32(modeName, &moveMode) == B_OK) {
-							checkEntry.SetTo(&ref);
-							if (checkEntry.Exists()) {
-								if ((uint32)moveMode == kMoveSelectionTo) {
-									srcMoveList->AddItem(new entry_ref(ref));
-									// now change "Cut" mode to "Copy" mode, to let the user
-									// cut only once, next paste will just copy poses (ToDo: from
-									// the new location?)
-									clip->ReplaceInt32(modeName, kCopySelectionTo);
+					updateNodeRef.device = ref.device;
+					updateNodeRef.node = ref.directory;
 
-									MakeNodeFromName(&tcnode.node, modeName);
-									tcnode.moveMode = kCopySelectionTo;
-									report->AddData("tcnode", T_CLIPBOARD_NODE, &tcnode, sizeof(tcnode), true);
-
-									moveCount++;
-								} else if ((uint32)moveMode == kCopySelectionTo) {
-									srcCopyList->AddItem(new entry_ref(ref));
-									copyCount++;
-								}
-								refsPasted++;
-							} else {
-								clip->RemoveName(refName);
-								clip->RemoveName(modeName);
-
-								MakeNodeFromName(&tcnode.node, modeName);
-								tcnode.moveMode = kDelete;
-								report->AddData("tcnode", T_CLIPBOARD_NODE, &tcnode, sizeof(tcnode), true);
-							}
-						}
-					}
-				} else {
-					// target and source directory are equal - if the poses were cut out,
-					// we now change their mode to kCopySelectionTo, so that they are not
-					// removed anymore, when pasting to another directory
+					updateMessage = new BMessage(kFSClipboardChanges);
+					updateMessage->AddInt32("device", updateNodeRef.device);
+					updateMessage->AddInt64("directory", updateNodeRef.node);					
 				}
 
-				index++;
+				// we need this data later on
+				MakeModeNameFromRefName(modeName, refName);
+				if (!linksMode && clip->FindInt32(modeName, (int32 *)&moveMode) != B_OK)
+					continue;
+
+				BEntry entry(&ref);
+
+				uint32 newMoveMode = 0;
+				bool sameDirectory = destNodeRef->device == ref.device && destNodeRef->node == ref.directory;
+				
+				if (!entry.Exists()) {
+					// The entry doesn't exist anymore, so we'll remove
+					// that entry from the clipboard as well
+					clip->RemoveName(refName);
+					clip->RemoveName(modeName);
+
+					newMoveMode = kDelete;
+				} else {
+					// the entry does exist, so lets see what we will
+					// do with it
+					if (!sameDirectory) {
+						if (linksMode || moveMode == kMoveSelectionTo) {
+							// the linksMode uses the moveList as well
+							moveList->AddItem(new entry_ref(ref));
+						} else if (moveMode == kCopySelectionTo)
+							copyList->AddItem(new entry_ref(ref));
+					}
+
+					// if the entry should have been removed from its directory,
+					// we want to copy that entry next time, no matter if the
+					// items don't have to be moved at all (source == target)
+					if (moveMode == kMoveSelectionTo)
+						newMoveMode = kCopySelectionTo;
+				}
+
+				// add the change to the update message (if necessary)
+				if (newMoveMode) {
+					clip->ReplaceInt32(modeName, kCopySelectionTo);
+
+					TClipboardNodeRef clipNode;
+					MakeNodeFromName(&clipNode.node, modeName);
+					clipNode.moveMode = kDelete;
+					updateMessage->AddData("tcnode", T_CLIPBOARD_NODE, &clipNode,
+						sizeof(TClipboardNodeRef), true);
+				}
 			}
 			be_clipboard->Commit();
+
+			// send notification for the last directory
+			if (updateMessage != NULL) {
+				tracker.SendMessage(updateMessage);
+				delete updateMessage;
+			}
 		}
 		be_clipboard->Unlock();
-
-		// send last report
-		if (report != NULL) {
-			if (messenger.IsValid())
-				messenger.SendMessage(report);
-			delete report;
-			report = NULL;
-		}
 	}
+
+	bool okToMove = true;
 
 	// can't copy/paste to root('/') directory
 	if (model->IsRoot()) {
 		(new BAlert("", kNoCopyToRootStr, "Cancel", NULL, NULL,
 			B_WIDTH_AS_USUAL, B_WARNING_ALERT))->Go();
-		okToMove = false;
+		okToMove = false;			
 	}
 
+	BEntry entry;
+	model->GetEntry(&entry);
+
 	// can't copy items into the trash
-	if (copyCount && destIsTrash) {
+	if (copyList->CountItems() > 0 && FSIsTrashDir(&entry)) {
 		(new BAlert("", kNoCopyToTrashStr, "Cancel", NULL, NULL,
 			B_WIDTH_AS_USUAL, B_WARNING_ALERT))->Go();
 		okToMove = false;
 	}
 
-	if (okToMove) {
-		if (moveCount)
-			FSMoveToFolder(srcMoveList, destMoveEntry, linksMode ? linksMode : kMoveSelectionTo);
-		else
-			delete srcMoveList;
-
-		if (copyCount)
-			FSMoveToFolder(srcCopyList, destCopyEntry, kCopySelectionTo);
-		else
-			delete srcCopyList;
-
-		return true;
+	if (!okToMove) {
+		// there was some problem with our target, so we bail out here
+		delete moveList;
+		delete copyList;
+		return false;
 	}
 
-	delete destMoveEntry;
-	delete destCopyEntry;
+	// asynchronous calls take over ownership of the objects passed to it
+	if (moveList->CountItems() > 0)
+		FSMoveToFolder(moveList, new BEntry(entry), linksMode ? linksMode : kMoveSelectionTo);
+	else
+		delete moveList;
 
-	return false;
+	if (copyList->CountItems() > 0)
+		FSMoveToFolder(copyList, new BEntry(entry), kCopySelectionTo);
+	else
+		delete copyList;
+
+	return true;
 }
 
 
@@ -522,6 +508,7 @@ FSClipboardFindNodeMode(Model *model, bool updateRefIfNeeded)
 	if (be_clipboard->Lock()) {
 		bool remove = false;
 		bool change = false;
+
 		BMessage *clip = be_clipboard->Data();
 		if (clip != NULL) {
 			const node_ref *node = model->NodeRef();
@@ -555,7 +542,9 @@ FSClipboardFindNodeMode(Model *model, bool updateRefIfNeeded)
 		}
 		if (change)
 			be_clipboard->Commit();
+
 		be_clipboard->Unlock();
+
 		if (remove)
 			FSClipboardRemove(model);
 	}
