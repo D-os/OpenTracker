@@ -97,6 +97,9 @@ status_t
 TShowHideMenuItem::TeamShowHideCommon(int32 action, const BList *teamList, 
 	BRect zoomRect, bool doZoom)
 {
+	if (teamList == NULL)
+		return B_BAD_VALUE;
+
 	int32 count = teamList->CountItems();
 	for (int32 index = 0; index < count; index++) {
 		team_id team = (team_id)teamList->ItemAt(index);
