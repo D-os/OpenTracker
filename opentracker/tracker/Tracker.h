@@ -229,6 +229,8 @@ TTracker::MainTaskLoop() const
 	return fTaskLoop;
 }
 
+extern void InitIconPreloader();
+
 } // namespace BPrivate
 
 using namespace BPrivate;

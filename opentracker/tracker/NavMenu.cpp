@@ -60,7 +60,6 @@ All rights reserved.
 #include "NavMenu.h"
 #include "PoseView.h"
 #include "Thread.h"
-#include "Tracker.h"
 #include "FunctionObject.h"
 #include "QueryPoseView.h"
 
