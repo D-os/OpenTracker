@@ -79,7 +79,6 @@ rule StaticLibrary
 	}
 }
 
-if $(OSPLAT) = X86 {
 rule UnitTest
 {
 	# UnitTest <name> : <sources> : <libraries> ;
@@ -102,9 +101,6 @@ rule UnitTest
 
 	ObjectSysHdrs $(sources) : [ FDirName $(LOCALE_UNITTESTS_DIR) include ] ;
 	Depends $(objects) : UnitTester ;	# actually on the includes
-}
-} else {	# TODO: No unit tests on PPC yet.
-rule UnitTest { }
 }
 
 rule LinkAgainst

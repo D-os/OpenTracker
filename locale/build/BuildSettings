@@ -41,14 +41,14 @@ MKDIR = mkdir -p ;
 }
 
 # Specify how to get the unit test stuff.
-# TODO: Currently only an x86 archive is available.
-if $(OSPLAT) = X86 {
+{
 	local archive = unittests.zip ;
 	MakeLocate $(archive) : $(LOCALE_DOWNLOADS_DIR) ;
 	local url ;
 	if $(OSPLAT) = X86 {
 		url = http://tfs.cs.tu-berlin.de/~bonefish/private/unittests-x86.zip ;
 	} else {
+		url = http://tfs.cs.tu-berlin.de/~bonefish/private/unittests-ppc.zip ;
 	}
 	Download $(archive) : $(url) ;
 	local targetDir = $(LOCALE_GENERATED_DIR) ;
