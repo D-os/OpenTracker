@@ -678,7 +678,7 @@ OpenWithPoseView::Pulse()
 	// it as preferred
 	Model *firstSelected = fSelectionList->FirstItem()->TargetModel();
 	if (OpenWithRelation(firstSelected) == kNoRelation) {
-		window->SetCanSetAppAsDefault(true);
+		window->SetCanSetAppAsDefault(false);
 		_inherited::Pulse();
 		return;
 	}
