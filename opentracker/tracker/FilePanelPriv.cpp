@@ -496,6 +496,9 @@ TFilePanel::AdjustButton()
 				if (model->ResolveIfLink()->IsDirectory()) {
 					enabled = true;
 					buttonText = "Open";
+				} else {
+					// insert the name of the selected model into the text field
+					textControl->SetText(model->Name());
 				}
 			}
 		} else
