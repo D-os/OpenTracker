@@ -35,6 +35,8 @@ All rights reserved.
 #ifndef __PUBLIC_COMMANDS__
 #define __PUBLIC_COMMANDS__
 
+#include <SupportDefs.h>
+
 // commands that may be issued to the tracker by other apps using messengers
 namespace BPrivate {
 
