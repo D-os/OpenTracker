@@ -60,7 +60,7 @@ All rights reserved.
 // Trash is supported
 
 BQueryPoseView::BQueryPoseView(Model *model, BRect frame, uint32 resizeMask)
-	:	BPoseView(model,frame, kListMode, resizeMask),
+	:	BPoseView(model, frame, kListMode, resizeMask),
 		fShowResultsFromTrash(false),
 		fQueryList(NULL),
 		fQueryListContainer(NULL),
@@ -68,10 +68,30 @@ BQueryPoseView::BQueryPoseView(Model *model, BRect frame, uint32 resizeMask)
 {
 }
 
+
 BQueryPoseView::~BQueryPoseView()
 {
 	delete fQueryListContainer;
 }
+
+
+void 
+BQueryPoseView::MessageReceived(BMessage *message)
+{
+	switch (message->what) {
+		case kFSClipboardChanges:
+		{
+			// poses have always to be updated for the query view
+			UpdatePosesClipboardModeFromClipboard(message);
+			break;
+		}
+
+		default:
+			_inherited::MessageReceived(message);
+			break;
+	}
+}
+
 
 void 
 BQueryPoseView::EditQueries()
@@ -80,6 +100,7 @@ BQueryPoseView::EditQueries()
 	message.AddRef("refs", TargetModel()->EntryRef());
 	BMessenger(kTrackerSignature, -1, 0).SendMessage(&message);
 }
+
 
 void
 BQueryPoseView::SetUpDefaultColumnsIfNeeded()
@@ -98,6 +119,7 @@ BQueryPoseView::SetUpDefaultColumnsIfNeeded()
 		kAttrStatModified, B_TIME_TYPE, true, false));
 }
 
+
 void
 BQueryPoseView::AttachedToWindow()
 {
@@ -106,12 +128,14 @@ BQueryPoseView::AttachedToWindow()
 	SetLowColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 }
 
+
 void 
 BQueryPoseView::RestoreState(AttributeStreamNode *node)
 {
 	_inherited::RestoreState(node);
 	fViewState->SetViewMode(kListMode);
 }
+
 
 void 
 BQueryPoseView::RestoreState(const BMessage &message)
@@ -120,20 +144,24 @@ BQueryPoseView::RestoreState(const BMessage &message)
 	fViewState->SetViewMode(kListMode);
 }
 
+
 void 
 BQueryPoseView::SavePoseLocations(BRect *)
 {
 }
+
 
 void 
 BQueryPoseView::SetViewMode(uint32)
 {
 }
 
+
 void 
 BQueryPoseView::OpenParent()
 {
 }
+
 
 void 
 BQueryPoseView::Refresh()
@@ -152,6 +180,7 @@ BQueryPoseView::Refresh()
 	ResetOrigin();
 	ResetPosePlacementHint();
 }
+
 
 bool
 BQueryPoseView::ShouldShowPose(const Model *model, const PoseInfo *poseInfo)
@@ -176,6 +205,7 @@ BQueryPoseView::ShouldShowPose(const Model *model, const PoseInfo *poseInfo)
 	return result;
 }
 
+
 void 
 BQueryPoseView::AddPosesCompleted()
 {
@@ -193,6 +223,7 @@ BQueryPoseView::AddPosesCompleted()
 
 	_inherited::AddPosesCompleted();
 }
+
 
 // When using dynamic dates, such as "today", need to refresh the query
 // window every now and then
@@ -302,11 +333,13 @@ BQueryPoseView::InitDirentIterator(const entry_ref *ref)
 	return fQueryListContainer->Clone();
 }
 
+
 uint32 
 BQueryPoseView::WatchNewNodeMask()
 {
 	return B_WATCH_NAME | B_WATCH_STAT | B_WATCH_ATTR;
 }
+
 
 const char *
 BQueryPoseView::SearchForType() const
@@ -470,6 +503,7 @@ QueryEntryListCollection::QueryEntryListCollection(Model *model, BHandler *targe
 	return;
 }
 
+
 status_t
 QueryEntryListCollection::FetchOneQuery(const BQuery *copyThis,
 	BHandler *target, BObjectList<BQuery> *list, BVolume *volume)
@@ -495,11 +529,13 @@ QueryEntryListCollection::FetchOneQuery(const BQuery *copyThis,
 	return B_OK;
 }
 
+
 QueryEntryListCollection::~QueryEntryListCollection()
 {
 	if (fQueryListRep->CloseQueryList()) 
 		delete fQueryListRep;
 }
+
 
 QueryEntryListCollection *
 QueryEntryListCollection::Clone()
@@ -508,6 +544,7 @@ QueryEntryListCollection::Clone()
 	return new QueryEntryListCollection(*this);
 }
 
+
 QueryEntryListCollection::QueryEntryListCollection(
 	const QueryEntryListCollection &cloneThis)
 	:	EntryListBase(),
@@ -515,6 +552,7 @@ QueryEntryListCollection::QueryEntryListCollection(
 {
 	// only to be used by the Clone routine
 }
+
 
 void 
 QueryEntryListCollection::ClearOldPoseList()
@@ -540,6 +578,7 @@ QueryEntryListCollection::GetNextEntry(BEntry *entry, bool traverse)
 	return result;
 }
 
+
 int32 
 QueryEntryListCollection::GetNextDirents(struct dirent *buffer, size_t length,
 	int32 count)
@@ -557,6 +596,7 @@ QueryEntryListCollection::GetNextDirents(struct dirent *buffer, size_t length,
 	}
 	return result;
 }
+
 
 status_t 
 QueryEntryListCollection::GetNextRef(entry_ref *ref)
@@ -576,6 +616,7 @@ QueryEntryListCollection::GetNextRef(entry_ref *ref)
 	return result;
 }
 
+
 status_t 
 QueryEntryListCollection::Rewind()
 {
@@ -584,11 +625,13 @@ QueryEntryListCollection::Rewind()
 	return B_OK;
 }
 
+
 int32 
 QueryEntryListCollection::CountEntries()
 {
 	return 0;
 }
+
 
 bool 
 QueryEntryListCollection::ShowResultsFromTrash() const
@@ -596,17 +639,20 @@ QueryEntryListCollection::ShowResultsFromTrash() const
 	return fQueryListRep->fShowResultsFromTrash;
 }
 
+
 bool 
 QueryEntryListCollection::DynamicDateQuery() const
 {
 	return fQueryListRep->fDynamicDateQuery;
 }
 
+
 bool 
 QueryEntryListCollection::DynamicDateRefreshEveryHour() const
 {
 	return fQueryListRep->fRefreshEveryHour;
 }
+
 
 bool 
 QueryEntryListCollection::DynamicDateRefreshEveryMinute() const

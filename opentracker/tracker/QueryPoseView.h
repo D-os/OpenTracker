@@ -50,6 +50,8 @@ public:
 	BQueryPoseView(Model *, BRect, uint32 resizeMask = B_FOLLOW_ALL);
 	virtual ~BQueryPoseView();
 	
+	virtual void MessageReceived(BMessage *message);
+
 	const char *SearchForType() const;
 	BQueryContainerWindow *ContainerWindow() const;
 	bool ActiveOnDevice(dev_t) const;
