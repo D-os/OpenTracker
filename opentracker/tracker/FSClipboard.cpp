@@ -556,7 +556,7 @@ BClipboardRefsWatcher::RemoveNodesByDevice(dev_t device)
 		char deviceName[6];
 		sprintf(deviceName,"r%ld_",device);
 
-		uint32 index = 0;
+		int32 index = 0;
 		char *refName;
 		type_code type;
 		int32 count;
