@@ -4,6 +4,8 @@
 */
 
 
+#include <memory>
+
 #include <Application.h>
 #include <Directory.h>
 #include <File.h>
@@ -16,6 +18,8 @@
 #include <DefaultCatalog.h>
 #include <LocaleRoster.h>
 
+#include <stdio.h>
+
 /*
  *	This implements the default catalog-type for the opentracker locale kit.
  *  Alternatively, this could be used as a full add-on, but currently this
@@ -25,12 +29,21 @@
 static const char *kCatFolder = "catalogs";
 static const char *kCatExtension = ".catalog";
 
+static const char *kCatMimeType = "x-vnd.Be.locale-catalog.default";
+static const char *kCatLangAttr = "BEOS:LOCALE_LANGUAGE";
+static const char *kCatSigAttr = "BEOS:LOCALE_SIGNATURE";
+
+static int16 kCatArchiveVersion = 1;
+	// version of the archive structure, bump this if you change the structure!
+
 size_t hash<CatKey>::operator()(const CatKey &key) const 
 {
 	return key.fHashVal;
 }
 
+
 static const char kSeparator = '\01';
+
 
 CatKey::CatKey(const char *str, const char *ctx, const char *cmt)
 {
@@ -59,11 +72,13 @@ CatKey::CatKey(const char *str, const char *ctx, const char *cmt)
 	fHashVal = __stl_hash_string(fKey.String());
 }
 
+
 CatKey::CatKey(uint32 id)
 	:
 	fHashVal(id)
 {
 }
+
 
 CatKey::CatKey()
 	:
@@ -71,12 +86,14 @@ CatKey::CatKey()
 {
 }
 
+
 bool 
 CatKey::operator== (const CatKey& right) const
 {
 	return fHashVal == right.fHashVal
 		&& fKey == right.fKey;
 }
+
 
 DefaultCatalog::DefaultCatalog(const char *signature, const char *language)
 	:
@@ -120,6 +137,7 @@ DefaultCatalog::DefaultCatalog(const char *signature, const char *language)
 	fInitCheck = status;
 }
 
+
 DefaultCatalog::DefaultCatalog(const char *signature, const char *language,
 	const char *path, bool create)
 	:
@@ -132,9 +150,11 @@ DefaultCatalog::DefaultCatalog(const char *signature, const char *language,
 		fInitCheck = B_OK;
 }
 
+
 DefaultCatalog::~DefaultCatalog()
 {
 }
+
 
 status_t
 DefaultCatalog::ReadFromDisk(const char *path)
@@ -154,40 +174,43 @@ DefaultCatalog::ReadFromDisk(const char *path)
 	if (res != B_OK)
 		return res;
 
-	char *buf = new char [sz];
-	res = catalogFile.Read( buf, sz);
-	if (res >= 0) {
-		BMemoryIO memIO( buf, sz);
+	auto_ptr<char> buf(new char [sz]);
+	res = catalogFile.Read( buf.get(), sz);
+	if (res < B_OK )
+		return res;
+		
+	BMemoryIO memIO( buf.get(), sz);
 
-		// create hash-map from mem-IO:
-		BMessage archiveMsg;
-		archiveMsg.Unflatten(&memIO);
-	
-		fCatMap.clear();
-		res = B_OK;
-		int32 count = archiveMsg.FindInt32("c:sz");
-		if (count > 0) {
-			CatKey key;
-			const char *keyStr;
-			const char *translated;
-			fCatMap.resize(count);
-			for (int i=0; res==B_OK && i<count; ++i) {
-				res = archiveMsg.Unflatten(&memIO);
-				if (res == B_OK) {
-					res = archiveMsg.FindString("c:key", &keyStr)
-						|| archiveMsg.FindInt32("c:hash", (int32*)&key.fHashVal)
-						|| archiveMsg.FindString("c:tstr", &translated);
-				}
-				if (res == B_OK) {
-					key.fKey = keyStr;
-					fCatMap.insert(make_pair(key, translated));
-				}
+	// create hash-map from mem-IO:
+	BMessage archiveMsg;
+	res = archiveMsg.Unflatten(&memIO);
+	if (res != B_OK)
+		return res;
+
+	fCatMap.clear();
+	int32 count = archiveMsg.FindInt32("c:sz");
+	int16 version = archiveMsg.FindInt16("c:ver");
+	if (count > 0) {
+		CatKey key;
+		const char *keyStr;
+		const char *translated;
+		fCatMap.resize(count);
+		for (int i=0; res==B_OK && i<count; ++i) {
+			res = archiveMsg.Unflatten(&memIO);
+			if (res == B_OK) {
+				res = archiveMsg.FindString("c:key", &keyStr)
+					|| archiveMsg.FindInt32("c:hash", (int32*)&key.fHashVal)
+					|| archiveMsg.FindString("c:tstr", &translated);
+			}
+			if (res == B_OK) {
+				key.fKey = keyStr;
+				fCatMap.insert(make_pair(key, translated));
 			}
 		}
 	}
-	delete [] buf;
 	return res;
 }
+
 
 status_t
 DefaultCatalog::WriteToDisk(const char *path) const
@@ -199,12 +222,13 @@ DefaultCatalog::WriteToDisk(const char *path) const
 	if (res == B_OK) {
 		if (path)
 			fPath = path;
-		res = catalogFile.SetTo(fPath.String(), 
+		res = catalogFile.SetTo(fPath.String(),
 			B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE);
 	}
 
-	int32 count=fCatMap.size();
-	res = archive.AddInt32("c:sz", count);
+	int32 count = fCatMap.size();
+	res = archive.AddInt32("c:sz", count)
+		|| archive.AddInt16("c:ver", kCatArchiveVersion);
 	if (res == B_OK)
 		res = archive.Flatten(&catalogFile);
 	CatMap::const_iterator iter;
@@ -226,11 +250,27 @@ DefaultCatalog::WriteToDisk(const char *path) const
 	return res;
 }
 
+
 void
 DefaultCatalog::MakeEmpty()
 {
 	fCatMap.clear();
 }
+
+
+void
+DefaultCatalog::Resize(int32 size)
+{
+	fCatMap.resize(size);
+}
+
+
+int32
+DefaultCatalog::CountItems() const
+{
+	return fCatMap.size();
+}
+
 
 const char *
 DefaultCatalog::GetString(const char *string, const char *context, 
@@ -241,8 +281,9 @@ DefaultCatalog::GetString(const char *string, const char *context,
 	if (iter != fCatMap.end())
 		return iter->second.String();
 	else
-		return NULL;
+		return string;
 }
+
 
 const char *
 DefaultCatalog::GetString(uint32 id)
@@ -254,6 +295,7 @@ DefaultCatalog::GetString(uint32 id)
 		return NULL;
 }
 
+
 status_t
 DefaultCatalog::SetString(const char *string, const char *translated, 
 	const char *context, const char *comment)
@@ -264,6 +306,7 @@ DefaultCatalog::SetString(const char *string, const char *translated,
 	return B_OK;
 }
 
+
 status_t
 DefaultCatalog::SetString(uint32 id, const char *translated)
 {
@@ -271,7 +314,6 @@ DefaultCatalog::SetString(uint32 id, const char *translated)
 		// overwrite existing element
 	return B_OK;
 }
-
 
 
 BCatalogAddOn *
@@ -284,6 +326,7 @@ DefaultCatalog::Instantiate(const char *signature, const char *language)
 	}
 	return catalog;
 }
+
 
 const uint8 DefaultCatalog::gDefaultCatalogAddOnPriority = 1;
 	// give highest priority to our embedded catalog-add-on
