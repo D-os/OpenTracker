@@ -12,16 +12,13 @@
 
 #if B_BEOS_VERSION <= B_BEOS_VERSION_5
 // B_BAD_DATA was introduced with DANO, so we define it for R5:
-#define B_BAD_DATA -2147483632L
+#	define B_BAD_DATA -2147483632L
 #endif
+
 
 status_t
 PropertyFile::SetTo(const char *directory, const char *name)
 {
-#ifdef GENERATE_PROPERTIES
-	BPath path(directory,name);
-	status_t status = BFile::SetTo(path.Path(), B_WRITE_ONLY | B_CREATE_FILE);
-#else
 	BPath path;
 	status_t status = find_directory(B_BEOS_ETC_DIRECTORY, &path);
 	if (status < B_OK)
@@ -30,19 +27,9 @@ PropertyFile::SetTo(const char *directory, const char *name)
 	path.Append(directory);
 	path.Append(name);
 	status = BFile::SetTo(path.Path(), B_READ_ONLY);
-#endif
 	if (status < B_OK)
 		return status;
 
-#ifdef GENERATE_PROPERTIES
-	static UnicodePropertiesHeader header = {
-		sizeof(UnicodePropertiesHeader),
-		B_HOST_IS_BENDIAN,
-		PROPERTIES_FORMAT,
-		3, 0, 0		// version (taken from the ICU data version)
-	};
-	return Write(&header, sizeof(header));
-#else	// GENERATE_PROPERTIES
 	UnicodePropertiesHeader header;
 	ssize_t bytes = Read(&header, sizeof(header));
 	if (bytes < sizeof(header)
@@ -50,9 +37,9 @@ PropertyFile::SetTo(const char *directory, const char *name)
 		|| header.isBigEndian != B_HOST_IS_BENDIAN
 		|| header.format != PROPERTIES_FORMAT)
 		return B_BAD_DATA;
+
 	return B_OK;
-#endif
-};
+}
 
 
 off_t 
@@ -63,24 +50,5 @@ PropertyFile::Size()
 		return 0;
 
 	return size - sizeof(UnicodePropertiesHeader);
-}
-
-
-ssize_t
-PropertyFile::WritePadding(size_t length)
-{
-	static uint8 padding[16] = {
-		0xaa, 0xaa, 0xaa, 0xaa,
-		0xaa, 0xaa, 0xaa, 0xaa,
-		0xaa, 0xaa, 0xaa, 0xaa,
-		0xaa, 0xaa, 0xaa, 0xaa
-	};
-
-	while (length >= 16) {
-		Write(padding, 16);
-		length -= 16;
-	}
-	if (length > 0)
-		Write(padding, length);
 }
 

@@ -9,12 +9,15 @@
 #include <File.h>
 
 
+// This is the read-only version of the PropertyFile class - the
+// genprops tool contains the write-only version of it
+
+
 class PropertyFile : public BFile {
 	public:
 		status_t SetTo(const char *directory, const char *name);
 
 		off_t Size();
-		ssize_t WritePadding(size_t length);
 };
 
 #endif	/* PROPERTY_FILE_H */
