@@ -37,7 +37,9 @@ All rights reserved.
 
 #include <Debug.h>
 
-#include "PoseView.h"
+#include "PoseList.h"
+#include "Pose.h"
+
 
 BPose *
 PoseList::FindPose(const node_ref *node, int32 *resultingIndex) const

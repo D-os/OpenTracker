@@ -40,9 +40,13 @@ All rights reserved.
 
 #include "ObjectList.h"
 
+struct node_ref;
+struct entry_ref;
+
 namespace BPrivate {
 
 class BPose;
+class Model;
 
 class PoseList : public BObjectList<BPose> {
 public:

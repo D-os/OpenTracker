@@ -45,7 +45,6 @@ All rights reserved.
 #include "AttributeStream.h"
 #include "ContainerWindow.h"
 #include "Model.h"
-#include "ObjectList.h"
 #include "PendingNodeMonitorCache.h"
 #include "Pose.h"
 #include "PoseList.h"
