@@ -217,21 +217,18 @@ TBeMenu::AddNextItem()
 		//	keep reentering and adding items
 		//	until this returns false
 		bool done = BNavMenu::AddNextItem();
-		BMenuItem *item = ItemAt(CountItems()-1);
+		BMenuItem *item = ItemAt(CountItems() - 1);
 		if (item) {
-			BMenu *menu = (BNavMenu *)item->Menu();
+			BNavMenu *menu = dynamic_cast<BNavMenu *>(item->Menu());
 			if (menu) {
-				BNavMenu* navmenu = dynamic_cast<BNavMenu*>(menu);
-				if (navmenu) {
-					if (data && fBarView->Dragging()) 
-						navmenu->InitTrackingHook(data->fTrackingHook,
-							&data->fTarget, data->fDragMessage);
-					else 
-						navmenu->InitTrackingHook(0, NULL, NULL);
-	
-				}
+				if (data && fBarView->Dragging()) {
+					menu->InitTrackingHook(data->fTrackingHook,
+						&data->fTarget, data->fDragMessage);
+				} else
+					menu->InitTrackingHook(0, NULL, NULL);
 			}
 		}
+
 		if (!done)
 			fAddState = kDone;
 		return done;
