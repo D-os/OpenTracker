@@ -164,13 +164,14 @@ rule ResComp
 	#
 	SEARCH on $(2) += $(SEARCH_SOURCE) ;
 	MakeLocate $(1) : $(LOCATE_TARGET) ;
-	Depends $(1) : $(2) ;
+	Depends $(1) : $(2) $(RESCOMP) ;
 	LocalClean clean : $(1) ;
+	ResComp1 $(1) : $(RESCOMP) $(2) ;
 }
 
-actions ResComp
+actions ResComp1
 {
-	beres -o $(1) $(2)
+	$(2[1]) -o $(1) $(2[2-])
 }
 
 rule XRes
