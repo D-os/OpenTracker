@@ -248,49 +248,70 @@ TFilePanel::~TFilePanel()
 filter_result
 TFilePanel::MessageDropFilter(BMessage *message, BHandler **, BMessageFilter *filter)
 {
-	if (message->WasDropped()) {
-		uint32 type;
-		int32 count;
-		if (message->GetInfo("refs", &type, &count) != B_OK)
-			return B_SKIP_MESSAGE;
+	TFilePanel *panel = dynamic_cast<TFilePanel *>(filter->Looper());
+	if (panel == NULL || !message->WasDropped())
+		return B_SKIP_MESSAGE;
 
-		if (count != 1)
-			return B_SKIP_MESSAGE;
-			
-		entry_ref ref;
-		if (message->FindRef("refs", &ref) != B_OK)
-			return B_SKIP_MESSAGE;
+	uint32 type;
+	int32 count;
+	if (message->GetInfo("refs", &type, &count) != B_OK)
+		return B_SKIP_MESSAGE;
 
-		BEntry entry(&ref);
-		if (entry.InitCheck() != B_OK)
-			return B_SKIP_MESSAGE;
-			
-		//	if the entry is a symlink
-		//	resolve it and see if it is a directory
-		//	pass it on if it is
-		if (entry.IsSymLink()) {
-			entry_ref resolvedRef;
-			
-			entry.GetRef(&resolvedRef);
-			BEntry resolvedEntry(&resolvedRef, true);
-			
-			if (resolvedEntry.IsDirectory()) {
-				// both entry and ref need to be the correct locations
-				// for the last setto
-				resolvedEntry.GetRef(&ref);
-				entry.SetTo(&ref);
-			}
+	if (count != 1)
+		return B_SKIP_MESSAGE;
+
+	entry_ref ref;
+	if (message->FindRef("refs", &ref) != B_OK)
+		return B_SKIP_MESSAGE;
+
+	BEntry entry(&ref);
+	if (entry.InitCheck() != B_OK)
+		return B_SKIP_MESSAGE;
+
+	// if the entry is a symlink
+	// resolve it and see if it is a directory
+	// pass it on if it is
+	if (entry.IsSymLink()) {
+		entry_ref resolvedRef;
+
+		entry.GetRef(&resolvedRef);
+		BEntry resolvedEntry(&resolvedRef, true);
+
+		if (resolvedEntry.IsDirectory()) {
+			// both entry and ref need to be the correct locations
+			// for the last setto
+			resolvedEntry.GetRef(&ref);
+			entry.SetTo(&ref);
 		}
-		
-		if (!entry.IsDirectory()) {
-			if (entry.GetParent(&entry) != B_OK)
-				return B_SKIP_MESSAGE;
-
-			entry.GetRef(&ref);
-		}
-
-		dynamic_cast<TFilePanel *>(filter->Looper())->SetTo(&ref);
 	}
+
+	// if not a directory, set to the parent, and select the child
+	if (!entry.IsDirectory()) {
+		node_ref child;
+		if (entry.GetNodeRef(&child) != B_OK)
+			return B_SKIP_MESSAGE;
+
+		BPath path(&entry);
+
+		if (entry.GetParent(&entry) != B_OK)
+			return B_SKIP_MESSAGE;
+
+		entry.GetRef(&ref);
+
+		panel->fTaskLoop->RunLater(NewMemberFunctionObjectWithResult
+			(&TFilePanel::SelectChildInParent, panel,
+			const_cast<const entry_ref *>(&ref),
+			const_cast<const node_ref *>(&child)), 
+			ref == *panel->TargetModel()->EntryRef() ? 0 : 100000, 200000, 5000000);
+				// if the target directory is already current, we won't
+				// delay the initial selection try
+
+		// also set the save name to the dragged in entry
+		if (panel->IsSavePanel())
+			panel->SetSaveText(path.Leaf());
+	}
+
+	panel->SetTo(&ref);
 
 	return B_SKIP_MESSAGE;
 }
@@ -1345,18 +1366,18 @@ bool
 TFilePanel::SelectChildInParent(const entry_ref *, const node_ref *child)
 {
 	AutoLock<TFilePanel> lock(this);
-	
+
 	if (!IsLocked())
 		return false;
-	
+
 	int32 index;
 	BPose *pose = PoseView()->FindPose(child, &index);
 	if (!pose) 
 		return false;
 
 	PoseView()->UpdateScrollRange();
-		// Scroll range should be updated by now, for some reason
-		// sometimes it is not right, force it here
+		// ToDo: Scroll range should be updated by now, for some
+		//	reason sometimes it is not right, force it here
 	PoseView()->SelectPose(pose, index, true);
 	return true;
 }
