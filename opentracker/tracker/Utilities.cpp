@@ -42,10 +42,10 @@ All rights reserved.
 #include <Bitmap.h>
 #include <Debug.h>
 #include <Directory.h>
-#include <PopUpMenu.h>
+#include <fs_info.h>
 #include <MenuItem.h>
 #include <OS.h>
-#include <OS.h>
+#include <PopUpMenu.h>
 #include <Region.h>
 #include <StorageDefs.h>
 #include <TextView.h>
@@ -821,12 +821,19 @@ EmbedUniqueVolumeInfo(BMessage *message, const BVolume *volume)
 {
 	BDirectory rootDirectory;
 	time_t created;
+	fs_info info;
 
-	volume->GetRootDirectory(&rootDirectory);
-	rootDirectory.GetCreationTime(&created);
-	message->AddInt32("creationDate", created);
-	message->AddInt64("capacity", volume->Capacity());
+	if (volume->GetRootDirectory(&rootDirectory) == B_OK
+		&& rootDirectory.GetCreationTime(&created) == B_OK
+		&& fs_stat_dev(volume->Device(), &info) == 0) {
+		message->AddInt32("creationDate", created);
+		message->AddInt64("capacity", volume->Capacity());
+		message->AddString("deviceName", info.device_name);
+		message->AddString("volumeName", info.volume_name);
+		message->AddString("fshName", info.fsh_name);
+	}
 }
+
 
 status_t
 MatchArchivedVolume(BVolume *result, const BMessage *message, int32 index)
@@ -840,19 +847,73 @@ MatchArchivedVolume(BVolume *result, const BMessage *message, int32 index)
 
 	BVolumeRoster roster;
 	BVolume volume;
+	BString deviceName, volumeName, fshName;
 
-	roster.Rewind();
-	while (roster.GetNextVolume(&volume) == B_OK)
-		if (volume.IsPersistent() && volume.KnowsQuery()) {
-			BDirectory root;
-			volume.GetRootDirectory(&root);
-			time_t cmpCreated;
-			root.GetCreationTime(&cmpCreated);
-			if (created == cmpCreated && capacity == volume.Capacity()) {
-				*result = volume;
-				return B_OK;
+	if (message->FindString("deviceName", &deviceName) == B_OK
+		&& message->FindString("volumeName", &volumeName) == B_OK
+		&& message->FindString("fshName", &fshName) == B_OK) {
+		// New style volume identifiers: We have a couple of characteristics,
+		// and compute a score from them. The volume with the greatest score
+		// (if over a certain threshold) is the one we're looking for. We
+		// pick the first volume, in case there is more than one with the
+		// same score.
+		dev_t foundDevice = -1;
+		int foundScore = -1;
+		roster.Rewind();
+		while (roster.GetNextVolume(&volume) == B_OK) {
+			if (volume.IsPersistent() && volume.KnowsQuery()) {
+				// get creation time and fs_info
+				BDirectory root;
+				volume.GetRootDirectory(&root);
+				time_t cmpCreated;
+				fs_info info;
+				if (root.GetCreationTime(&cmpCreated) == B_OK
+					&& fs_stat_dev(volume.Device(), &info) == 0) {
+					// compute the score
+					int score = 0;
+
+					// creation time
+					if (created == cmpCreated)
+						score += 5;
+					// capacity
+					if (capacity == volume.Capacity())
+						score += 4;
+					// device name
+					if (deviceName == info.device_name)
+						score += 3;
+					// volume name
+					if (volumeName == info.volume_name)
+						score += 2;
+					// fsh name
+					if (fshName == info.fsh_name)
+						score += 1;
+
+					// check score
+					if (score >= 9 && score > foundScore) {
+						foundDevice = volume.Device();
+						foundScore = score;
+					}
+				}
 			}
 		}
+		if (foundDevice >= 0)
+			return result->SetTo(foundDevice);
+	} else {
+		// Old style volume identifiers: We have only creation time and
+		// capacity. Both must match.
+		roster.Rewind();
+		while (roster.GetNextVolume(&volume) == B_OK)
+			if (volume.IsPersistent() && volume.KnowsQuery()) {
+				BDirectory root;
+				volume.GetRootDirectory(&root);
+				time_t cmpCreated;
+				root.GetCreationTime(&cmpCreated);
+				if (created == cmpCreated && capacity == volume.Capacity()) {
+					*result = volume;
+					return B_OK;
+				}
+			}
+	}
 
 	return B_DEV_BAD_DRIVE_NUM;
 }
