@@ -477,9 +477,10 @@ TBeMenu::ScreenLocation()
 //
 
 
-TRecentsMenu::TRecentsMenu(const char *name, TBarView *bar, int32 which, const char *signature)
+TRecentsMenu::TRecentsMenu(const char *name, TBarView *bar, int32 which, const char *signature, entry_ref *appRef)
 	: BNavMenu(name, B_REFS_RECEIVED, BMessenger(kTrackerSignature)),
 	fWhich(which),
+	fAppRef(NULL),
 	fSignature(NULL),
 	fRecentsCount(0),
 	fItemIndex(0),
@@ -500,11 +501,20 @@ TRecentsMenu::TRecentsMenu(const char *name, TBarView *bar, int32 which, const c
 			fRecentsCount = app->Settings()->recentDocsCount;
 			if (signature != NULL)
 				fSignature = strdup(signature);
+			if (appRef != NULL)
+				fAppRef = new entry_ref(*appRef);
 			break;
 		case kRecentFolders:
 			fRecentsCount = app->Settings()->recentFoldersCount;
 			break;
 	}
+}
+
+
+TRecentsMenu::~TRecentsMenu()
+{
+	delete fAppRef;
+	free(fSignature);
 }
 
 
@@ -585,9 +595,14 @@ TRecentsMenu::AddRecents(int32 count)
 			Model model(&ref, true);
 
 			if (fWhich != kRecentApplications) {
+				BMessage *message = new BMessage(B_REFS_RECEIVED);
+				if (fWhich == kRecentAppDocuments) {
+					// add application as handler
+					message->AddRef("handler", fAppRef);
+				}
+
 				ModelMenuItem *item = BNavMenu::NewModelItem(&model,
-					new BMessage(B_REFS_RECEIVED),
-					Target(), false, NULL, TypesList());
+					message, Target(), false, NULL, TypesList());
 
 				if (item)
 					AddItem(item);
@@ -604,14 +619,14 @@ TRecentsMenu::AddRecents(int32 count)
 
 				// create recents menu that will contain the recent docs of this app
 				TRecentsMenu *docs = new TRecentsMenu(ref.name, fBarView,
-					kRecentAppDocuments, signature);
+					kRecentAppDocuments, signature, &ref);
 				docs->SetTypesList(TypesList());
 				docs->SetTarget(Target());
 
 				ModelMenuItem *item = new ModelMenuItem(&model, docs);
 				if (item)
 				{
-					// add refs-message sothat recent app can be launched
+					// add refs-message so that the recent app can be launched
 					BMessage *msg = new BMessage(B_REFS_RECEIVED);
 					msg->AddRef("refs", &ref);
 					item->SetMessage(msg);

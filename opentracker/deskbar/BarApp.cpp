@@ -109,7 +109,6 @@ TBarApp::TBarApp()
 
 	sSubscribers.MakeEmpty();
 
-
 	fSwitcherMess = BMessenger(new TSwitchMgr(fSettings.switcherLoc));
 
 	fBarWindow = new TBarWindow();
