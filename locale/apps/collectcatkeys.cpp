@@ -21,7 +21,8 @@ bool showWarnings = false;
 const char *inputFile = NULL;
 BString outputFile;
 const char *catalogSig = NULL;
-BString rxString("\\bbe_catalog\\s*->\\s*GetString\\s*");
+const char *catalogLang = "English";
+BString rxString("be_catalog\\s*->\\s*GetString\\s*");
 
 
 BString str, ctx, cmt;
@@ -36,13 +37,17 @@ void
 usage() 
 {
 	fprintf(stderr,
-		"usage: collectcatkeys [-psw] [-r <regex>] [-o <outfile>] <prepCppFile> <catalogSig>\n"
-		"  -o <outfile>\texplicitly specifies the name of the output-file\n"
-		"  -p\t\tprint keys as they are found\n"
-		"  -r <regex>\tchanges the regex used by the key-scanner to the one given,\n"
-		"      \t\tthe default is:   \\bbe_catalog\\s*->\\s*GetString\\s*\n"
-		"  -s\t\tshow summary\n"
-		"  -w\t\tshow warnings about catalog-accesses that couldn't be resolved completely\n");
+		"usage: collectcatkeys [-pvw] [-r <regex>] [-o <outfile>] [-l <catalogLanguage>]\n"
+		"                      -s <catalogSig> <prepCppFile>\n"
+		"options:\n"
+		"  -l <catalogLang>\tlanguage of the target-catalog (default is English)\n"
+		"  -o <outfile>\t\texplicitly specifies the name of the output-file\n"
+		"  -p\t\t\tprint keys as they are found\n"
+		"  -r <regex>\t\tchanges the regex used by the key-scanner to the one given,\n"
+		"      \t\t\tthe default is:   be_catalog\\s*->\\s*GetString\\s*\n"
+		"  -s <catalogSig>\tsignature of the target-catalog\n"
+		"  -v\t\t\tbe verbose, show summary\n"
+		"  -w\t\t\tshow warnings about catalog-accesses that couldn't be resolved completely\n");
 	exit(-1);
 }
 
@@ -132,8 +137,6 @@ fetchKey(const char *&in)
 void
 collectAllCatalogKeys(BString& inputStr)
 {
-	const int errbufsz = 256;
-	char errbuf[errbufsz];
 	RegExp rx;
 	struct regexp *rxprg = rx.Compile(rxString.String());
 	if (rx.InitCheck() != B_OK) {
@@ -142,10 +145,9 @@ collectAllCatalogKeys(BString& inputStr)
 	}
 	status_t res;
 	const char *in = inputStr.String();
-	int32 matchCount = rx.RunMatcher(rxprg, in);
-	for(int32 m=1; m<matchCount; ++m) {
-		const char *start = rxprg->startp[m];
-		in = rxprg->endp[m];
+	while(rx.RunMatcher(rxprg, in)) {
+		const char *start = rxprg->startp[0];
+		in = rxprg->endp[0];
 		if (fetchKey(in)) {
 			if (haveID) {
 				if (showKeys)
@@ -160,7 +162,7 @@ collectAllCatalogKeys(BString& inputStr)
 				if (showKeys)
 					printf("CatKey(\"%s\", \"%s\", \"%s\")\n", str.String(), 
 						ctx.String(), cmt.String());
-				res = catalog->SetString(str.String(), ctx.String(), cmt.String());
+				res = catalog->SetString(str.String(), str.String(), ctx.String(), cmt.String());
 				if (res != B_OK) {
 					fprintf(stderr, "couldn't add key %s,%s,%s - error: %s\n", 
 						str.String(), ctx.String(), cmt.String(), strerror(res));
@@ -173,6 +175,7 @@ collectAllCatalogKeys(BString& inputStr)
 			if (end)
 				match.SetTo(start, end-start+1);
 			else
+				// can't determine end of statement, we output next 40 characters
 				match.SetTo(start, 40);
 			fprintf(stderr, "Warning: couldn't resolve catalog-access:\n\t%s\n",
 				match.String());
@@ -191,7 +194,11 @@ main(int argc, char **argv)
 			while ((c = *arg++) != '\0') {
 				if (c == 'p')
 					showKeys = true;
+				else if (c == 'l')
+					catalogLang = (++argv)[0];
 				else if (c == 's')
+					catalogSig = (++argv)[0];
+				else if (c == 'v')
 					showSummary = true;
 				else if (c == 'w')
 					showWarnings = true;
@@ -209,22 +216,20 @@ main(int argc, char **argv)
 		} else {
 			if (!inputFile)
 				inputFile = argv[0];
-			else if (!catalogSig)
-				catalogSig = argv[0];
 			else
 				usage();
 		}
 	}
 	if (!outputFile.Length() && inputFile) {
 		// generate default output-file from input-file by replacing 
-		// the extension with .catkeys:
+		// the extension with '.catkeys':
 		outputFile = inputFile;
 		int32 dot = outputFile.FindLast('.');
 		if (dot >= B_OK)
 			outputFile.Truncate(dot);
 		outputFile << ".catkeys";
 	}
-	if (!inputFile || !catalogSig || !outputFile.Length())
+	if (!inputFile || !catalogSig || !outputFile.Length() || !catalogLang)
 		usage();
 	
 	BFile inFile;
@@ -246,7 +251,7 @@ main(int argc, char **argv)
 			exit(-1);
 		}
 		inputStr.UnlockBuffer(rsz);
-		catalog = new EditableCatalog("Default", catalogSig, "native");
+		catalog = new EditableCatalog("Default", catalogSig, catalogLang);
 		collectAllCatalogKeys(inputStr);
 		res = catalog->WriteToFile(outputFile.String());
 		if (res != B_OK) {
@@ -265,8 +270,8 @@ main(int argc, char **argv)
 		delete catalog;
 	}
 
-	BEntry inEntry(inputFile);
-	inEntry.Remove();
+//	BEntry inEntry(inputFile);
+//	inEntry.Remove();
 	
 	return res;
 }
