@@ -1445,14 +1445,14 @@ FindPanel::CurrentMimeType(const char **type) const
 		item = NULL;
 
 	if (item == NULL) {
-		for (int32 index = MimeTypeMenu()->CountItems();index-- > 0;) {
+		for (int32 index = MimeTypeMenu()->CountItems(); index-- > 0;) {
 			BMenu *submenu = MimeTypeMenu()->ItemAt(index)->Submenu();
 			if (submenu != NULL && (item = submenu->FindMarked()) != NULL)
 				break;
 		}
 	}
 
-	if (type) {
+	if (type && item != NULL) {
 		BMessage *message = item->Message();
 		if (!message)
 			return NULL;
