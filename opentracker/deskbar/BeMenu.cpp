@@ -627,15 +627,22 @@ TRecentsMenu::AddRecents(int32 count)
 					|| appInfo.GetSignature(signature) != B_OK)
 					continue;
 
-				// create recents menu that will contain the recent docs of this app
-				TRecentsMenu *docs = new TRecentsMenu(ref.name, fBarView,
-					kRecentAppDocuments, signature, &ref);
-				docs->SetTypesList(TypesList());
-				docs->SetTarget(Target());
+				ModelMenuItem *item = NULL;
+				BMessage doc;
+				be_roster->GetRecentDocuments(&doc, 1, NULL, signature);
 
-				ModelMenuItem *item = new ModelMenuItem(&model, docs);
-				if (item)
-				{
+				if (doc.CountNames(B_REF_TYPE) > 0) {
+					// create recents menu that will contain the recent docs of this app
+					TRecentsMenu *docs = new TRecentsMenu(ref.name, fBarView,
+						kRecentAppDocuments, signature, &ref);
+					docs->SetTypesList(TypesList());
+					docs->SetTarget(Target());
+
+					item = new ModelMenuItem(&model, docs);
+				} else
+					item = new ModelMenuItem(&model, ref.name, NULL);
+
+				if (item) {
 					// add refs-message so that the recent app can be launched
 					BMessage *msg = new BMessage(B_REFS_RECEIVED);
 					msg->AddRef("refs", &ref);
@@ -668,11 +675,7 @@ TRecentsMenu::DoneBuildingItemList()
 	//	BNavMenu::DoneBuildingItemList();
 	//
 
-	if (CountItems() <= 0) {
-		BMenuItem *item = new BMenuItem("<No Recent Items>", 0);
-		item->SetEnabled(false);
-		AddItem(item);
-	} else
+	if (CountItems() > 0)
 		SetTargetForItems(Target());
 }
 
