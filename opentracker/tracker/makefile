@@ -4,7 +4,7 @@
 NAME= Tracker
 LIB_NAME= libtracker.so
 
-#BIG_TRACKER=true
+#BIG_TRACKER=TRUE
 DEBUGGER= FALSE
 
 ROOT_DIR = ..
@@ -142,7 +142,7 @@ resources_app := \
 SRCS := \
 	main.cpp \
 
-ifeq ($(BIG_TRACKER),true)
+ifeq ($(BIG_TRACKER),TRUE)
 	SRCS += $(sources_src)
 endif
 
@@ -321,7 +321,7 @@ CFLAGS += $(COMPILER_FLAGS)
 #	SETTING: add the additional linker flags
 LDFLAGS += $(LINKER_FLAGS)
 APP_LDFLAGS += -L$(OBJ_DIR)
-ifneq ($(BIG_TRACKER),true)
+ifneq ($(BIG_TRACKER),TRUE)
 	APP_LDFLAGS += -ltracker
 endif
 LIB_LDFLAGS += $(LINKER_FLAGS)
