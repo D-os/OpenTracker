@@ -47,13 +47,16 @@ All rights reserved.
 #include "FSUtils.h"
 #include "PoseList.h"
 #include "Tracker.h"
+#include "TrackerSettings.h"
 #include "TrackerString.h"
+
 
 DesktopPoseView::DesktopPoseView(Model *model, BRect frame, uint32 viewMode,
 	uint32 resizeMask)
 	:	BPoseView(model, frame, viewMode, resizeMask)
 {
 }
+
 
 EntryListBase *
 DesktopPoseView::InitDesktopDirentIterator(BPoseView *nodeMonitoringTarget,
@@ -139,6 +142,7 @@ DesktopPoseView::InitDirentIterator(const entry_ref *ref)
 	return InitDesktopDirentIterator(this, ref);
 }
 
+
 bool 
 DesktopPoseView::FSNotification(const BMessage *message)
 {
@@ -151,15 +155,17 @@ DesktopPoseView::FSNotification(const BMessage *message)
 					break;
 	
 				ASSERT(TargetModel());
-				if (TTracker::MountVolumesOntoDesktop()) {
+				TrackerSettings settings;
+
+				if (settings.MountVolumesOntoDesktop()) {
 					// place an icon for the volume onto the desktop
 					BVolume volume(device);
 					if (volume.InitCheck() == B_OK
-						&& !volume.IsShared() || TTracker::MountSharedVolumesOntoDesktop())
+						&& !volume.IsShared() || settings.MountSharedVolumesOntoDesktop())
 						CreateVolumePose(&volume, true);
 				}
 
-				if (!TTracker::IntegrateNonBootBeOSDesktops())
+				if (!settings.IntegrateNonBootBeOSDesktops())
 					break;
 
 				BDirectory remoteDesktop;
@@ -206,6 +212,7 @@ DesktopPoseView::AddPosesThreadValid(const entry_ref *) const
 	return true;
 }
 
+
 bool
 DesktopPoseView::ShouldShowPose(const Model *model, const PoseInfo *poseInfo)
 {
@@ -216,13 +223,14 @@ DesktopPoseView::ShouldShowPose(const Model *model, const PoseInfo *poseInfo)
 	return _inherited::ShouldShowPose(model, poseInfo);
 }
 
+
 bool
 DesktopPoseView::Represents(const node_ref *ref) const
 {
 	//	When the Tracker is set up to integrate non-boot beos volumes,
 	//	it represents the home/Desktop folders of all beos volumes
 
-	if (TTracker::IntegrateNonBootBeOSDesktops()) {
+	if (TrackerSettings().IntegrateNonBootBeOSDesktops()) {
 		BDirectory deviceDesktop;
 		FSGetDeskDir(&deviceDesktop, ref->device);
 		node_ref nref;
@@ -233,6 +241,7 @@ DesktopPoseView::Represents(const node_ref *ref) const
 	return _inherited::Represents(ref);
 }
 
+
 bool
 DesktopPoseView::Represents(const entry_ref *ref) const
 {
@@ -242,9 +251,11 @@ DesktopPoseView::Represents(const entry_ref *ref) const
 	return Represents(&nref);
 }
 
+
 DesktopEntryListCollection::DesktopEntryListCollection()
 {
 }
+
 
 void
 DesktopPoseView::ShowVolumes(bool visible, bool showShared)
@@ -258,6 +269,7 @@ DesktopPoseView::ShowVolumes(bool visible, bool showShared)
 	}
 }
  
+
 void
 DesktopPoseView::RemoveNonBootItems()
 {
@@ -267,6 +279,7 @@ DesktopPoseView::RemoveNonBootItems()
 
 	EachPoseAndModel(fPoseList, &RemoveNonBootDesktopModels, (BPoseView*)this, (dev_t)0);
 }
+
 
 void
 DesktopPoseView::AddNonBootItems()
@@ -301,6 +314,7 @@ DesktopPoseView::AddNonBootItems()
 	}
 }
 
+
 void
 DesktopPoseView::StartSettingsWatch()
 {
@@ -309,6 +323,7 @@ DesktopPoseView::StartSettingsWatch()
 	BHandler::StartWatching(be_app, kDesktopIntegrationChanged);
 }
 
+
 void
 DesktopPoseView::StopSettingsWatch()
 {
@@ -316,6 +331,7 @@ DesktopPoseView::StopSettingsWatch()
 	BHandler::StopWatching(be_app, kVolumesOnDesktopChanged);
 	BHandler::StopWatching(be_app, kDesktopIntegrationChanged);
 }
+
 
 void
 DesktopPoseView::AdaptToVolumeChange(BMessage *message)
@@ -380,6 +396,7 @@ DesktopPoseView::AdaptToDesktopIntegrationChange(BMessage *message)
 
 	UpdateNonBootDesktopPoses(integrateNonBootBeOSDesktops);
 }
+
 
 void
 DesktopPoseView::UpdateNonBootDesktopPoses(bool integrateNonBootBeOSDesktops)

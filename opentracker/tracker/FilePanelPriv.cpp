@@ -234,11 +234,10 @@ TFilePanel::FSFilter(BMessage *message, BHandler **, BMessageFilter *filter)
 }
 
 TFilePanel::TFilePanel(file_panel_mode mode, BMessenger *target,
-	const BEntry *startDir, uint32 nodeFlavors, bool multipleSelection,
-	BMessage *message, BRefFilter *filter, uint32 containerWindowFlags,
-	window_look look, window_feel feel, bool hideWhenDone)
-	:	BContainerWindow(0, containerWindowFlags, look, feel, 0,
-			B_CURRENT_WORKSPACE),
+		const BEntry *startDir, uint32 nodeFlavors, bool multipleSelection,
+		BMessage *message, BRefFilter *filter, uint32 containerWindowFlags,
+		window_look look, window_feel feel, bool hideWhenDone)
+	:	BContainerWindow(0, containerWindowFlags, look, feel, 0, B_CURRENT_WORKSPACE),
 		fDirMenu(NULL),
 		fDirMenuField(NULL),
 		fTextControl(NULL),
@@ -249,8 +248,7 @@ TFilePanel::TFilePanel(file_panel_mode mode, BMessenger *target,
 		fIsTrackingMenu(false),
 		fConfigWindow(NULL)
 {
-
-	TTrackerState::InitIfNeeded();
+	InitIconPreloader();
 
 	fIsSavePanel = (mode == B_SAVE_PANEL);
 
@@ -1061,8 +1059,7 @@ TFilePanel::MessageReceived(BMessage *message)
 						entry.GetRef(&startref);
 						
 						int32 apps, docs, folders;
-						TTrackerState trackerState;
-						trackerState.RecentCounts(&apps, &docs, &folders);
+						TrackerSettings().RecentCounts(&apps, &docs, &folders);
 
 						//	if this is a save panel
 						//	then don't show recent docs controls
@@ -1080,18 +1077,18 @@ TFilePanel::MessageReceived(BMessage *message)
 		case kConfigClose:
 			{
 				int32 count = 0;
-				TTrackerState trackerState;
+				TrackerSettings settings;
 
 				//	save off whatever was last in the fields
 				//	do this just in case someone didn't tab out
 				if (message->FindInt32("applications", &count) == B_OK)				
-					trackerState.SetRecentApplicationsCount(count);
+					settings.SetRecentApplicationsCount(count);
 				if (message->FindInt32("folders", &count) == B_OK)				
-					trackerState.SetRecentFoldersCount(count);
+					settings.SetRecentFoldersCount(count);
 				if (message->FindInt32("documents", &count) == B_OK)				
-					trackerState.SetRecentDocumentsCount(count);
+					settings.SetRecentDocumentsCount(count);
 					
-				trackerState.SaveSettings(false);
+				settings.SaveSettings(false);
 
 				fConfigWindow = NULL;
 			}
@@ -1103,16 +1100,16 @@ TFilePanel::MessageReceived(BMessage *message)
 			{
 				//	messages sent when the user changes the count
 				int32 count;
-				TTrackerState trackerState;
+				TrackerSettings settings;
 				
 				if (message->FindInt32("count", &count) == B_OK) {
 					if (message->what == kUpdateAppsCount) 
-						trackerState.SetRecentApplicationsCount(count);
+						settings.SetRecentApplicationsCount(count);
 					else if (message->what == kUpdateDocsCount) 
-						trackerState.SetRecentDocumentsCount(count);
+						settings.SetRecentDocumentsCount(count);
 					else if (message->what == kUpdateFolderCount) 
-						trackerState.SetRecentFoldersCount(count);
-					trackerState.SaveSettings(false);
+						settings.SetRecentFoldersCount(count);
+					settings.SaveSettings(false);
 				}
 			}
 			break;
@@ -1153,13 +1150,13 @@ TFilePanel::MessageReceived(BMessage *message)
 				if (message->FindInt32("be:observe_change_what", &observerWhat) == B_OK) {
 					switch (observerWhat) {
 						case kDesktopFilePanelRootChanged:
-							{
-								bool desktopIsRoot =   true;
-								message->FindBool("DesktopFilePanelRoot", &desktopIsRoot);
-								TTracker::SetDesktopFilePanelRoot(desktopIsRoot);
-								SetTo(TargetModel()->EntryRef());
-							}
+						{
+							bool desktopIsRoot =   true;
+							message->FindBool("DesktopFilePanelRoot", &desktopIsRoot);
+							TrackerSettings().SetDesktopFilePanelRoot(desktopIsRoot);
+							SetTo(TargetModel()->EntryRef());
 							break;
+						}
 					}
 				}		
 			}
@@ -1221,7 +1218,7 @@ TFilePanel::OpenParent()
 bool 
 TFilePanel::CanOpenParent() const
 {
-	if (TTracker::DesktopFilePanelRoot()) {
+	if (TrackerSettings().DesktopFilePanelRoot()) {
 		// don't allow opening Desktop folder's parent
 		BEntry entry(TargetModel()->EntryRef());
 		if (FSIsDeskDir(&entry, TargetModel()->NodeRef()->device))
@@ -1242,23 +1239,22 @@ TFilePanel::SwitchDirToDesktopIfNeeded(entry_ref &ref)
 	// support showing Desktop as root of everything
 	// This call implements the worm hole that maps Desktop as
 	// a root above the disks
-	if (!TTracker::DesktopFilePanelRoot())
+	TrackerSettings settings;
+	if (!settings.DesktopFilePanelRoot())
 		// Tracker isn't set up that way, just let Disks show
 		return false;
 		
 	BEntry entry(&ref);
 	BEntry root("/");
 
-
 	BDirectory desktopDir;
 	BVolume	bootVol;
 	BVolumeRoster().GetBootVolume(&bootVol);
 	FSGetDeskDir(&desktopDir, bootVol.Device());
-	
 
 	if ((bootVol.Device() != ref.device && FSIsDeskDir(&entry, ref.device))
 		// navigated into non-boot desktop, switch to boot desktop
-		|| (entry == root && !TTracker::ShowDisksIcon())) {
+		|| (entry == root && !settings.ShowDisksIcon())) {
 		// hit "/" level, map to desktop
 
 		desktopDir.GetEntry(&entry);
@@ -1475,6 +1471,7 @@ BFilePanelPoseView::StartWatching()
 	BHandler::StartWatching(tracker, kDesktopIntegrationChanged);
 }
 
+
 void 
 BFilePanelPoseView::StopWatching()
 {
@@ -1483,6 +1480,7 @@ BFilePanelPoseView::StopWatching()
 	BMessenger tracker("application/x-vnd.Be-TRAK");
 	BHandler::StopWatchingAll(tracker);
 }
+
 
 bool
 BFilePanelPoseView::FSNotification(const BMessage *message)
@@ -1497,23 +1495,25 @@ BFilePanelPoseView::FSNotification(const BMessage *message)
 
 					if (message->FindInt32("new device", &device) != B_OK)
 						break;
-		
+
 					ASSERT(TargetModel());
-					if (TTracker::MountVolumesOntoDesktop()) {
+					TrackerSettings settings;
+
+					if (settings.MountVolumesOntoDesktop()) {
 						// place an icon for the volume onto the desktop
 						BVolume volume(device);
 						if (volume.InitCheck() == B_OK
-							&& !volume.IsShared() || TTracker::MountSharedVolumesOntoDesktop())
+							&& !volume.IsShared() || settings.MountSharedVolumesOntoDesktop())
 							CreateVolumePose(&volume, true);
 					}
-	
-					if (!TTracker::IntegrateNonBootBeOSDesktops())
+
+					if (!settings.IntegrateNonBootBeOSDesktops())
 						break;
-	
+
 					BDirectory remoteDesktop;
 					BEntry entry;
 					BVolume volume(device);
-	
+
 					if (ShouldIntegrateVolume(&volume)
 						&& FSGetDeskDir(&remoteDesktop, volume.Device()) == B_OK
 						&& remoteDesktop.GetEntry(&entry) == B_OK) {
@@ -1528,6 +1528,7 @@ BFilePanelPoseView::FSNotification(const BMessage *message)
 	}
 	return _inherited::FSNotification(message);
 }
+
 
 void 
 BFilePanelPoseView::RestoreState(AttributeStreamNode *node)
@@ -1622,7 +1623,7 @@ BFilePanelPoseView::AdaptToVolumeChange(BMessage *message)
 		monitorMsg.AddInt64("node", model.NodeRef()->node);
 		monitorMsg.AddInt64("directory", model.EntryRef()->directory);
 		monitorMsg.AddString("name", model.EntryRef()->name);
-		TTracker::SetShowDisksIcon(showDisksIcon);
+		TrackerSettings().SetShowDisksIcon(showDisksIcon);
 		if (Window())
 			Window()->PostMessage(&monitorMsg, this);
 	}

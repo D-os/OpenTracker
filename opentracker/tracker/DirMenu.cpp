@@ -47,8 +47,9 @@ All rights reserved.
 #include "DirMenu.h"
 #include "FSUtils.h"
 #include "IconMenuItem.h"
-#include "Tracker.h"
+#include "TrackerSettings.h"
 #include "Utilities.h"
+
 
 BDirMenu::BDirMenu(BMenuBar *bar, uint32 command, const char *entryName)
 	:	BPopUpMenu("directories"),
@@ -62,9 +63,11 @@ BDirMenu::BDirMenu(BMenuBar *bar, uint32 command, const char *entryName)
 		fEntryName = "refs";
 }
 
+
 BDirMenu::~BDirMenu()
 {
 }
+
 
 void
 BDirMenu::Populate(const BEntry *startEntry, BWindow *originatingWindow,
@@ -83,10 +86,14 @@ BDirMenu::Populate(const BEntry *startEntry, BWindow *originatingWindow,
 			fMenuBar->AddItem(menu);
 	
 		BEntry entry(*startEntry);
-	
-		bool showDesktop = TTracker::DesktopFilePanelRoot();
-		bool showDisksIcon = TTracker::ShowDisksIcon();
-	
+
+		bool showDesktop, showDisksIcon;
+		{
+			TrackerSettings settings;	
+			showDesktop = settings.DesktopFilePanelRoot();
+			showDisksIcon = settings.ShowDisksIcon();
+		}
+
 		// might start one level above startEntry
 		if (!includeStartEntry) {
 			BDirectory parent;
@@ -176,6 +183,7 @@ BDirMenu::Populate(const BEntry *startEntry, BWindow *originatingWindow,
 	}
 }
 
+
 void
 BDirMenu::AddItemToDirMenu(const BEntry *entry, BWindow *originatingWindow,
 	bool atEnd, bool addShortcuts)
@@ -217,6 +225,7 @@ BDirMenu::AddItemToDirMenu(const BEntry *entry, BWindow *originatingWindow,
 	}
 }
 
+
 void
 BDirMenu::AddDisksIconToMenu(bool atEnd)
 {
@@ -234,3 +243,4 @@ BDirMenu::AddDisksIconToMenu(bool atEnd)
 	else
 		AddItem(item, 0);
 }
+
