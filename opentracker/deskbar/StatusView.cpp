@@ -301,6 +301,15 @@ TReplicantTray::AdjustPlacement()
 	//	need to resize the parent of this accordingly
 	//		
 	//	call to Parent will call ResizeToPreferred
+	BRect bounds = Bounds();
+	float width, height;
+	GetPreferredSize(&width, &height);
+	
+	if (width == bounds.Width() && height == bounds.Height()) {
+		// no need to change anything
+		return;
+	}
+
 	Parent()->ResizeToPreferred();
 	fBarView->UpdatePlacement();
 	Parent()->Invalidate();
@@ -337,29 +346,29 @@ TReplicantTray::MessageReceived(BMessage *message)
 			RealignReplicants();
 			AdjustPlacement();
 			break;
-		
+
 		case 'trfm':
 			// time string reformat -> realign
 			DealWithClock(fBarView->ShowingClock());
 			RealignReplicants();
 			AdjustPlacement();
 			break;
-		
+
 		case msg_showseconds:
 			if (fClock) 
 				fClock->ShowSeconds(!fClock->ShowingSeconds());
 			break;
-		
+
 		case msg_miltime:
 			if (fClock) 
 				fClock->ShowMilTime(!fClock->ShowingMilTime());
 			break;
-		
+
 		case msg_eurodate:
 			if (fClock)
 				fClock->ShowEuroDate(!fClock->ShowingEuroDate());
 			break;
-		
+
 		case msg_fulldate:
 			if (fClock)
 				if (fClock->CanShowFullDate())
@@ -372,7 +381,7 @@ TReplicantTray::MessageReceived(BMessage *message)
 			HandleEntryUpdate(message);
 			break;
 #endif
-						
+
 		default:
 			BView::MessageReceived(message);
 			break;
@@ -597,8 +606,6 @@ TReplicantTray::HandleEntryUpdate(BMessage *message)
 	int32 opcode;
 	if (message->FindInt32("opcode", &opcode) != B_OK)
 		return;
-
-	message->PrintToStream();
 
 	BPath path;
 	switch (opcode) {
