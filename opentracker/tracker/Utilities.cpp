@@ -66,6 +66,7 @@ extern _IMPEXP_BE const uint32	MINI_ICON_TYPE;
 #include "MimeTypes.h"
 #include "Model.h"
 #include "Utilities.h"
+#include "ContainerWindow.h"
 
 #include <fs_attr.h>
 
@@ -1296,6 +1297,9 @@ PositionPassingMenuItem::Invoke(BMessage *message)
 		menu = menu->Supermenu();
 	}
 
+	// use the window position only, if the item was invoked from the menu
+	// menu->Window() points to the window the item was invoked from
+	if (dynamic_cast<BContainerWindow *>(menu->Window()) == NULL)
 	{
 		LooperAutoLocker lock(menu);
 		if (lock.IsLocked()) {
