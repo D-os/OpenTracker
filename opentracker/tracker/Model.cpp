@@ -859,7 +859,8 @@ Model::StatChanged()
 	if (oldMode != fStatBuf.st_mode) {
 		bool forWriting = IsNodeOpenForWriting();
 		CloseNode();
-		SetupBaseType();
+		//SetupBaseType();
+			// the node type can't change with a stat update...
 		OpenNodeCommon(forWriting);
 		return true;
 	}
