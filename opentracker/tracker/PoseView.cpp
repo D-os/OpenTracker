@@ -2496,7 +2496,6 @@ BPoseView::ReadExtendedPoseInfo(Model *model)
 	const char *extendedPoseInfoAttrName;
 	const char *extendedPoseInfoAttrForeignName;
 
-
 	// special case the "root" disks icon
 	if (model->IsRoot()) {
 		BVolume	bootVol;
@@ -2517,22 +2516,26 @@ BPoseView::ReadExtendedPoseInfo(Model *model)
 	size_t size;
 	result = GetAttrInfo(model->Node(), extendedPoseInfoAttrName,
 		extendedPoseInfoAttrForeignName, &type, &size);
-	
+
 	if (result == kReadAttrFailed)
 		return NULL;
-	
-	char *buffer = new char [ExtendedPoseInfo::SizeWithHeadroom(size)];
+
+	char *buffer = new char[ExtendedPoseInfo::SizeWithHeadroom(size)];
+	ExtendedPoseInfo *poseInfo = reinterpret_cast<ExtendedPoseInfo *>(buffer);
 
 	result = ReadAttr(model->Node(), extendedPoseInfoAttrName,
 		extendedPoseInfoAttrForeignName,
 		B_RAW_TYPE, 0, buffer, size, &ExtendedPoseInfo::EndianSwap);
-	
-	if (result == kReadAttrFailed) {
+
+	// check that read worked, and data is sane
+	if (result == kReadAttrFailed
+		|| size > poseInfo->SizeWithHeadroom()
+		|| size < poseInfo->Size()) {
 		delete [] buffer;
 		return NULL;
 	}
 
-	return (ExtendedPoseInfo *)buffer;
+	return poseInfo;
 }
 
 
