@@ -70,6 +70,7 @@ OneShotDelayedTask::RunIfNeeded(bigtime_t currentTime)
 	return true;
 }
 
+
 PeriodicDelayedTask::PeriodicDelayedTask(FunctionObjectWithResult<bool> *functor,
 	bigtime_t initialDelay, bigtime_t period)
 	:	DelayedTask(initialDelay),
@@ -84,6 +85,7 @@ PeriodicDelayedTask::~PeriodicDelayedTask()
 	delete fFunctor;
 }
 
+
 bool 
 PeriodicDelayedTask::RunIfNeeded(bigtime_t currentTime)
 {
@@ -95,6 +97,7 @@ PeriodicDelayedTask::RunIfNeeded(bigtime_t currentTime)
 	return fFunctor->Result();
 }
 
+
 PeriodicDelayedTaskWithTimeout::PeriodicDelayedTaskWithTimeout(
 	FunctionObjectWithResult<bool> *functor, bigtime_t initialDelay,
 	bigtime_t period, bigtime_t timeout)
@@ -102,6 +105,7 @@ PeriodicDelayedTaskWithTimeout::PeriodicDelayedTaskWithTimeout(
 		fTimeoutAfter(system_time() + timeout)
 {
 }
+
 
 bool 
 PeriodicDelayedTaskWithTimeout::RunIfNeeded(bigtime_t currentTime)
@@ -132,6 +136,7 @@ RunWhenIdleTask::~RunWhenIdleTask()
 {
 }
 
+
 bool 
 RunWhenIdleTask::RunIfNeeded(bigtime_t currentTime)
 {
@@ -156,6 +161,7 @@ RunWhenIdleTask::RunIfNeeded(bigtime_t currentTime)
 	return false;
 }
 
+
 static bigtime_t
 ActivityLevel()
 {
@@ -167,6 +173,7 @@ ActivityLevel()
 		time += sinfo.cpu_infos[index].active_time;
 	return time / ((bigtime_t) sinfo.cpu_count);
 }
+
 
 void 
 RunWhenIdleTask::ResetIdleTimer(bigtime_t currentTime)
@@ -215,11 +222,13 @@ RunWhenIdleTask::IsIdle(bigtime_t currentTime, float taskOverhead)
 	return idle;
 }
 
+
 bool
 RunWhenIdleTask::IdleTimerExpired(bigtime_t currentTime)
 {
 	return IsIdle(currentTime, 0);
 }
+
 
 bool 
 RunWhenIdleTask::StillIdle(bigtime_t currentTime)
@@ -234,9 +243,11 @@ TaskLoop::TaskLoop(bigtime_t heartBeat)
 {
 }
 
+
 TaskLoop::~TaskLoop()
 {	
 }
+
 
 void 
 TaskLoop::RunLater(DelayedTask *task)
@@ -244,11 +255,13 @@ TaskLoop::RunLater(DelayedTask *task)
 	AddTask(task);
 }
 
+
 void
 TaskLoop::RunLater(FunctionObject *functor, bigtime_t delay)
 {
 	RunLater(new OneShotDelayedTask(functor, delay));
 }
+
 
 void 
 TaskLoop::RunLater(FunctionObjectWithResult<bool> *functor,
@@ -257,12 +270,14 @@ TaskLoop::RunLater(FunctionObjectWithResult<bool> *functor,
 	RunLater(new PeriodicDelayedTask(functor, delay, period));
 }
 
+
 void 
 TaskLoop::RunLater(FunctionObjectWithResult<bool> *functor, bigtime_t delay,
 	bigtime_t period, bigtime_t timeout)
 {
 	RunLater(new PeriodicDelayedTaskWithTimeout(functor, delay, period, timeout));
 }
+
 
 void 
 TaskLoop::RunWhenIdle(FunctionObjectWithResult<bool> *functor, bigtime_t initialDelay,
