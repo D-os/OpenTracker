@@ -57,6 +57,7 @@ const uint32 kRestoreState = 'Trst';
 
 const uint32 kCutMoreSelectionToClipboard = 'Tmvm';
 const uint32 kCopyMoreSelectionToClipboard = 'Tcpm';
+const uint32 kPasteLinksFromClipboard = 'Tplc';
 const uint32 kCancelSelectionToClipboard = 'Tesc';
 const uint32 kClipboardPosesChanged = 'Tcpc';
 

@@ -49,8 +49,8 @@ class BClipboardRefsWatcher : public BLooper {
 		BClipboardRefsWatcher();
 		virtual ~BClipboardRefsWatcher();
 
-		void AddToNotifyList(BPoseView *view);
-		void RemoveFromNotifyList(BPoseView *view);
+		void AddToNotifyList(BMessenger target);
+		void RemoveFromNotifyList(BMessenger target);
 		void AddNode(const node_ref *node);
 		void RemoveNode(node_ref *node, bool removeFromClipboard = false);
 		void RemoveNodesByDevice(dev_t device);
@@ -63,7 +63,7 @@ class BClipboardRefsWatcher : public BLooper {
 
 	private:
 		bool fRefsInClipboard;
-		BObjectList<BPoseView> fNotifyList;
+		BObjectList<BMessenger> fNotifyList;
 
 		typedef BLooper _inherited;
 };
@@ -75,9 +75,12 @@ using namespace BPrivate;
 //bool FSClipboardCheckIntegrity();
 bool FSClipboardHasRefs();
 
+void FSClipboardStartWatch(BMessenger target);
+void FSClipboardStopWatch(BMessenger target);
+
 void FSClipboardClear();
 uint32 FSClipboardAddPoses(const node_ref *directory, PoseList *list, uint32 moveMode, bool clearClipboard);
-bool FSClipboardPaste(Model *model);
+bool FSClipboardPaste(Model *model, uint32 linksMode = 0);
 uint32 FSClipboardFindNodeMode(Model *model, bool updateRefIfNeeded);
 
 #endif	/* FS_CLIPBOARD_H */

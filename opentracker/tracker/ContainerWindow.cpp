@@ -1067,6 +1067,7 @@ BContainerWindow::MessageReceived(BMessage *message)
 		case B_PASTE:
 		case kCutMoreSelectionToClipboard:
 		case kCopyMoreSelectionToClipboard:
+		case kPasteLinksFromClipboard:
 		{
 			BView *view = CurrentFocus();
 			if (view->LockLooper()) {
@@ -1406,9 +1407,22 @@ BContainerWindow::SetCopyItem(BMenu *menu)
 void
 BContainerWindow::SetPasteItem(BMenu *menu)
 {
-	BMenuItem *item = menu->FindItem(B_PASTE);
-	if (item)
-		item->SetEnabled(FSClipboardHasRefs() || PoseView() != CurrentFocus());
+	BMenuItem *item;
+	if ((item = menu->FindItem(B_PASTE)) == NULL
+		&& (item = menu->FindItem(kPasteLinksFromClipboard)) == NULL)
+		return;
+
+	item->SetEnabled(FSClipboardHasRefs() || PoseView() != CurrentFocus());
+
+	if (modifiers() & B_SHIFT_KEY) {
+		item->SetLabel("Paste links");
+		item->SetShortcut('V', B_COMMAND_KEY | B_SHIFT_KEY);
+		item->SetMessage(new BMessage(kPasteLinksFromClipboard));
+	} else {
+		item->SetLabel("Paste");
+		item->SetShortcut('V', B_COMMAND_KEY);
+		item->SetMessage(new BMessage(B_PASTE));
+	}
 }
 
 

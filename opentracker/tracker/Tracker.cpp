@@ -445,6 +445,24 @@ TTracker::MessageReceived(BMessage *message)
 			SendNotices(kFavoriteCountChangedExternally, message);
 			break;
 
+		case kStartWatchClipboardRefs:
+		{
+			BMessenger messenger;
+			message->FindMessenger("target", &messenger);
+			if (messenger.IsValid())
+				fClipboardRefsWatcher->AddToNotifyList(messenger);
+			break;
+		}
+
+		case kStopWatchClipboardRefs:
+		{
+			BMessenger messenger;
+			message->FindMessenger("target", &messenger);
+			if (messenger.IsValid())
+				fClipboardRefsWatcher->RemoveFromNotifyList(messenger);
+			break;
+		}
+
 		default:
 			_inherited::MessageReceived(message);
 			break;

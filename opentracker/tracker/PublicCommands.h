@@ -42,8 +42,16 @@ const uint32 kFindButton = 'Tfnd';
 const uint32 kSaveButton = 'Tsav';
 const uint32 kShowSplash = 'Spls';
 
+const uint32 kStartWatchClipboardRefs = 'TCbw';
+	// StartWatching() clipboard changes. Changes will be sent to given BMessenger "target"
+const uint32 kStopWatchClipboardRefs = 'TCfw';
+	// StopWatching() given BMessenger "target"
+const uint32 kUpdatePoseViewsFromClipboard = 'TCup';
+	// Updates poses in views: Int32 "device" & Int64 "directory" as directory node which
+	// has to be updated, Bool "clearClipboard" if clipboard was cleared
+
 } // namespace BPrivate
 
 using namespace BPrivate;
 
-#endif
+#endif	/* __PUBLIC_COMMANDS__ */

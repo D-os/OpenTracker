@@ -67,6 +67,7 @@ All rights reserved.
 #include "FavoritesMenu.h"
 #include "FilePanelPriv.h"
 #include "FSUtils.h"
+#include "FSClipboard.h"
 #include "IconMenuItem.h"
 #include "MimeTypes.h"
 #include "NavMenu.h"
@@ -616,10 +617,13 @@ TFilePanel::Init(const BMessage *)
 				delete menu->RemoveItem(--index);
 			}
 
-			// remove trailing separator
-			item = menu->ItemAt(menu->CountItems() - 1);
-			if (item && menu->RemoveItem(item))
-				delete item;
+			// remove separator
+			item = menu->FindItem(B_CUT);
+			if (item) {
+				item = menu->ItemAt(menu->IndexOf(item)-1);
+				if (item && menu->RemoveItem(item))
+					delete item;
+			}
 		}
 	}
 
@@ -825,7 +829,14 @@ TFilePanel::AddFileContextMenus(BMenu *menu)
 {
 	menu->AddItem(new BMenuItem("Get Info", new BMessage(kGetInfo), 'I'));
 	menu->AddItem(new BMenuItem("Edit Name", new BMessage(kEditItem), 'E'));
-	menu->AddItem(new BMenuItem("Move to Trash", new BMessage(kMoveToTrash), 'T'));
+	menu->AddItem(new BMenuItem(TrackerSettings().DontMoveFilesToTrash() ?
+			"Delete" : "Move to Trash",
+			new BMessage(kMoveToTrash), 'T'));
+	menu->AddSeparatorItem();
+	menu->AddItem(new BMenuItem("Cut", new BMessage(B_CUT), 'X'));
+	menu->AddItem(new BMenuItem("Copy", new BMessage(B_COPY), 'C'));
+//	menu->AddItem(pasteItem = new BMenuItem("Paste", new BMessage(B_PASTE), 'V'));
+
 	menu->SetTargetForItems(PoseView());
 }
 
@@ -836,6 +847,11 @@ TFilePanel::AddVolumeContextMenus(BMenu *menu)
 	menu->AddItem(new BMenuItem("Open", new BMessage(kOpenSelection), 'O'));
 	menu->AddItem(new BMenuItem("Get Info", new BMessage(kGetInfo), 'I'));
 	menu->AddItem(new BMenuItem("Edit Name", new BMessage(kEditItem), 'E'));
+	menu->AddSeparatorItem();
+	menu->AddItem(new BMenuItem("Cut", new BMessage(B_CUT), 'X'));
+	menu->AddItem(new BMenuItem("Copy", new BMessage(B_COPY), 'C'));
+//	menu->AddItem(pasteItem = new BMenuItem("Paste", new BMessage(B_PASTE), 'V'));
+
 	menu->SetTargetForItems(PoseView());
 }
 
@@ -844,6 +860,11 @@ void
 TFilePanel::AddWindowContextMenus(BMenu *menu)
 {
 	BMenuItem *item = new BMenuItem("New Folder", new BMessage(kNewFolder), 'N');
+	item->SetTarget(PoseView());
+	menu->AddItem(item);
+	menu->AddSeparatorItem();
+
+	item = new BMenuItem("Paste", new BMessage(B_PASTE), 'V');
 	item->SetTarget(PoseView());
 	menu->AddItem(item);
 	menu->AddSeparatorItem();
@@ -882,6 +903,10 @@ TFilePanel::MenusBeginning()
 	EnableNamedMenuItem(fMenuBar, kMoveToTrash, !TargetModel()->IsRoot() && count);
 	EnableNamedMenuItem(fMenuBar, kGetInfo, count != 0);
 	EnableNamedMenuItem(fMenuBar, kEditItem, count == 1);
+
+	SetCutItem(fMenuBar);
+	SetCopyItem(fMenuBar);
+	SetPasteItem(fMenuBar);
 
 	fIsTrackingMenu = true;
 }

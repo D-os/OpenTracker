@@ -310,10 +310,6 @@ BPoseView::InitCommon()
 		AddPoses(TargetModel());
 
 	UpdateScrollRange();
-	
-	// receive messages from ClipboardRefsWatcher
-	if (dynamic_cast<TTracker *>(be_app) != NULL)
-		((TTracker *)be_app)->ClipboardRefsWatcher()->AddToNotifyList(this);
 }
 
 
@@ -807,9 +803,7 @@ BPoseView::DetachedFromWindow()
 	CommitActivePose();
 	SavePoseLocations();
 
-	//stop receiving messages from ClipboardRefsWatcher
-	if (dynamic_cast<TTracker *>(be_app) != NULL)
-		((TTracker *)be_app)->ClipboardRefsWatcher()->RemoveFromNotifyList(this);
+	FSClipboardStopWatch(this);
 }
 
 
@@ -861,11 +855,11 @@ BPoseView::AttachedToWindow()
 	if (fIsDesktopWindow) 
 		AddFilter(new TPoseViewFilter(this));
 
-	// add Option-Return as a shortcut filter because AddShortcut doesn't allow
-	// us to have shortcuts without Command yet
 	AddFilter(new ShortcutFilter(B_RETURN, B_OPTION_KEY, kOpenSelection, this));
-	// Escape key, currently used only to abort an on-going clipboard cut
+		// add Option-Return as a shortcut filter because AddShortcut doesn't allow
+		// us to have shortcuts without Command yet
 	AddFilter(new ShortcutFilter(B_ESCAPE, 0, B_CANCEL, this));
+		// Escape key, currently used only to abort an on-going clipboard cut
 
 	fLastLeftTop = LeftTop();
 	BFont font(be_plain_font);
@@ -887,6 +881,8 @@ BPoseView::AttachedToWindow()
 	be_app->StartWatching(this, kSpaceBarColorChanged);
 	be_app->StartWatching(this, kUpdateVolumeSpaceBar);
 	be_app->UnlockLooper();
+
+	FSClipboardStartWatch(this);
 }
 
 
@@ -1994,6 +1990,10 @@ BPoseView::MessageReceived(BMessage *message)
 
 		case B_PASTE:
 			FSClipboardPaste(TargetModel());
+			break;
+
+		case kPasteLinksFromClipboard:
+			FSClipboardPaste(TargetModel(), kCreateLink);
 			break;
 
 		case B_CANCEL:
