@@ -50,20 +50,22 @@ int32
 CalcFreeSpace(dev_t device)
 {
 	BVolume volume(device);
-	if (volume.InitCheck() == B_OK && !volume.IsReadOnly()) {
-		// special case: check for CDDA
-		if (volume.IsRemovable()) {
-			fs_info info;
-			if (fs_stat_dev(device,&info) == B_OK && !strcmp(info.fsh_name,"cdda"))
-				return -1;
+	fs_info info;
+	if (volume.InitCheck() == B_OK && fs_stat_dev(device,&info) == B_OK) {
+		// Philosophy here:
+		// Bars go on all drives with read/write capabilities
+		// Exceptions: Not on CDDA, but on NTFS/Ext2
+		if ((!volume.IsReadOnly() && strcmp(info.fsh_name,"cdda"))
+			|| !strcmp(info.fsh_name,"ntfs")
+			|| !strcmp(info.fsh_name,"ext2")) {
+			int32 percent = volume.FreeBytes() / (volume.Capacity() / 100);
+
+			// warn below 20 MB of free space (if this is less than 10% of free space)
+			if (volume.FreeBytes() < 20 * 1024 * 1024 && percent < 10)
+				return -2 - percent;
+
+			return percent;
 		}
-		int32 percent = volume.FreeBytes() / (volume.Capacity() / 100);
-
-		// warn below 20 MB of free space (if this is less than 10% of free space)
-		if (volume.FreeBytes() < 20 * 1024 * 1024 && percent < 10)
-			return -2 - percent;
-
-		return percent;
 	}
 	return -1;
 }
