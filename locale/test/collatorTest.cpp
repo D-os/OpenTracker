@@ -6,6 +6,7 @@
 
 #include <Collator.h>
 #include <Locale.h>
+#include <Message.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -112,9 +113,25 @@ main(int argc, char **argv)
 			usage();
 	}
 
-	// test the BCollator::Compare() and GetSortKey() methods
+	// test archiving/unarchiving collator
 
 	gCollator = be_locale->Collator();
+	BMessage archive;
+	if (gCollator->Archive(&archive, true) != B_OK)
+		fprintf(stderr, "Archiving failed!\n");
+	else {
+		BArchivable *unarchived = instantiate_object(&archive);
+		gCollator = dynamic_cast<BCollator *>(unarchived);
+		if (gCollator == NULL) {
+			fprintf(stderr, "Unarchiving failed!\n");
+
+			delete unarchived;
+			gCollator = be_locale->Collator();
+		}
+	}
+
+	// test the BCollator::Compare() and GetSortKey() methods
+
 	const char *strengthLabels[] = {"primary:  ", "secondary:", "tertiary: "};
 	uint32 strengths[] = {B_COLLATE_PRIMARY, B_COLLATE_SECONDARY, B_COLLATE_TERTIARY};
 
