@@ -27,9 +27,9 @@ rule Filter
 	return $(newList) ;
 }
 
-rule SplitPath
+rule FSplitPath
 {
-	# SplitPath <path> ;
+	# FSplitPath <path> ;
 	#
 	# Decomposes a path into its components.
 	#
