@@ -99,7 +99,7 @@ CalendarMenuItem::DrawContent()
 	// Draw days
 
 	Menu()->SetHighColor(dayColor);
-	Menu()->SetFont(be_plain_font, B_FONT_SIZE);
+	Menu()->SetFont(be_plain_font);
 
 	Menu()->GetFont(&font);
 	font.SetFace(B_BOLD_FACE);
@@ -112,7 +112,7 @@ CalendarMenuItem::DrawContent()
 		bool today = day == tm.tm_mday;
 
 		if (today)
-			Menu()->SetFont(&font, B_FONT_FACE);
+			Menu()->SetFont(&font);
 
 		sprintf(text, "%ld", day);
 		width = Menu()->StringWidth(text);
@@ -120,7 +120,7 @@ CalendarMenuItem::DrawContent()
 			2 * (fTitleHeight + kTitleGap) + row * fRowHeight));
 
 		if (today)
-			Menu()->SetFont(be_plain_font, B_FONT_FACE);
+			Menu()->SetFont(be_plain_font);
 
 		day++;
 		if (column == 6)
