@@ -1,3 +1,9 @@
+/* 
+** Copyright 2003, Axel Dörfler, axeld@pinc-software.de. All rights reserved.
+** Distributed under the terms of the OpenBeOS License.
+*/
+
+
 #include <Collator.h>
 #include <UnicodeChar.h>
 #include <String.h>
@@ -39,7 +45,8 @@ getPrimaryChar(uint32 c)
 	return BUnicodeChar::ToLower(c);
 }
 
-// ToDo: should probably override B_COLLATE_SECONDARY only!
+// ToDo: should probably override B_COLLATE_SECONDARY & B_COLLATE_TERTIARY,
+//		and not B_COLLATE_PRIMARY!
 // ToDo: specify the length in BString::UnlockBuffer() to speed things up!
 
 /**	The German collator just utilizes the BCollatorAddOn class for most
