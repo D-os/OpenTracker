@@ -54,7 +54,8 @@ getPrimaryChar(uint32 c)
  *	When you specify this strength, "ä" will be replaced by "ae", "ö"
  *	by "oe" and so on for all the German umlauts. For all other characters,
  *	it will do the exact same thing as it's parent class.
- *	This method is used in German telephone books, for example.
+ *	This method is called DIN-2 and its intended usage is for sorting names.
+ *	It is used in German telephone books, for example.
  */
 
 class CollatorDeutsch : public BCollatorAddOn {
