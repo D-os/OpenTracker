@@ -1,10 +1,12 @@
 
 # The directories used by the build.
 LOCALE_BUILD_DIR			= [ FDirName $(LOCALE_TOP) build ] ;
-LOCALE_DISTRO_DIR			= [ FDirName $(LOCALE_TOP) distro ] ;
 LOCALE_INCLUDE_DIR			= [ FDirName $(LOCALE_TOP) include ] ;
-LOCALE_OBJECTS_DIR			= [ FDirName $(LOCALE_TOP) objects ] ;
 LOCALE_POSIX_INCLUDE_DIR	= [ FDirName $(LOCALE_TOP) include posix ] ;
+LOCALE_DISTRO_DIR			= [ FDirName $(LOCALE_TOP) generated distro ] ;
+LOCALE_DOWNLOADS_DIR		= [ FDirName $(LOCALE_TOP) generated downloads ] ;
+LOCALE_OBJECTS_DIR			= [ FDirName $(LOCALE_TOP) generated objects ] ;
+LOCALE_UNITTESTS_DIR		= [ FDirName $(LOCALE_TOP) generated unittests ] ;
 
 # Cache files for header scanning and jamfile caching.
 HCACHEFILE = header_cache ;
@@ -24,6 +26,7 @@ include [ FDirName $(LOCALE_BUILD_DIR) ConfigRules ] ;
 	}
 }
 
-include [ FDirName $(LOCALE_BUILD_DIR) BuildSettings ] ;
+include [ FDirName $(LOCALE_BUILD_DIR) DownloadRules ] ;
 include [ FDirName $(LOCALE_BUILD_DIR) OverriddenJamRules ] ;
 include [ FDirName $(LOCALE_BUILD_DIR) MainBuildRules ] ;
+include [ FDirName $(LOCALE_BUILD_DIR) BuildSettings ] ;
