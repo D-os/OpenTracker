@@ -12,10 +12,6 @@
 #include <ctype.h>
 
 
-// ToDo: specify the length in BString::UnlockBuffer() to speed things up!
-// ToDo: BCollatorAddOn::GetSortKey() doesn't work correctly
-
-
 struct input_context {
 	input_context(bool ignorePunctuation)
 		:
@@ -64,28 +60,6 @@ getPrimaryChar(uint32 c)
 }
 
 
-/** Fills the specified buffer with the primary sort key. The buffer
- *	has to be long enough to hold the key.
- *	It returns the position in the buffer immediately after the key;
- *	it does not add a terminating null byte!
- */
-
-static char *
-putPrimarySortKey(const char *string, char *buffer, int32 length)
-{
-	// ToDo: what about "sz" and punctuation??
-	uint32 c;
-	for (int32 i = 0; (c = BUnicodeChar::FromUTF8(&string)) != 0 && i < length; i++) {
-		if (c < 0x80)
-			*buffer++ = tolower(c);
-		else
-			BUnicodeChar::ToUTF8(getPrimaryChar(c), &buffer);
-	}
-
-	return buffer;
-}
-
-
 static inline uint32
 getNextChar(const char **string, input_context &context)
 {
@@ -106,6 +80,30 @@ getNextChar(const char **string, input_context &context)
 	}
 
 	return c;
+}
+
+
+/** Fills the specified buffer with the primary sort key. The buffer
+ *	has to be long enough to hold the key.
+ *	It returns the position in the buffer immediately after the key;
+ *	it does not add a terminating null byte!
+ */
+
+static char *
+putPrimarySortKey(const char *string, char *buffer, int32 length, bool ignorePunctuation)
+{
+	input_context context(ignorePunctuation);
+
+	// ToDo: what about "sz" and punctuation??
+	uint32 c;
+	for (int32 i = 0; (c = getNextChar(&string, context)) != 0 && i < length; i++) {
+		if (c < 0x80)
+			*buffer++ = tolower(c);
+		else
+			BUnicodeChar::ToUTF8(getPrimaryChar(c), &buffer);
+	}
+
+	return buffer;
 }
 
 
@@ -194,17 +192,21 @@ void
 BCollatorAddOn::GetSortKey(const char *string, BString *key, int8 strength,
 	bool ignorePunctuation)
 {
-	int32 length = strlen(string);
+	if (strength == B_COLLATE_QUATERNARY) {
+		// the difference between tertiary and quaternary collation strength
+		// are usually a different handling of punctuation characters
+		ignorePunctuation = false;
+	}
 
-	// ToDo: this function is currently broken (ß), and doesn't take
-	//	ignorePunctuation into account
+	int32 length = strlen(string);
 
 	switch (strength) {
 		case B_COLLATE_PRIMARY:
 		{
-			char *begin = key->LockBuffer(length);
+			char *begin = key->LockBuffer(length * 2);
+				// the primary key needs to make space for doubled characters (like 'ß')
 
-			char *end = putPrimarySortKey(string, begin, length);
+			char *end = putPrimarySortKey(string, begin, length, ignorePunctuation);
 			*end = '\0';
 
 			key->UnlockBuffer(end - begin);
@@ -213,15 +215,16 @@ BCollatorAddOn::GetSortKey(const char *string, BString *key, int8 strength,
 
 		case B_COLLATE_SECONDARY:
 		{
-			char *begin = key->LockBuffer(length * 2 + 1);
+			char *begin = key->LockBuffer(length * 3 + 1);
 				// the primary key + the secondary key + separator char
 
-			char *buffer = putPrimarySortKey(string, begin, length);
+			char *buffer = putPrimarySortKey(string, begin, length, ignorePunctuation);
 			*buffer++ = '\01';
 				// separator
 
+			input_context context(ignorePunctuation);
 			uint32 c;
-			for (int32 i = 0; (c = BUnicodeChar::FromUTF8(&string)) && i < length; i++) {
+			for (int32 i = 0; (c = getNextChar(&string, context)) && i < length; i++) {
 				if (c < 0x80)
 					*buffer++ = tolower(c);
 				else
@@ -236,16 +239,19 @@ BCollatorAddOn::GetSortKey(const char *string, BString *key, int8 strength,
 		case B_COLLATE_TERTIARY:
 		case B_COLLATE_QUATERNARY:
 		{
-			char *begin = key->LockBuffer(length * 2 + 1);
+			char *begin = key->LockBuffer(length * 3 + 1);
 				// the primary key + the tertiary key + separator char
 
-			char *buffer = putPrimarySortKey(string, begin, length);
+			char *buffer = putPrimarySortKey(string, begin, length, ignorePunctuation);
 			*buffer++ = '\01';
 				// separator
 
-			// ToDo: that will have to be more complicated (in order to
-			//	support punctuation etc.)
-			strcpy(buffer, string);
+			input_context context(ignorePunctuation);
+			uint32 c;
+			for (int32 i = 0; (c = getNextChar(&string, context)) && i < length; i++) {
+				BUnicodeChar::ToUTF8(c, &buffer);
+			}
+			*buffer = '\0';
 
 			key->UnlockBuffer(buffer + length - begin);
 			break;
