@@ -250,7 +250,7 @@ TExpandoMenuBar::MessageReceived(BMessage *message)
 			RemoveTeam(team, false);
 			break;
 		}
-		
+
 		case M_MINIMIZE_TEAM:
 		{
 			index = message->FindInt32("itemIndex");
@@ -264,7 +264,7 @@ TExpandoMenuBar::MessageReceived(BMessage *message)
 				true);
 			break;
 		}
-		
+
 		case M_BRING_TEAM_TO_FRONT:
 		{
 			index = message->FindInt32("itemIndex");
@@ -278,7 +278,7 @@ TExpandoMenuBar::MessageReceived(BMessage *message)
 				true);
 			break;
 		}
-			
+
 		default:
 			BMenuBar::MessageReceived(message);
 			break;
@@ -699,23 +699,26 @@ TExpandoMenuBar::monitor_team_windows(void *arg)
 	while (teamMenu->sDoMonitor) {
 		sMonLocker.Lock();
 
-		int32 totalItems = teamMenu->CountItems();
+		if (teamMenu->Window()->LockWithTimeout(50000) == B_OK) {
+			int32 totalItems = teamMenu->CountItems();
 
-		// Set all WindowMenuItems to require an update.
-		TWindowMenuItem *item = NULL;
-		for (int32 i = 0; i < totalItems; i++) {
-			if (!teamMenu->SubmenuAt(i)){
-				item = static_cast<TWindowMenuItem *>(teamMenu->ItemAt(i));
-				item->SetRequireUpdate();
+			// Set all WindowMenuItems to require an update.
+			TWindowMenuItem *item = NULL;
+			for (int32 i = 0; i < totalItems; i++) {
+				if (!teamMenu->SubmenuAt(i)){
+					item = static_cast<TWindowMenuItem *>(teamMenu->ItemAt(i));
+					item->SetRequireUpdate();
+				}
 			}
-		}
 
-		// Perform SetTo() on all the items that still exist as well as add new items.
-		bool itemModified = false, resize = false;
-		TTeamMenuItem *teamItem = NULL;
+			// Perform SetTo() on all the items that still exist as well as add new items.
+			bool itemModified = false, resize = false;
+			TTeamMenuItem *teamItem = NULL;
 
-		for (int32 i = 0; i < totalItems; i++) {
-			if (teamMenu->SubmenuAt(i)){
+			for (int32 i = 0; i < totalItems; i++) {
+				if (teamMenu->SubmenuAt(i) == NULL)
+					continue;
+
 				teamItem = static_cast<TTeamMenuItem *>(teamMenu->ItemAt(i));
 				if (teamItem->IsExpanded()) {
 					int32 teamCount = teamItem->Teams()->CountItems();
@@ -736,7 +739,6 @@ TExpandoMenuBar::monitor_team_windows(void *arg)
 								// Check if we have a matching window item...
 								item = teamItem->ExpandedWindowItem(wInfo->id);
 								if (item) {
-									// Lock the window, changing workspaces will fry this.
 									item->SetTo(wInfo->name, wInfo->id, wInfo->is_mini,
 										((1 << current_workspace()) & wInfo->workspaces) != 0);
 
@@ -762,27 +764,28 @@ TExpandoMenuBar::monitor_team_windows(void *arg)
 					}
 				}
 			}
-		}
-
-		// Remove any remaining items which require an update.
-		for (int32 i = 0; i < totalItems; i++) {
-			if (!teamMenu->SubmenuAt(i)){
-				item = static_cast<TWindowMenuItem *>(teamMenu->ItemAt(i));
-				if (item && item->RequiresUpdate()) {
-					item = static_cast<TWindowMenuItem *>(teamMenu->RemoveItem(i));
-					delete item;
-					totalItems--;
-
-					resize = true;
+	
+			// Remove any remaining items which require an update.
+			for (int32 i = 0; i < totalItems; i++) {
+				if (!teamMenu->SubmenuAt(i)){
+					item = static_cast<TWindowMenuItem *>(teamMenu->ItemAt(i));
+					if (item && item->RequiresUpdate()) {
+						item = static_cast<TWindowMenuItem *>(teamMenu->RemoveItem(i));
+						delete item;
+						totalItems--;
+	
+						resize = true;
+					}
 				}
 			}
-		}
-
-		// If any of the WindowMenuItems changed state, we need to force a repaint.
-		if ((itemModified || resize) && teamMenu->Window()->LockWithTimeout(50000) == B_OK) {
-			teamMenu->Invalidate();
-			if (resize)
-				teamMenu->SizeWindow();
+	
+			// If any of the WindowMenuItems changed state, we need to force a repaint.
+			if (itemModified || resize) {
+				teamMenu->Invalidate();
+				if (resize)
+					teamMenu->SizeWindow();
+			}
+	
 			teamMenu->Window()->Unlock();
 		}
 
