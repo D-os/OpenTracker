@@ -190,7 +190,7 @@ LDFLAGS	:= $(DEBUG)
 ifeq ($(CPU), x86)
 #	set the compiler and compiler flags
 	CC		:= gcc
-	LD		:= gcc
+	LD		:= g++
 	LDFLAGS += -lbe
 
 	APP_LDFLAGS = $(LDFLAGS) \
