@@ -65,12 +65,14 @@ NodePreloader::InstallNodePreloader(const char *name, BLooper *host)
 	return result;
 }
 
+
 NodePreloader::NodePreloader(const char *name)
 	:	BHandler(name),
 		fModelList(20, true),
 		fQuitRequested(false)
 {
 }
+
 
 NodePreloader::~NodePreloader()
 {
@@ -79,12 +81,14 @@ NodePreloader::~NodePreloader()
 	fLock.Lock();
 }
 
+
 void 
 NodePreloader::Run()
 {
 	fLock.Lock();
 	Thread::Launch(NewMemberFunctionObject(&NodePreloader::Preload, this));
 }
+
 
 Model *
 NodePreloader::FindModel(node_ref itemNode) const
@@ -147,6 +151,7 @@ NodePreloader::MessageReceived(BMessage *message)
 	}
 }
 
+
 void 
 NodePreloader::PreloadOne(const char *dirPath)
 {
@@ -185,6 +190,7 @@ NodePreloader::PreloadOne(const char *dirPath)
 	
 }
 
+
 void 
 NodePreloader::Preload()
 {
@@ -206,6 +212,4 @@ NodePreloader::Preload()
 	
 	fLock.Unlock();
 }
-
-
 
