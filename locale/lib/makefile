@@ -50,6 +50,7 @@ SRCS= \
 	IntegerFormatParameters.cpp \
 	langinfo.cpp \
 	Language.cpp \
+	LibraryInit.cpp \
 	Locale.cpp \
 	LocaleRoster.cpp \
 	NumberFormat.cpp \
