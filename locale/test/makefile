@@ -8,7 +8,7 @@ CFLAGS = -g # -fcheck-memory-usage -D_NO_INLINE_ASM
 
 default: all
 
-all:	localeTest collatorTest collatorSpeed catalogTest
+all:	localeTest collatorTest collatorSpeed catalogTest catalogSpeed
 
 clean:
 	rm -rf localeTest collatorTest collatorSpeed catalogTest
@@ -24,4 +24,7 @@ collatorSpeed:	collatorSpeed.cpp
 
 catalogTest:	catalogTest.cpp
 	gcc catalogTest.cpp $(CFLAGS) $(INCPATHS) $(LIBPATHS) $(LIBS)
+
+catalogSpeed:	catalogSpeed.cpp
+	gcc catalogSpeed.cpp $(CFLAGS) $(INCPATHS) $(LIBPATHS) $(LIBS)
 
