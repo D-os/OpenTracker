@@ -161,94 +161,95 @@ DesktopSettingsView::MessageReceived(BMessage *message)
 	if (!tracker)
 		return;
 
-	switch (message->what) {
-		
+	TrackerSettings settings;
+
+	switch (message->what) {		
 		case kShowDisksIconChanged:
-			{
-				// Turn on and off related settings:
-				fMountVolumesOntoDesktopRadioButton->SetValue(
-					!fShowDisksIconRadioButton->Value() == 1);
-				fMountSharedVolumesOntoDesktopCheckBox->SetEnabled(
-					fMountVolumesOntoDesktopRadioButton->Value() == 1);
-				
-				// Set the new settings in the tracker:
-				tracker->SetShowDisksIcon(fShowDisksIconRadioButton->Value() == 1);
-				tracker->SetMountVolumesOntoDesktop(
-					fMountVolumesOntoDesktopRadioButton->Value() == 1);
-				tracker->SetMountSharedVolumesOntoDesktop(
-					fMountSharedVolumesOntoDesktopCheckBox->Value() == 1);
-				
-				// Construct the notification message:				
-				BMessage notificationMessage;
-				notificationMessage.AddBool("ShowDisksIcon",
-					fShowDisksIconRadioButton->Value() == 1);
-				notificationMessage.AddBool("MountVolumesOntoDesktop",
-					fMountVolumesOntoDesktopRadioButton->Value() == 1);
-				notificationMessage.AddBool("MountSharedVolumesOntoDesktop",
-					fMountSharedVolumesOntoDesktopCheckBox->Value() == 1);
-
-				// Send the notification message:
-				tracker->SendNotices(kVolumesOnDesktopChanged, &notificationMessage);
-				
-				// Tell the settings window the contents have changed:
-				Window()->PostMessage(kSettingsContentsModified);
-				break;
-			}
+		{
+			// Turn on and off related settings:
+			fMountVolumesOntoDesktopRadioButton->SetValue(
+				!fShowDisksIconRadioButton->Value() == 1);
+			fMountSharedVolumesOntoDesktopCheckBox->SetEnabled(
+				fMountVolumesOntoDesktopRadioButton->Value() == 1);
 			
+			// Set the new settings in the tracker:
+			settings.SetShowDisksIcon(fShowDisksIconRadioButton->Value() == 1);
+			settings.SetMountVolumesOntoDesktop(
+				fMountVolumesOntoDesktopRadioButton->Value() == 1);
+			settings.SetMountSharedVolumesOntoDesktop(
+				fMountSharedVolumesOntoDesktopCheckBox->Value() == 1);
+			
+			// Construct the notification message:				
+			BMessage notificationMessage;
+			notificationMessage.AddBool("ShowDisksIcon",
+				fShowDisksIconRadioButton->Value() == 1);
+			notificationMessage.AddBool("MountVolumesOntoDesktop",
+				fMountVolumesOntoDesktopRadioButton->Value() == 1);
+			notificationMessage.AddBool("MountSharedVolumesOntoDesktop",
+				fMountSharedVolumesOntoDesktopCheckBox->Value() == 1);
+
+			// Send the notification message:
+			tracker->SendNotices(kVolumesOnDesktopChanged, &notificationMessage);
+
+			// Tell the settings window the contents have changed:
+			Window()->PostMessage(kSettingsContentsModified);
+			break;
+		}
+
 		case kVolumesOnDesktopChanged:
-			{
-				// Turn on and off related settings:
-				fShowDisksIconRadioButton->SetValue(
-					!fMountVolumesOntoDesktopRadioButton->Value() == 1);
-				fMountSharedVolumesOntoDesktopCheckBox->SetEnabled(
-					fMountVolumesOntoDesktopRadioButton->Value() == 1);
-				
-				// Set the new settings in the tracker:
-				tracker->SetShowDisksIcon(fShowDisksIconRadioButton->Value() == 1);
-				tracker->SetMountVolumesOntoDesktop(
-					fMountVolumesOntoDesktopRadioButton->Value() == 1);
-				tracker->SetMountSharedVolumesOntoDesktop(
-					fMountSharedVolumesOntoDesktopCheckBox->Value() == 1);
-				
-				// Construct the notification message:				
-				BMessage notificationMessage;
-				notificationMessage.AddBool("ShowDisksIcon",
-					fShowDisksIconRadioButton->Value() == 1);
-				notificationMessage.AddBool("MountVolumesOntoDesktop",
-					fMountVolumesOntoDesktopRadioButton->Value() == 1);
-				notificationMessage.AddBool("MountSharedVolumesOntoDesktop",
-					fMountSharedVolumesOntoDesktopCheckBox->Value() == 1);
+		{
+			// Turn on and off related settings:
+			fShowDisksIconRadioButton->SetValue(
+				!fMountVolumesOntoDesktopRadioButton->Value() == 1);
+			fMountSharedVolumesOntoDesktopCheckBox->SetEnabled(
+				fMountVolumesOntoDesktopRadioButton->Value() == 1);
+			
+			// Set the new settings in the tracker:
+			settings.SetShowDisksIcon(fShowDisksIconRadioButton->Value() == 1);
+			settings.SetMountVolumesOntoDesktop(
+				fMountVolumesOntoDesktopRadioButton->Value() == 1);
+			settings.SetMountSharedVolumesOntoDesktop(
+				fMountSharedVolumesOntoDesktopCheckBox->Value() == 1);
+			
+			// Construct the notification message:				
+			BMessage notificationMessage;
+			notificationMessage.AddBool("ShowDisksIcon",
+				fShowDisksIconRadioButton->Value() == 1);
+			notificationMessage.AddBool("MountVolumesOntoDesktop",
+				fMountVolumesOntoDesktopRadioButton->Value() == 1);
+			notificationMessage.AddBool("MountSharedVolumesOntoDesktop",
+				fMountSharedVolumesOntoDesktopCheckBox->Value() == 1);
 
-				// Send the notification message:
-				tracker->SendNotices(kVolumesOnDesktopChanged, &notificationMessage);
-				
-				// Tell the settings window the contents have changed:
-				Window()->PostMessage(kSettingsContentsModified);
-				break;
-			}
-		
+			// Send the notification message:
+			tracker->SendNotices(kVolumesOnDesktopChanged, &notificationMessage);
+
+			// Tell the settings window the contents have changed:
+			Window()->PostMessage(kSettingsContentsModified);
+			break;
+		}
+
 		case kDesktopIntegrationChanged:
-			{
-				// Set the new settings in the tracker:
-				tracker->SetIntegrateNonBootBeOSDesktops(
-					fIntegrateNonBootBeOSDesktopsCheckBox->Value() == 1);
-				
-				// Construct the notification message:				
-				BMessage notificationMessage;
-				notificationMessage.AddBool("MountVolumesOntoDesktop",
-					fMountVolumesOntoDesktopRadioButton->Value() == 1);
-				notificationMessage.AddBool("MountSharedVolumesOntoDesktop",
-					fMountSharedVolumesOntoDesktopCheckBox->Value() == 1);
-				notificationMessage.AddBool("IntegrateNonBootBeOSDesktops",
-					fIntegrateNonBootBeOSDesktopsCheckBox->Value() == 1);
+		{
+			// Set the new settings in the tracker:
+			settings.SetIntegrateNonBootBeOSDesktops(
+				fIntegrateNonBootBeOSDesktopsCheckBox->Value() == 1);
+			
+			// Construct the notification message:				
+			BMessage notificationMessage;
+			notificationMessage.AddBool("MountVolumesOntoDesktop",
+				fMountVolumesOntoDesktopRadioButton->Value() == 1);
+			notificationMessage.AddBool("MountSharedVolumesOntoDesktop",
+				fMountSharedVolumesOntoDesktopCheckBox->Value() == 1);
+			notificationMessage.AddBool("IntegrateNonBootBeOSDesktops",
+				fIntegrateNonBootBeOSDesktopsCheckBox->Value() == 1);
 
-				// Send the notification message:
-				tracker->SendNotices(kDesktopIntegrationChanged, &notificationMessage);
-				
-				// Tell the settings window the contents have changed:
-				Window()->PostMessage(kSettingsContentsModified);
-				break;
-			}
+			// Send the notification message:
+			tracker->SendNotices(kDesktopIntegrationChanged, &notificationMessage);
+			
+			// Tell the settings window the contents have changed:
+			Window()->PostMessage(kSettingsContentsModified);
+			break;
+		}
 
 		default:
 			_inherited::MessageReceived(message);
@@ -259,31 +260,28 @@ DesktopSettingsView::MessageReceived(BMessage *message)
 void
 DesktopSettingsView::SetDefaults()
 {
-	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
-	if (!tracker)
-		return;
-	
 	// ToDo: Avoid the duplication of the default values.
-	tracker->SetShowDisksIcon(false);
-	tracker->SetMountVolumesOntoDesktop(true);
-	tracker->SetMountSharedVolumesOntoDesktop(false);
-	tracker->SetIntegrateNonBootBeOSDesktops(true);
+	TrackerSettings settings;
+
+	settings.SetShowDisksIcon(false);
+	settings.SetMountVolumesOntoDesktop(true);
+	settings.SetMountSharedVolumesOntoDesktop(false);
+	settings.SetIntegrateNonBootBeOSDesktops(true);
 
 	ShowCurrentSettings(true);
 		// true -> send notices about the change
 }
 
+
 void
 DesktopSettingsView::Revert()
 {
-	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
-	if (!tracker)
-		return;
+	TrackerSettings settings;
 
-	tracker->SetShowDisksIcon(fShowDisksIcon);
-	tracker->SetMountVolumesOntoDesktop(fMountVolumesOntoDesktop);
-	tracker->SetMountSharedVolumesOntoDesktop(fMountSharedVolumesOntoDesktop);
-	tracker->SetIntegrateNonBootBeOSDesktops(fIntegrateNonBootBeOSDesktops);
+	settings.SetShowDisksIcon(fShowDisksIcon);
+	settings.SetMountVolumesOntoDesktop(fMountVolumesOntoDesktop);
+	settings.SetMountSharedVolumesOntoDesktop(fMountSharedVolumesOntoDesktop);
+	settings.SetIntegrateNonBootBeOSDesktops(fIntegrateNonBootBeOSDesktops);
 
 	ShowCurrentSettings(true);
 		// true -> send notices about the change
@@ -292,13 +290,15 @@ DesktopSettingsView::Revert()
 void
 DesktopSettingsView::ShowCurrentSettings(bool sendNotices)
 {
-	fShowDisksIconRadioButton->SetValue(TTracker::ShowDisksIcon());
-	fMountVolumesOntoDesktopRadioButton->SetValue(TTracker::MountVolumesOntoDesktop());
+	TrackerSettings settings;
 
-	fMountSharedVolumesOntoDesktopCheckBox->SetValue(TTracker::MountSharedVolumesOntoDesktop());
-	fMountSharedVolumesOntoDesktopCheckBox->SetEnabled(TTracker::MountVolumesOntoDesktop());
+	fShowDisksIconRadioButton->SetValue(settings.ShowDisksIcon());
+	fMountVolumesOntoDesktopRadioButton->SetValue(settings.MountVolumesOntoDesktop());
 
-	fIntegrateNonBootBeOSDesktopsCheckBox->SetValue(TTracker::IntegrateNonBootBeOSDesktops());
+	fMountSharedVolumesOntoDesktopCheckBox->SetValue(settings.MountSharedVolumesOntoDesktop());
+	fMountSharedVolumesOntoDesktopCheckBox->SetEnabled(settings.MountVolumesOntoDesktop());
+
+	fIntegrateNonBootBeOSDesktopsCheckBox->SetValue(settings.IntegrateNonBootBeOSDesktops());
 
 	if (sendNotices) {
 		TTracker *tracker = dynamic_cast<TTracker *>(be_app);
@@ -326,11 +326,14 @@ DesktopSettingsView::ShowCurrentSettings(bool sendNotices)
 void
 DesktopSettingsView::RecordRevertSettings()
 {
-	fShowDisksIcon = TTracker::ShowDisksIcon();
-	fMountVolumesOntoDesktop = TTracker::MountVolumesOntoDesktop();
-	fMountSharedVolumesOntoDesktop = TTracker::MountSharedVolumesOntoDesktop();
-	fIntegrateNonBootBeOSDesktops = TTracker::IntegrateNonBootBeOSDesktops();
+	TrackerSettings settings;
+
+	fShowDisksIcon = settings.ShowDisksIcon();
+	fMountVolumesOntoDesktop = settings.MountVolumesOntoDesktop();
+	fMountSharedVolumesOntoDesktop = settings.MountSharedVolumesOntoDesktop();
+	fIntegrateNonBootBeOSDesktops = settings.IntegrateNonBootBeOSDesktops();
 }
+
 
 bool
 DesktopSettingsView::ShowsRevertSettings() const
@@ -346,8 +349,10 @@ DesktopSettingsView::ShowsRevertSettings() const
 			(fIntegrateNonBootBeOSDesktopsCheckBox->Value() > 0));
 }
 
+
 //------------------------------------------------------------------------
 // #pragma mark -
+
 
 WindowsSettingsView::WindowsSettingsView(BRect rect)
 	:	SettingsView(rect, "WindowsSettingsView")
@@ -392,6 +397,7 @@ WindowsSettingsView::WindowsSettingsView(BRect rect)
 	fSortFolderNamesFirstCheckBox->ResizeToPreferred();
 }
 
+
 void
 WindowsSettingsView::AttachedToWindow()
 {
@@ -402,28 +408,30 @@ WindowsSettingsView::AttachedToWindow()
 	fSortFolderNamesFirstCheckBox->SetTarget(this);
 }
 
+
 void
 WindowsSettingsView::MessageReceived(BMessage *message)
 {
 	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
 	if (!tracker)
 		return;
+	TrackerSettings settings;
 		
 	switch (message->what) {
 		case kWindowsShowFullPathChanged:
-			tracker->SetShowFullPathInTitleBar(fShowFullPathInTitleBarCheckBox->Value() == 1);
+			settings.SetShowFullPathInTitleBar(fShowFullPathInTitleBarCheckBox->Value() == 1);
 			tracker->SendNotices(kWindowsShowFullPathChanged);
 			Window()->PostMessage(kSettingsContentsModified);
 			break;
 		
 		case kSingleWindowBrowseChanged:
-			tracker->SetSingleWindowBrowse(fSingleWindowBrowseCheckBox->Value() == 1);
+			settings.SetSingleWindowBrowse(fSingleWindowBrowseCheckBox->Value() == 1);
 			if (fSingleWindowBrowseCheckBox->Value() == 0) {
 				fShowNavigatorCheckBox->SetEnabled(false);
-				tracker->SetShowNavigator(0);
+				settings.SetShowNavigator(0);
 			} else {
 				fShowNavigatorCheckBox->SetEnabled(true);
-				tracker->SetShowNavigator(fShowNavigatorCheckBox->Value() != 0);
+				settings.SetShowNavigator(fShowNavigatorCheckBox->Value() != 0);
 			}				
 			tracker->SendNotices(kShowNavigatorChanged);
 			tracker->SendNotices(kSingleWindowBrowseChanged);
@@ -431,38 +439,39 @@ WindowsSettingsView::MessageReceived(BMessage *message)
 			break;
 
 		case kShowNavigatorChanged:
-			tracker->SetShowNavigator(fShowNavigatorCheckBox->Value() == 1);
+			settings.SetShowNavigator(fShowNavigatorCheckBox->Value() == 1);
 			tracker->SendNotices(kShowNavigatorChanged);
 			Window()->PostMessage(kSettingsContentsModified);
 			break;
 
 		case kShowSelectionWhenInactiveChanged:
-			{
-				tracker->SetShowSelectionWhenInactive(fShowSelectionWhenInactiveCheckBox->Value() == 1);
-
-				// Make the notification message and send it to the tracker:
-				BMessage notificationMessage;
-				notificationMessage.AddBool("ShowSelectionWhenInactive",
+		{
+			settings.SetShowSelectionWhenInactive(
 					fShowSelectionWhenInactiveCheckBox->Value() == 1);
-				tracker->SendNotices(kShowSelectionWhenInactiveChanged, &notificationMessage);
 
-				Window()->PostMessage(kSettingsContentsModified);
-			}
+			// Make the notification message and send it to the tracker:
+			BMessage notificationMessage;
+			notificationMessage.AddBool("ShowSelectionWhenInactive",
+					fShowSelectionWhenInactiveCheckBox->Value() == 1);
+			tracker->SendNotices(kShowSelectionWhenInactiveChanged, &notificationMessage);
+
+			Window()->PostMessage(kSettingsContentsModified);
 			break;
+		}
 
 		case kSortFolderNamesFirstChanged:
-			{
-				tracker->SetSortFolderNamesFirst(fSortFolderNamesFirstCheckBox->Value() == 1);
+		{
+			settings.SetSortFolderNamesFirst(fSortFolderNamesFirstCheckBox->Value() == 1);
 
-				// Make the notification message and send it to the tracker:
-				BMessage notificationMessage;
-				notificationMessage.AddBool("SortFolderNamesFirst",
-					fSortFolderNamesFirstCheckBox->Value() == 1);
-				tracker->SendNotices(kSortFolderNamesFirstChanged, &notificationMessage);
+			// Make the notification message and send it to the tracker:
+			BMessage notificationMessage;
+			notificationMessage.AddBool("SortFolderNamesFirst",
+				fSortFolderNamesFirstCheckBox->Value() == 1);
+			tracker->SendNotices(kSortFolderNamesFirstChanged, &notificationMessage);
 
-				Window()->PostMessage(kSettingsContentsModified);
-			}
+			Window()->PostMessage(kSettingsContentsModified);
 			break;
+		}
 
 		default:
 			_inherited::MessageReceived(message);
@@ -474,36 +483,34 @@ WindowsSettingsView::MessageReceived(BMessage *message)
 void
 WindowsSettingsView::SetDefaults()
 {
-	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
-	if (!tracker)
-		return;
+	TrackerSettings settings;
 
-	tracker->SetShowFullPathInTitleBar(false);
-	tracker->SetSingleWindowBrowse(false);
-	tracker->SetShowNavigator(false);
-	tracker->SetShowSelectionWhenInactive(true);
-	tracker->SetSortFolderNamesFirst(false);
+	settings.SetShowFullPathInTitleBar(false);
+	settings.SetSingleWindowBrowse(false);
+	settings.SetShowNavigator(false);
+	settings.SetShowSelectionWhenInactive(true);
+	settings.SetSortFolderNamesFirst(false);
 
 	ShowCurrentSettings(true);
 		// true -> send notices about the change
 }
+
 
 void
 WindowsSettingsView::Revert()
 {
-	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
-	if (!tracker)
-		return;
+	TrackerSettings settings;
 
-	tracker->SetShowFullPathInTitleBar(fShowFullPathInTitleBar);
-	tracker->SetSingleWindowBrowse(fSingleWindowBrowse);
-	tracker->SetShowNavigator(fShowNavigator);
-	tracker->SetShowSelectionWhenInactive(fShowSelectionWhenInactive);
-	tracker->SetSortFolderNamesFirst(fSortFolderNamesFirst);
+	settings.SetShowFullPathInTitleBar(fShowFullPathInTitleBar);
+	settings.SetSingleWindowBrowse(fSingleWindowBrowse);
+	settings.SetShowNavigator(fShowNavigator);
+	settings.SetShowSelectionWhenInactive(fShowSelectionWhenInactive);
+	settings.SetSortFolderNamesFirst(fSortFolderNamesFirst);
 
 	ShowCurrentSettings(true);
 		// true -> send notices about the change
 }
+
 
 void
 WindowsSettingsView::ShowCurrentSettings(bool sendNotices)
@@ -511,13 +518,14 @@ WindowsSettingsView::ShowCurrentSettings(bool sendNotices)
 	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
 	if (!tracker)
 		return;
+	TrackerSettings settings;
 
-	fShowFullPathInTitleBarCheckBox->SetValue(tracker->ShowFullPathInTitleBar());
-	fSingleWindowBrowseCheckBox->SetValue(tracker->SingleWindowBrowse());
-	fShowNavigatorCheckBox->SetEnabled(tracker->SingleWindowBrowse());
-	fShowNavigatorCheckBox->SetValue(tracker->ShowNavigator());
-	fShowSelectionWhenInactiveCheckBox->SetValue(tracker->ShowSelectionWhenInactive());
-	fSortFolderNamesFirstCheckBox->SetValue(tracker->SortFolderNamesFirst());
+	fShowFullPathInTitleBarCheckBox->SetValue(settings.ShowFullPathInTitleBar());
+	fSingleWindowBrowseCheckBox->SetValue(settings.SingleWindowBrowse());
+	fShowNavigatorCheckBox->SetEnabled(settings.SingleWindowBrowse());
+	fShowNavigatorCheckBox->SetValue(settings.ShowNavigator());
+	fShowSelectionWhenInactiveCheckBox->SetValue(settings.ShowSelectionWhenInactive());
+	fSortFolderNamesFirstCheckBox->SetValue(settings.SortFolderNamesFirst());
 	
 	if (sendNotices) {
 		tracker->SendNotices(kSingleWindowBrowseChanged);
@@ -532,12 +540,15 @@ WindowsSettingsView::ShowCurrentSettings(bool sendNotices)
 void
 WindowsSettingsView::RecordRevertSettings()
 {
-	fShowFullPathInTitleBar = TTracker::ShowFullPathInTitleBar();
-	fSingleWindowBrowse = TTracker::SingleWindowBrowse();
-	fShowNavigator = TTracker::ShowNavigator();
-	fShowSelectionWhenInactive = TTracker::ShowSelectionWhenInactive();
-	fSortFolderNamesFirst = TTracker::SortFolderNamesFirst();
+	TrackerSettings settings;
+
+	fShowFullPathInTitleBar = settings.ShowFullPathInTitleBar();
+	fSingleWindowBrowse = settings.SingleWindowBrowse();
+	fShowNavigator = settings.ShowNavigator();
+	fShowSelectionWhenInactive = settings.ShowSelectionWhenInactive();
+	fSortFolderNamesFirst = settings.SortFolderNamesFirst();
 }
+
 
 bool
 WindowsSettingsView::ShowsRevertSettings() const
@@ -555,8 +566,10 @@ WindowsSettingsView::ShowsRevertSettings() const
 			(fSortFolderNamesFirstCheckBox->Value() > 0));
 }
 
+
 //------------------------------------------------------------------------
 // #pragma mark -
+
 
 FilePanelSettingsView::FilePanelSettingsView(BRect rect)
 	:	SettingsView(rect, "FilePanelSettingsView")
@@ -606,6 +619,7 @@ FilePanelSettingsView::FilePanelSettingsView(BRect rect)
 	StartWatching(be_app, kFavoriteCountChangedExternally);
 }
 
+
 FilePanelSettingsView::~FilePanelSettingsView()
 {
 	StopWatching(be_app, kFavoriteCountChangedExternally);
@@ -620,17 +634,19 @@ FilePanelSettingsView::AttachedToWindow()
 	fRecentFoldersTextControl->SetTarget(this);
 }
 
+
 void
 FilePanelSettingsView::MessageReceived(BMessage *message)
 {
 	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
 	if (!tracker)
 		return;
-		
+	TrackerSettings settings;
+
 	switch (message->what) {
 		case kDesktopFilePanelRootChanged:
 			{
-				tracker->SetDesktopFilePanelRoot(fDesktopFilePanelRootCheckBox->Value() == 1);
+				settings.SetDesktopFilePanelRoot(fDesktopFilePanelRootCheckBox->Value() == 1);
 
 				// Make the notification message and send it to the tracker:
 				BMessage message;
@@ -644,8 +660,8 @@ FilePanelSettingsView::MessageReceived(BMessage *message)
 		case kFavoriteCountChanged:
 			{
 				GetAndRefreshDisplayedFigures();
-				tracker->SetRecentDocumentsCount(fDisplayedDocCount);
-				tracker->SetRecentFoldersCount(fDisplayedFolderCount);
+				settings.SetRecentDocumentsCount(fDisplayedDocCount);
+				settings.SetRecentFoldersCount(fDisplayedFolderCount);
 
 				// Make the notification message and send it to the tracker:
 				BMessage message;
@@ -666,17 +682,17 @@ FilePanelSettingsView::MessageReceived(BMessage *message)
 							{
 								int32 count;
 								if (message->FindInt32("RecentApplications", &count) == B_OK) {
-									tracker->SetRecentApplicationsCount(count);
+									settings.SetRecentApplicationsCount(count);
 									ShowCurrentSettings();
 								}
 
 								if (message->FindInt32("RecentDocuments", &count) == B_OK) {
-									tracker->SetRecentDocumentsCount(count);
+									settings.SetRecentDocumentsCount(count);
 									ShowCurrentSettings();
 								}
 
 								if (message->FindInt32("RecentFolders", &count) == B_OK) {
-									tracker->SetRecentFoldersCount(count);
+									settings.SetRecentFoldersCount(count);
 									ShowCurrentSettings();
 								}
 							}
@@ -696,32 +712,30 @@ FilePanelSettingsView::MessageReceived(BMessage *message)
 void
 FilePanelSettingsView::SetDefaults()
 {
-	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
-	if (!tracker)
-		return;
+	TrackerSettings settings;
 	
-	tracker->SetDesktopFilePanelRoot(true);
-	tracker->SetRecentDocumentsCount(10);
-	tracker->SetRecentFoldersCount(10);
+	settings.SetDesktopFilePanelRoot(true);
+	settings.SetRecentDocumentsCount(10);
+	settings.SetRecentFoldersCount(10);
 
 	ShowCurrentSettings(true);
 		// true -> send notices about the change
 }
+
 
 void
 FilePanelSettingsView::Revert()
 {
-	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
-	if (!tracker)
-		return;
+	TrackerSettings settings;
 
-	tracker->SetDesktopFilePanelRoot(fDesktopFilePanelRoot);
-	tracker->SetRecentDocumentsCount(fRecentDocuments);
-	tracker->SetRecentFoldersCount(fRecentFolders);
+	settings.SetDesktopFilePanelRoot(fDesktopFilePanelRoot);
+	settings.SetRecentDocumentsCount(fRecentDocuments);
+	settings.SetRecentFoldersCount(fRecentFolders);
 
 	ShowCurrentSettings(true);
 		// true -> send notices about the change
 }
+
 
 void
 FilePanelSettingsView::ShowCurrentSettings(bool sendNotices)
@@ -729,12 +743,12 @@ FilePanelSettingsView::ShowCurrentSettings(bool sendNotices)
 	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
 	if (!tracker)
 		return;
+	TrackerSettings settings;
 
-	fDesktopFilePanelRootCheckBox->SetValue(tracker->DesktopFilePanelRoot());
+	fDesktopFilePanelRootCheckBox->SetValue(settings.DesktopFilePanelRoot());
 
 	int32 recentApplications, recentDocuments, recentFolders;
-	
-	tracker->RecentCounts(&recentApplications, &recentDocuments, &recentFolders);
+	settings.RecentCounts(&recentApplications, &recentDocuments, &recentFolders);
 
 	BString docCountText;
 	docCountText << recentDocuments;
@@ -757,16 +771,16 @@ FilePanelSettingsView::ShowCurrentSettings(bool sendNotices)
 	}
 }
 
+
 void
 FilePanelSettingsView::RecordRevertSettings()
 {
-	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
-	if (!tracker)
-		return;
-	
-	fDesktopFilePanelRoot = tracker->DesktopFilePanelRoot();
-	tracker->RecentCounts(&fRecentApplications, &fRecentDocuments, &fRecentFolders);
+	TrackerSettings settings;
+
+	fDesktopFilePanelRoot = settings.DesktopFilePanelRoot();
+	settings.RecentCounts(&fRecentApplications, &fRecentDocuments, &fRecentFolders);
 }
+
 
 bool
 FilePanelSettingsView::ShowsRevertSettings() const
@@ -778,6 +792,7 @@ FilePanelSettingsView::ShowsRevertSettings() const
 		&& (fDisplayedDocCount == fRecentDocuments)
 		&& (fDisplayedFolderCount == fRecentFolders);
 }
+
 
 void
 FilePanelSettingsView::GetAndRefreshDisplayedFigures() const
@@ -794,8 +809,10 @@ FilePanelSettingsView::GetAndRefreshDisplayedFigures() const
 	fRecentFoldersTextControl->SetText(folderCountText.String());
 }
 
+
 //------------------------------------------------------------------------
 // #pragma mark -
+
 
 TimeFormatSettingsView::TimeFormatSettingsView(BRect rect)
 	:	SettingsView(rect, "WindowsSettingsView")
@@ -897,6 +914,7 @@ TimeFormatSettingsView::TimeFormatSettingsView(BRect rect)
 	UpdateExamples();
 }
 
+
 void
 TimeFormatSettingsView::AttachedToWindow()
 {
@@ -909,12 +927,14 @@ TimeFormatSettingsView::AttachedToWindow()
 	fSeparatorMenuField->Menu()->SetTargetForItems(this);
 }
 
+
 void
 TimeFormatSettingsView::MessageReceived(BMessage *message)
 {
 	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
 	if (!tracker)
 		return;
+	TrackerSettings settings;
 
 	switch (message->what) {
 		case kSettingsContentsModified:
@@ -924,15 +944,15 @@ TimeFormatSettingsView::MessageReceived(BMessage *message)
 				if (item) {
 					separator = fSeparatorMenuField->Menu()->IndexOf(item);
 					if (separator >= 0)
-						tracker->SetTimeFormatSeparator((FormatSeparator)separator);
+						settings.SetTimeFormatSeparator((FormatSeparator)separator);
 				}
 			
 				DateOrder format =
 					fYMDRadioButton->Value() ? kYMDFormat :
 					fDMYRadioButton->Value() ? kDMYFormat : kMDYFormat;
 			
-				tracker->SetDateOrderFormat(format);
-				tracker->SetClockTo24Hr(f24HrRadioButton->Value() == 1);
+				settings.SetDateOrderFormat(format);
+				settings.SetClockTo24Hr(f24HrRadioButton->Value() == 1);
 
 				// Make the notification message and send it to the tracker:
 				BMessage notificationMessage;
@@ -952,59 +972,59 @@ TimeFormatSettingsView::MessageReceived(BMessage *message)
 	}
 }
 
+
 void
 TimeFormatSettingsView::SetDefaults()
 {
-	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
-	if (!tracker)
-		return;
-	
-	tracker->SetTimeFormatSeparator(kSlashSeparator);
-	tracker->SetDateOrderFormat(kMDYFormat);
-	tracker->SetClockTo24Hr(false);
+	TrackerSettings settings;
+
+	settings.SetTimeFormatSeparator(kSlashSeparator);
+	settings.SetDateOrderFormat(kMDYFormat);
+	settings.SetClockTo24Hr(false);
 
 	ShowCurrentSettings(true);
 		// true -> send notices about the change
 }
+
 
 void
 TimeFormatSettingsView::Revert()
 {
-	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
-	if (!tracker)
-		return;
+	TrackerSettings settings;
 
-	tracker->SetTimeFormatSeparator(fSeparator);
-	tracker->SetDateOrderFormat(fFormat);
-	tracker->SetClockTo24Hr(f24HrClock);
+	settings.SetTimeFormatSeparator(fSeparator);
+	settings.SetDateOrderFormat(fFormat);
+	settings.SetClockTo24Hr(f24HrClock);
 
 	ShowCurrentSettings(true);
 		// true -> send notices about the change
 }
 
+
 void
 TimeFormatSettingsView::ShowCurrentSettings(bool sendNotices)
 {
-	f24HrRadioButton->SetValue(TTracker::ClockIs24Hr());
-	f12HrRadioButton->SetValue(!TTracker::ClockIs24Hr());
+	TrackerSettings settings;
+
+	f24HrRadioButton->SetValue(settings.ClockIs24Hr());
+	f12HrRadioButton->SetValue(!settings.ClockIs24Hr());
 	
-	switch (TTracker::DateOrderFormat()) {
-		
+	switch (settings.DateOrderFormat()) {
 		case kYMDFormat:
 			fYMDRadioButton->SetValue(1);
 			break;
-		default:
-	
-		case kDMYFormat:
-			fDMYRadioButton->SetValue(1);
-			break;
-	
+
 		case kMDYFormat:
 			fMDYRadioButton->SetValue(1);
 			break;
+
+		default:
+		case kDMYFormat:
+			fDMYRadioButton->SetValue(1);
+			break;
 	}
 	
-	FormatSeparator separator = TTracker::TimeFormatSeparator();
+	FormatSeparator separator = settings.TimeFormatSeparator();
 	
 	if (separator >= kNoSeparator && separator < kSeparatorsEnd)
 		fSeparatorMenuField->Menu()->ItemAt((int32)separator)->SetMarked(true);
@@ -1018,20 +1038,24 @@ TimeFormatSettingsView::ShowCurrentSettings(bool sendNotices)
 	
 		// Make the notification message and send it to the tracker:
 		BMessage notificationMessage;
-		notificationMessage.AddInt32("TimeFormatSeparator", (int32)tracker->TimeFormatSeparator());
-		notificationMessage.AddInt32("DateOrderFormat", (int32)tracker->DateOrderFormat());
-		notificationMessage.AddBool("24HrClock", tracker->ClockIs24Hr());
+		notificationMessage.AddInt32("TimeFormatSeparator", (int32)settings.TimeFormatSeparator());
+		notificationMessage.AddInt32("DateOrderFormat", (int32)settings.DateOrderFormat());
+		notificationMessage.AddBool("24HrClock", settings.ClockIs24Hr());
 		tracker->SendNotices(kDateFormatChanged, &notificationMessage);
 	}
 }
 
+
 void
 TimeFormatSettingsView::RecordRevertSettings()
 {
-	f24HrClock = TTracker::ClockIs24Hr();
-	fSeparator = TTracker::TimeFormatSeparator();
-	fFormat = TTracker::DateOrderFormat();
+	TrackerSettings settings;
+
+	f24HrClock = settings.ClockIs24Hr();
+	fSeparator = settings.TimeFormatSeparator();
+	fFormat = settings.DateOrderFormat();
 }
+
 
 bool
 TimeFormatSettingsView::ShowsRevertSettings() const
@@ -1057,6 +1081,7 @@ TimeFormatSettingsView::ShowsRevertSettings() const
 		&& separator == fSeparator
 		&& format == fFormat;
 }
+
 
 void
 TimeFormatSettingsView::UpdateExamples()
@@ -1098,8 +1123,10 @@ TimeFormatSettingsView::UpdateExamples()
 	fShortDateExampleView->ResizeToPreferred();
 }
 
+
 //------------------------------------------------------------------------
 // #pragma mark -
+
 
 SpaceBarSettingsView::SpaceBarSettingsView(BRect rect)
 	:	SettingsView(rect, "SpaceBarSettingsView")
@@ -1131,15 +1158,17 @@ SpaceBarSettingsView::SpaceBarSettingsView(BRect rect)
 	fColorControl = new BColorControl(
 			BPoint(8,fColorPicker->Bounds().Height() + 8 + kItemExtraSpacing),
 			B_CELLS_16x16,1,"SpaceColorControl",new BMessage(kSpaceBarColorChanged));
-	fColorControl->SetValue(TTracker::UsedSpaceColor());
+	fColorControl->SetValue(TrackerSettings().UsedSpaceColor());
 	fColorControl->ResizeToPreferred();
 	box->AddChild(fColorControl);
 	box->ResizeTo(fColorControl->Bounds().Width() + 16,fColorControl->Frame().bottom + 8);
 }
 
+
 SpaceBarSettingsView::~SpaceBarSettingsView()
 {
 }
+
 
 void
 SpaceBarSettingsView::AttachedToWindow()
@@ -1149,20 +1178,22 @@ SpaceBarSettingsView::AttachedToWindow()
 	fColorPicker->Menu()->SetTargetForItems(this);
 }
 
+
 void
 SpaceBarSettingsView::MessageReceived(BMessage *message)
 {
 	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
 	if (!tracker)
 		return;
-		
+	TrackerSettings settings;
+
 	switch (message->what) {
 		case kUpdateVolumeSpaceBar:
 		{
-			tracker->SetShowVolumeSpaceBar(fSpaceBarShowCheckBox->Value() == 1);
+			settings.SetShowVolumeSpaceBar(fSpaceBarShowCheckBox->Value() == 1);
 			Window()->PostMessage(kSettingsContentsModified);
 			BMessage notificationMessage;
-			notificationMessage.AddBool("ShowVolumeSpaceBar", tracker->ShowVolumeSpaceBar());
+			notificationMessage.AddBool("ShowVolumeSpaceBar", settings.ShowVolumeSpaceBar());
 			tracker->SendNotices(kShowVolumeSpaceBar, &notificationMessage);
 			break;
 		}
@@ -1172,13 +1203,13 @@ SpaceBarSettingsView::MessageReceived(BMessage *message)
 			fCurrentColor = message->FindInt32("index");
 			switch (fCurrentColor) {
 				case 0:
-					fColorControl->SetValue(TTracker::UsedSpaceColor());
+					fColorControl->SetValue(settings.UsedSpaceColor());
 					break;
 				case 1:
-					fColorControl->SetValue(TTracker::FreeSpaceColor());
+					fColorControl->SetValue(settings.FreeSpaceColor());
 					break;
 				case 2:
-					fColorControl->SetValue(TTracker::WarningSpaceColor());
+					fColorControl->SetValue(settings.WarningSpaceColor());
 					break;
 			}
 			break;
@@ -1187,13 +1218,13 @@ SpaceBarSettingsView::MessageReceived(BMessage *message)
 		{
 			switch (fCurrentColor) {
 				case 0:
-					tracker->SetUsedSpaceColor(fColorControl->ValueAsColor());
+					settings.SetUsedSpaceColor(fColorControl->ValueAsColor());
 					break;
 				case 1:
-					tracker->SetFreeSpaceColor(fColorControl->ValueAsColor());
+					settings.SetFreeSpaceColor(fColorControl->ValueAsColor());
 					break;
 				case 2:
-					tracker->SetWarningSpaceColor(fColorControl->ValueAsColor());
+					settings.SetWarningSpaceColor(fColorControl->ValueAsColor());
 					break;
 			}
 
@@ -1209,38 +1240,37 @@ SpaceBarSettingsView::MessageReceived(BMessage *message)
 	}	
 }
 
+
 void
 SpaceBarSettingsView::SetDefaults()
 {
-	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
-	if (!tracker)
-		return;
+	TrackerSettings settings;
 
-	tracker->SetShowVolumeSpaceBar(false);
+	settings.SetShowVolumeSpaceBar(false);
 
-	tracker->SetUsedSpaceColor(Color(0,0xcb,0,192));
-	tracker->SetFreeSpaceColor(Color(0xff,0xff,0xff,192));
-	tracker->SetWarningSpaceColor(Color(0xcb,0,0,192));
+	settings.SetUsedSpaceColor(Color(0,0xcb,0,192));
+	settings.SetFreeSpaceColor(Color(0xff,0xff,0xff,192));
+	settings.SetWarningSpaceColor(Color(0xcb,0,0,192));
 
 	ShowCurrentSettings(true);
 		// true -> send notices about the change
 }
+
 
 void
 SpaceBarSettingsView::Revert()
 {
-	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
-	if (!tracker)
-		return;
+	TrackerSettings settings;
 
-	tracker->SetShowVolumeSpaceBar(fSpaceBarShow);
-	tracker->SetUsedSpaceColor(fUsedSpaceColor);
-	tracker->SetFreeSpaceColor(fFreeSpaceColor);
-	tracker->SetWarningSpaceColor(fWarningSpaceColor);
+	settings.SetShowVolumeSpaceBar(fSpaceBarShow);
+	settings.SetUsedSpaceColor(fUsedSpaceColor);
+	settings.SetFreeSpaceColor(fFreeSpaceColor);
+	settings.SetWarningSpaceColor(fWarningSpaceColor);
 	
 	ShowCurrentSettings(true);
 		// true -> send notices about the change
 }
+
 
 void
 SpaceBarSettingsView::ShowCurrentSettings(bool sendNotices)
@@ -1248,24 +1278,25 @@ SpaceBarSettingsView::ShowCurrentSettings(bool sendNotices)
 	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
 	if (!tracker)
 		return;
+	TrackerSettings settings;
 
-	fSpaceBarShowCheckBox->SetValue(tracker->ShowVolumeSpaceBar());
+	fSpaceBarShowCheckBox->SetValue(settings.ShowVolumeSpaceBar());
 	
 	switch (fCurrentColor) {
 		case 0:
-			fColorControl->SetValue(tracker->UsedSpaceColor());
+			fColorControl->SetValue(settings.UsedSpaceColor());
 			break;
 		case 1:
-			fColorControl->SetValue(tracker->FreeSpaceColor());
+			fColorControl->SetValue(settings.FreeSpaceColor());
 			break;
 		case 2:
-			fColorControl->SetValue(tracker->WarningSpaceColor());
+			fColorControl->SetValue(settings.WarningSpaceColor());
 			break;
 	}
 
 	if (sendNotices) {
 		BMessage notificationMessage;
-		notificationMessage.AddBool("ShowVolumeSpaceBar", tracker->ShowVolumeSpaceBar());
+		notificationMessage.AddBool("ShowVolumeSpaceBar", settings.ShowVolumeSpaceBar());
 		tracker->SendNotices(kShowVolumeSpaceBar, &notificationMessage);
 
 		Window()->PostMessage(kSettingsContentsModified);
@@ -1274,18 +1305,18 @@ SpaceBarSettingsView::ShowCurrentSettings(bool sendNotices)
 	}
 }
 
+
 void
 SpaceBarSettingsView::RecordRevertSettings()
 {
-	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
-	if (!tracker)
-		return;
+	TrackerSettings settings;
 	
-	fSpaceBarShow = tracker->ShowVolumeSpaceBar();
-	fUsedSpaceColor = tracker->UsedSpaceColor();
-	fFreeSpaceColor = tracker->FreeSpaceColor();
-	fWarningSpaceColor = tracker->WarningSpaceColor();
+	fSpaceBarShow = settings.ShowVolumeSpaceBar();
+	fUsedSpaceColor = settings.UsedSpaceColor();
+	fFreeSpaceColor = settings.FreeSpaceColor();
+	fWarningSpaceColor = settings.WarningSpaceColor();
 }
+
 
 bool
 SpaceBarSettingsView::ShowsRevertSettings() const
@@ -1317,6 +1348,7 @@ TrashSettingsView::TrashSettingsView(BRect rect)
 	fAskBeforeDeleteFileCheckBox->ResizeToPreferred();
 }
 
+
 void
 TrashSettingsView::AttachedToWindow()
 {
@@ -1324,23 +1356,25 @@ TrashSettingsView::AttachedToWindow()
 	fAskBeforeDeleteFileCheckBox->SetTarget(this);
 }
 
+
 void
 TrashSettingsView::MessageReceived(BMessage *message)
 {
 	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
 	if (!tracker)
 		return;
+	TrackerSettings settings;
 		
 	switch (message->what) {
 		case kDontMoveFilesToTrashChanged:
-			tracker->SetDontMoveFilesToTrash(fDontMoveFilesToTrashCheckBox->Value() == 1);
+			settings.SetDontMoveFilesToTrash(fDontMoveFilesToTrashCheckBox->Value() == 1);
 
 			tracker->SendNotices(kDontMoveFilesToTrashChanged);
 			Window()->PostMessage(kSettingsContentsModified);
 			break;
 
 		case kAskBeforeDeleteFileChanged:
-			tracker->SetAskBeforeDeleteFile(fAskBeforeDeleteFileCheckBox->Value() == 1);
+			settings.SetAskBeforeDeleteFile(fAskBeforeDeleteFileCheckBox->Value() == 1);
 
 			tracker->SendNotices(kAskBeforeDeleteFileChanged);
 			Window()->PostMessage(kSettingsContentsModified);
@@ -1356,52 +1390,51 @@ TrashSettingsView::MessageReceived(BMessage *message)
 void
 TrashSettingsView::SetDefaults()
 {
-	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
-	if (!tracker)
-		return;
+	TrackerSettings settings;
 
-	tracker->SetDontMoveFilesToTrash(false);
-	tracker->SetAskBeforeDeleteFile(true);
+	settings.SetDontMoveFilesToTrash(false);
+	settings.SetAskBeforeDeleteFile(true);
 
 	ShowCurrentSettings(true);
 		// true -> send notices about the change
 }
+
 
 void
 TrashSettingsView::Revert()
 {
-	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
-	if (!tracker)
-		return;
+	TrackerSettings settings;
 
-	tracker->SetDontMoveFilesToTrash(fDontMoveFilesToTrash);
-	tracker->SetAskBeforeDeleteFile(fAskBeforeDeleteFile);
+	settings.SetDontMoveFilesToTrash(fDontMoveFilesToTrash);
+	settings.SetAskBeforeDeleteFile(fAskBeforeDeleteFile);
 
 	ShowCurrentSettings(true);
 		// true -> send notices about the change
 }
 
+
 void
 TrashSettingsView::ShowCurrentSettings(bool sendNotices)
 {
-	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
-	if (!tracker)
-		return;
+	TrackerSettings settings;
 
-	fDontMoveFilesToTrashCheckBox->SetValue(tracker->DontMoveFilesToTrash());
-	fAskBeforeDeleteFileCheckBox->SetValue(tracker->AskBeforeDeleteFile());
+	fDontMoveFilesToTrashCheckBox->SetValue(settings.DontMoveFilesToTrash());
+	fAskBeforeDeleteFileCheckBox->SetValue(settings.AskBeforeDeleteFile());
 
-	if (sendNotices) {
+	if (sendNotices)
 		Window()->PostMessage(kSettingsContentsModified);
-	}
 }
+
 
 void
 TrashSettingsView::RecordRevertSettings()
 {
-	fDontMoveFilesToTrash = TTracker::DontMoveFilesToTrash();
-	fAskBeforeDeleteFile = TTracker::AskBeforeDeleteFile();
+	TrackerSettings settings;
+
+	fDontMoveFilesToTrash = settings.DontMoveFilesToTrash();
+	fAskBeforeDeleteFile = settings.AskBeforeDeleteFile();
 }
+
 
 bool
 TrashSettingsView::ShowsRevertSettings() const
@@ -1409,3 +1442,4 @@ TrashSettingsView::ShowsRevertSettings() const
 	return (fDontMoveFilesToTrash == (fDontMoveFilesToTrashCheckBox->Value() > 0))
 			&& (fAskBeforeDeleteFile == (fAskBeforeDeleteFileCheckBox->Value() > 0));
 }
+
