@@ -112,7 +112,7 @@ BCurrency::GetSymbol(char *symbol, size_t maxSize, BLocale *locale)
 		return B_BAD_VALUE;
 	// TODO: get symbol from locale
 	// fall back to the default symbol
-	if (maxSize <= fDefaultSymbol.Length())
+	if ((int32)maxSize <= fDefaultSymbol.Length())
 		return EOVERFLOW;	// OpenBeOS: B_BUFFER_OVERFLOW
 	strcpy(symbol, fDefaultSymbol.String());
 	return B_OK;
