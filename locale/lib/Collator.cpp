@@ -61,6 +61,12 @@ getPrimaryChar(uint32 c)
 }
 
 
+/** This returns the next Unicode character from the UTF-8 encoded
+ *	input string, and bumps it to the next character.
+ *	It will ignore punctuation if specified by the context, and
+ *	might substitute characters if needed.
+ */
+
 static inline uint32
 getNextChar(const char **string, input_context &context)
 {
