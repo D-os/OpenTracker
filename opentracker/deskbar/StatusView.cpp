@@ -1055,6 +1055,10 @@ TReplicantTray::AddIcon(BMessage *icon, int32 *id, const entry_ref *addOn)
 	node_ref nodeRef;
 	file.GetNodeRef(&nodeRef);
 	BEntry entry(&ref, true);
+		// ToDo: this resolves an eventual link for the item
+		// being added - this is okay for now, but in multi-user
+		// environments, one might want to have links that
+		// carry the be:deskbar_item_status attribute
 	AddItem(*id, nodeRef, entry, addOn != NULL);
 
  	return B_OK;
