@@ -180,6 +180,8 @@ TBarApp::SaveSettings()
 		fSettingsFile->Write(&fSettings.timeFullDate, sizeof(bool));
 		fSettingsFile->Write(&fSettings.trackerAlwaysFirst, sizeof(bool));
 		fSettingsFile->Write(&fSettings.sortRunningApps, sizeof(bool));
+		fSettingsFile->Write(&fSettings.superExpando, sizeof(bool));
+		fSettingsFile->Write(&fSettings.expandNewTeams, sizeof(bool));
 	}
 }
 
@@ -206,7 +208,9 @@ TBarApp::InitSettings()
 	settings.timeFullDate = false;
 	settings.trackerAlwaysFirst = false;
 	settings.sortRunningApps = false;
-	
+	settings.superExpando = false;
+	settings.expandNewTeams = false;
+
 	BPath dirPath;
 	const char *settingsFileName = "Deskbar_settings";
 
@@ -259,6 +263,10 @@ TBarApp::InitSettings()
 				fSettingsFile->Read(&settings.trackerAlwaysFirst, sizeof(bool));
 				fSettingsFile->Read(&settings.sortRunningApps, sizeof(bool));
 			}
+			if (theSize >= kValidSettingsSize9) {
+				fSettingsFile->Read(&settings.superExpando, sizeof(bool));
+				fSettingsFile->Read(&settings.expandNewTeams, sizeof(bool));
+			}
 		}
 	}
 
@@ -289,7 +297,7 @@ TBarApp::MessageReceived(BMessage *message)
 			if (message->FindInt32("count", &count) == B_OK)
 				fSettings.recentDocsCount = count;
 			break;
-			
+
 		case kUpdateAppsCount:
 			if (message->FindInt32("count", &count) == B_OK)
 				fSettings.recentAppsCount = count;
@@ -312,7 +320,7 @@ TBarApp::MessageReceived(BMessage *message)
 		case msg_config_db:
 			ShowConfigWindow();
 			break;
-	
+
 		case kConfigClose:
 			if (message->FindInt32("applications", &count) == B_OK)				
 				fSettings.recentAppsCount = count;
@@ -325,30 +333,30 @@ TBarApp::MessageReceived(BMessage *message)
 			break;
 
 		case B_SOME_APP_LAUNCHED:
-			{
-				team_id team = -1;
-				message->FindInt32("be:team", &team);
+		{
+			team_id team = -1;
+			message->FindInt32("be:team", &team);
+
+			uint32 flags = 0;
+			message->FindInt32("be:flags", (long *)&flags);
+
+			const char *sig = NULL;
+			message->FindString("be:signature", &sig);
 	
-				uint32 flags = 0;
-				message->FindInt32("be:flags", (long *)&flags);
-	
-				const char *sig = NULL;
-				message->FindString("be:signature", &sig);
-		
-				entry_ref ref;
-				message->FindRef("be:ref", &ref);
-	
-				AddTeam(team, flags, sig, &ref);
-				break;
-			}
+			entry_ref ref;
+			message->FindRef("be:ref", &ref);
+
+			AddTeam(team, flags, sig, &ref);
+			break;
+		}
 
 		case B_SOME_APP_QUIT:
-			{	
-				team_id team = -1;
-				message->FindInt32("be:team", &team);
-				RemoveTeam(team);
-				break;
-			}	
+		{	
+			team_id team = -1;
+			message->FindInt32("be:team", &team);
+			RemoveTeam(team);
+			break;
+		}
 
 		case B_ARCHIVED_OBJECT:
 			message->AddString("special", "Alex Osadzinski");
@@ -379,49 +387,63 @@ TBarApp::MessageReceived(BMessage *message)
 			break;
 			
 		case msg_AlwaysTop:
- 			if (fSettings.alwaysOnTop) 
- 				fSettings.alwaysOnTop = false;
- 			else 
- 				fSettings.alwaysOnTop = true;
+ 			fSettings.alwaysOnTop = !fSettings.alwaysOnTop;
+
  			fBarWindow->SetFeel(fSettings.alwaysOnTop ? 
  				B_FLOATING_ALL_WINDOW_FEEL : B_NORMAL_WINDOW_FEEL);
  			break;
 
 		case msg_trackerFirst:
-			{
-				if (fSettings.trackerAlwaysFirst)
-					fSettings.trackerAlwaysFirst = false;
-				else
-					fSettings.trackerAlwaysFirst = true;
-	
-				TBarView *barView = static_cast<TBarApp *>(be_app)->BarView();
-				fBarWindow->Lock();
-				barView->UpdatePlacement();
-				fBarWindow->Unlock();
-				break;
-			}
+		{
+			fSettings.trackerAlwaysFirst = !fSettings.trackerAlwaysFirst;
+
+			TBarView *barView = static_cast<TBarApp *>(be_app)->BarView();
+			fBarWindow->Lock();
+			barView->UpdatePlacement();
+			fBarWindow->Unlock();
+			break;
+		}
 
 		case msg_sortRunningApps:
-			{
-				if (fSettings.sortRunningApps)
-					fSettings.sortRunningApps = false;
-				else
-					fSettings.sortRunningApps = true;
-				
-				TBarView *barView = static_cast<TBarApp *>(be_app)->BarView();
-				fBarWindow->Lock();
-				barView->UpdatePlacement();
-				fBarWindow->Unlock();
-				break;
-			}
-				
+		{
+			fSettings.sortRunningApps = !fSettings.sortRunningApps;
+
+			TBarView *barView = static_cast<TBarApp *>(be_app)->BarView();
+			fBarWindow->Lock();
+			barView->UpdatePlacement();
+			fBarWindow->Unlock();
+			break;
+		}
+
 		case msg_Unsubscribe:
-			{
-				BMessenger messenger;
-				if (message->FindMessenger("messenger", &messenger) == B_OK)
-					Unsubscribe(messenger);
-				break;
-			}
+		{
+			BMessenger messenger;
+			if (message->FindMessenger("messenger", &messenger) == B_OK)
+				Unsubscribe(messenger);
+			break;
+		}
+		
+		case msg_superExpando:
+		{
+			fSettings.superExpando = !fSettings.superExpando;
+
+			TBarView *barView = static_cast<TBarApp *>(be_app)->BarView();
+			fBarWindow->Lock();
+			barView->UpdatePlacement();
+			fBarWindow->Unlock();
+			break;
+		}
+		
+		case msg_expandNewTeams:
+		{
+			fSettings.expandNewTeams = !fSettings.expandNewTeams;
+
+			TBarView *barView = static_cast<TBarApp *>(be_app)->BarView();
+			fBarWindow->Lock();
+			barView->UpdatePlacement();
+			fBarWindow->Unlock();
+			break;
+		}
 
 		case 'TASK': 
 			fSwitcherMess.SendMessage(message);
