@@ -50,7 +50,8 @@ struct BCatalogAddOnInfo {
 	void UnloadIfPossible();
 };
 
-BCatalogAddOnInfo::BCatalogAddOnInfo(const BString& name, const BString& path, uint8 priority)
+BCatalogAddOnInfo::BCatalogAddOnInfo(const BString& name, const BString& path, 
+	uint8 priority)
 	:	
 	fName(name),
 	fPath(path),
@@ -130,15 +131,6 @@ RosterData::CompareInfos(const void *left, const void *right)
 void 
 RosterData::InitializeCatalogAddOns() 
 {
-	BDirectory addOnFolder;
-	entry_ref eref;
-	BNode node;
-	dirent *dent;
-	status_t err;
-	char buf[4096];
-	int32 count;
-	int32 priority;
-
 	BAutolock lock( fLock);
 	assert( lock.IsLocked());
 
@@ -155,6 +147,9 @@ RosterData::InitializeCatalogAddOns()
 		static_cast<directory_which>(-1)
 	};
 	BPath addOnPath;
+	BDirectory addOnFolder;
+	char buf[4096];
+	status_t err;
 	for (int f=0; folders[f]>=0; ++f) {
 		find_directory(folders[f], &addOnPath);
 		BString addOnFolderName(addOnPath.Path());
@@ -162,7 +157,14 @@ RosterData::InitializeCatalogAddOns()
 		err = addOnFolder.SetTo(addOnFolderName.String());
 		if (err != B_OK)
 			continue;
+
 		// scan through all the folder's entries for catalog add-ons:
+		int32 count;
+		int8 priority;
+		entry_ref eref;
+		BNode node;
+		BEntry entry;
+		dirent *dent;
 		while ((count = addOnFolder.GetNextDirents((dirent *)buf, 4096)) > 0) {
 			dent = (dirent *)buf;
 			while (count-- > 0) {
@@ -171,10 +173,12 @@ RosterData::InitializeCatalogAddOns()
 					eref.device = dent->d_pdev;
 					eref.directory = dent->d_pino;
 					eref.set_name(dent->d_name);
-					node.SetTo(&eref);
+					entry.SetTo(&eref, true);
+						// traverse through any links to get to the real thang!
+					node.SetTo(&entry);
 					priority = -1;
-					if (node.ReadAttr(kPriorityAttr, B_UINT8_TYPE, 0, 
-						&priority, sizeof(int32)) != B_OK) {
+					if (node.ReadAttr(kPriorityAttr, B_INT8_TYPE, 0, 
+						&priority, sizeof(int8)) <= 0) {
 						// add-on has no priority-attribute yet, so we load it to
 						// fetch the priority from the corresponding symbol...
 						BString fullAddOnPath(addOnFolderName);
@@ -186,9 +190,10 @@ RosterData::InitializeCatalogAddOns()
 								B_SYMBOL_TYPE_TEXT, 
 								(void **)&prioPtr) == B_OK) {
 								priority = *prioPtr;
-								node.WriteAttr(kPriorityAttr, B_UINT8_TYPE, 0, 
-									&priority, sizeof(int32));
+								node.WriteAttr(kPriorityAttr, B_INT8_TYPE, 0, 
+									&priority, sizeof(int8));
 							}
+							unload_add_on(image);
 						}
 #ifdef DEBUG
 						else
@@ -337,7 +342,10 @@ BLocaleRoster::LoadCatalog(const char *signature, const char *language)
 					info->fLoadedCatalogs.AddItem(catalog);
 /*
 The following could be used to chain-load catalogs for languages that 
-depend on other languages:
+depend on other languages. We just need to define how we'd like to express
+the language hierarchy (such that this code can traverse from child to parent
+language). The implementation below uses the filename for that (i.e. it
+traverses from "english-british-oxford" to "english-british" to "english"):
 					int32 pos;
 					BCatalogAddOn *currCatalog=catalog, *nextCatalog;
 					while ((pos = lang.FindLast('-')) > B_OK) {
