@@ -62,21 +62,21 @@ void run_be_about();
 #ifdef MOUNT_MENU_IN_DESKBAR
 
 class MountMenu : public BMenu {
-public:
-	MountMenu(const char *name);
-	virtual bool AddDynamicItem(add_state s);
+	public:
+		MountMenu(const char *name);
+		virtual bool AddDynamicItem(add_state s);
 };
 
 
 class MountMenuItem : public BMenuItem {
-public:
+	public:
+		MountMenuItem(const char *label, BMessage *message, BBitmap *icon );
+		virtual ~MountMenuItem();
+		virtual void GetContentSize(float *width, float *height);	
+		virtual void DrawContent();
 
-	MountMenuItem(const char *label, BMessage *message, BBitmap *icon );
-	virtual ~MountMenuItem();
-	virtual void GetContentSize(float *width, float *height);	
-	virtual void DrawContent();
-private:
-	BBitmap *deviceIcon;
+	private:
+		BBitmap *deviceIcon;
 };
 
 #endif
@@ -84,13 +84,12 @@ private:
 // #define SHOW_RECENT_FIND_ITEMS
 
 namespace BPrivate {
-
-BMenu *TrackerBuildRecentFindItemsMenu(const char *);
-
+	BMenu *TrackerBuildRecentFindItemsMenu(const char *);
 }
 using namespace BPrivate;
 
 //********************************************************************************
+
 
 TBeMenu::TBeMenu(TBarView *barview)
 	: BNavMenu("BeMenu", B_REFS_RECEIVED, BMessenger(kTrackerSig)),
@@ -98,6 +97,7 @@ TBeMenu::TBeMenu(TBarView *barview)
 		fBarView(barview)
 {
 }
+
 
 void
 TBeMenu::AttachedToWindow()
@@ -121,6 +121,7 @@ TBeMenu::AttachedToWindow()
 	BNavMenu::AttachedToWindow();
 }
 
+
 void
 TBeMenu::DetachedFromWindow()
 {
@@ -139,6 +140,7 @@ TBeMenu::DetachedFromWindow()
 	BMenu::DetachedFromWindow();
 }
 
+
 bool 
 TBeMenu::StartBuildingItemList()
 {
@@ -154,6 +156,7 @@ TBeMenu::StartBuildingItemList()
 	return BNavMenu::StartBuildingItemList();
 }
 
+
 void
 TBeMenu::DoneBuildingItemList()
 {
@@ -164,6 +167,7 @@ TBeMenu::DoneBuildingItemList()
 	} else
 		BNavMenu::DoneBuildingItemList();
 }
+
 
 bool 
 TBeMenu::AddNextItem()
@@ -235,6 +239,7 @@ TBeMenu::AddNextItem()
 	
 	return false;
 }
+
 
 bool
 TBeMenu::AddStandardBeMenuItems()
@@ -374,6 +379,7 @@ TBeMenu::AddStandardBeMenuItems()
 	return true;
 }
 
+
 void 
 TBeMenu::ClearMenuBuildingState()
 {
@@ -382,6 +388,7 @@ TBeMenu::ClearMenuBuildingState()
 		// force the menu to get rebuilt each time
 	BNavMenu::ClearMenuBuildingState();
 }
+
 
 void
 TBeMenu::ResetTargets()
@@ -441,6 +448,7 @@ TBeMenu::ResetTargets()
 	}
 }
 
+
 BPoint
 TBeMenu::ScreenLocation()
 {
@@ -463,10 +471,13 @@ TBeMenu::ScreenLocation()
 	return pt;
 }
 
+
 //********************************************************************************
-//
+//	#pragma mark -
 //	which == 0 is documents, which ==1 is applications
 //
+
+
 TRecentsMenu::TRecentsMenu(const char* name, TBarView *bar, int32 which)
 	: BNavMenu(name, B_REFS_RECEIVED, BMessenger(kTrackerSig)),
 		fWhich(which),
@@ -619,17 +630,22 @@ TRecentsMenu::ResetTargets()
 	SetTargetForItems(Target());
 }
 
+
 //********************************************************************************
+//	#pragma mark -
+
 
 #ifdef MOUNT_MENU_IN_DESKBAR
 
 MountMenu::MountMenu(const char *name)
-	:	BMenu(name)
+	: BMenu(name)
 {
 	SetFont(be_plain_font);
 }
 
-bool MountMenu::AddDynamicItem(add_state s)
+
+bool
+MountMenu::AddDynamicItem(add_state s)
 {
 	BMenuItem *item;
 	while ((item = RemoveItem(0L)) != NULL)
@@ -672,17 +688,19 @@ bool MountMenu::AddDynamicItem(add_state s)
 	return false;
 }
 
+
 MountMenuItem::MountMenuItem(const char *label, BMessage *message, BBitmap *icon)
-	:	BMenuItem(label,message),
-		deviceIcon(icon)
-		
+	: BMenuItem(label,message),
+	deviceIcon(icon)
 {
 }
+
 
 MountMenuItem::~MountMenuItem()
 {
 	delete deviceIcon;
 }
+
 
 void
 MountMenuItem::GetContentSize(float *width, float *height)
@@ -691,6 +709,7 @@ MountMenuItem::GetContentSize(float *width, float *height)
 	*width += 20;
 	*height += 3;
 }
+
 
 void
 MountMenuItem::DrawContent()
@@ -707,4 +726,3 @@ MountMenuItem::DrawContent()
 }
 
 #endif
-

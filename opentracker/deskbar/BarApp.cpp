@@ -61,6 +61,17 @@ All rights reserved.
 #include "WindowMenuItem.h"
 
 
+// private Be API
+extern void __set_window_decor(int32 theme);
+
+BLocker TBarApp::sSubscriberLock;
+BList TBarApp::sBarTeamInfoList;
+BList TBarApp::sSubscribers;
+
+
+const uint32 kShowBeMenu = 'BeMn';
+const uint32 kShowTeamMenu = 'TmMn';
+
 const BRect kIconSize(0.0f, 0.0f, 15.0f, 15.0f);
 
 
@@ -146,6 +157,7 @@ TBarApp::QuitRequested()
 	return true;
 }
 
+
 void
 TBarApp::SaveSettings()
 {
@@ -171,6 +183,7 @@ TBarApp::SaveSettings()
 		fSettingsFile->Write(&fSettings.sortRunningApps, sizeof(bool));
 	}
 }
+
 
 void
 TBarApp::InitSettings()
@@ -253,7 +266,6 @@ TBarApp::InitSettings()
 	fSettings = settings;
 }
 
-void __set_window_decor(int32 theme);
 
 void
 TBarApp::MessageReceived(BMessage *message)
@@ -282,6 +294,20 @@ TBarApp::MessageReceived(BMessage *message)
 		case kUpdateAppsCount:
 			if (message->FindInt32("count", &count) == B_OK)
 				fSettings.recentAppsCount = count;
+			break;
+
+		case kShowBeMenu:
+			if (fBarWindow->Lock()) {
+				fBarWindow->ShowBeMenu();
+				fBarWindow->Unlock();
+			}
+			break;
+
+		case kShowTeamMenu:
+			if (fBarWindow->Lock()) {
+				fBarWindow->ShowTeamMenu();
+				fBarWindow->Unlock();
+			}
 			break;
 
 		case msg_config_db:
@@ -408,6 +434,7 @@ TBarApp::MessageReceived(BMessage *message)
 	}
 }
 
+
 //	called when ExpandoMenuBar, TeamMenu or Switcher are built/rebuilt
 void
 TBarApp::Subscribe(const BMessenger &subscriber, BList *list)
@@ -457,23 +484,6 @@ TBarApp::Unsubscribe(const BMessenger &subscriber)
 	}
 }
 
-
-BarTeamInfo::BarTeamInfo(BList *teams, uint32 flags, char *sig, BBitmap *icon, char *name)
-	:	teams(teams),
-		flags(flags),
-		sig(sig),
-		icon(icon),
-		name(name)
-{
-}
-
-BarTeamInfo::~BarTeamInfo()
-{
-	delete teams;
-	free(sig);
-	delete icon;
-	free(name);
-}
 
 void
 TBarApp::AddTeam(team_id team, uint32 flags, const char *sig, entry_ref *ref)
@@ -582,6 +592,7 @@ TBarApp::RemoveTeam(team_id	team)
 	} 
 }
 
+
 void
 TBarApp::ShowConfigWindow()
 {
@@ -603,6 +614,26 @@ TBarApp::ShowConfigWindow()
 	}
 }
 
-BLocker TBarApp::sSubscriberLock;
-BList TBarApp::sBarTeamInfoList;
-BList TBarApp::sSubscribers;
+
+//	#pragma mark -
+
+
+BarTeamInfo::BarTeamInfo(BList *teams, uint32 flags, char *sig, BBitmap *icon, char *name)
+	:	teams(teams),
+		flags(flags),
+		sig(sig),
+		icon(icon),
+		name(name)
+{
+}
+
+
+BarTeamInfo::~BarTeamInfo()
+{
+	delete teams;
+	free(sig);
+	delete icon;
+	free(name);
+}
+
+

@@ -40,31 +40,33 @@ All rights reserved.
 #define BARMENUBAR_H
 
 #include <MenuBar.h>
+
 #include "BarView.h"
 #include "BarMenuTitle.h"
 #include "TimeView.h"
 
+
 class TBarMenuBar : public BMenuBar {
-public:
-	TBarMenuBar(TBarView *bar, BRect frame, const char *name);
-	virtual ~TBarMenuBar();
-	
-	virtual void MouseMoved(BPoint where, uint32 code, const BMessage *message);
-	virtual void Draw(BRect);
+	public:
+		TBarMenuBar(TBarView *bar, BRect frame, const char *name);
+		virtual ~TBarMenuBar();
 
-	void DrawBackground(BRect);
-	void SmartResize(float width = -1.0f, float height = -1.0f);
-	
-	void AddTeamMenu();
-	void RemoveTeamMenu();
-	
-	void InitTrackingHook(bool (* hookfunction)(BMenu *, void *), void *state,
-		bool both = false);
+		virtual void MouseMoved(BPoint where, uint32 code, const BMessage *message);
+		virtual void Draw(BRect);
 
-private:
-	TBarView *fBarView;
-	TBarMenuTitle *fBeMenuItem;
-	TBarMenuTitle *fAppListMenuItem;
+		void DrawBackground(BRect);
+		void SmartResize(float width = -1.0f, float height = -1.0f);
+
+		void AddTeamMenu();
+		void RemoveTeamMenu();
+
+		void InitTrackingHook(bool (* hookfunction)(BMenu *, void *), void *state,
+			bool both = false);
+	
+	private:
+		TBarView *fBarView;
+		TBarMenuTitle *fBeMenuItem;
+		TBarMenuTitle *fAppListMenuItem;
 };
 
 #endif /* BARMENUBAR_H */

@@ -52,9 +52,11 @@ TBarMenuTitle::TBarMenuTitle(float width, float height, const BBitmap *icon,
 {
 }
 
+
 TBarMenuTitle::~TBarMenuTitle()
 {
 }
+
 
 void
 TBarMenuTitle::SetWidthHeight(float width, float height)
@@ -63,6 +65,7 @@ TBarMenuTitle::SetWidthHeight(float width, float height)
 	fHeight = height;
 }
 
+
 void
 TBarMenuTitle::GetContentSize(float *width, float *height)
 {
@@ -70,11 +73,13 @@ TBarMenuTitle::GetContentSize(float *width, float *height)
 	*height = fHeight;
 }
 
+
 void
 TBarMenuTitle::Draw()
 {
 	BMenuItem::Draw();
 }
+
 
 void
 TBarMenuTitle::DrawContent()
@@ -139,6 +144,7 @@ TBarMenuTitle::DrawContent()
 
 	menu->DrawBitmapAsync(fIcon, dstRect);
 }
+
 
 status_t
 TBarMenuTitle::Invoke(BMessage *message)

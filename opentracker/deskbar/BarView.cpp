@@ -58,11 +58,15 @@ All rights reserved.
 #include "StatusView.h"
 #include "TeamMenuItem.h"
 
+
 extern menu_info *_menu_info_ptr_;
 
 const int32 kDefaultRecentDocCount = 10;
 const int32 kDefaultRecentFolderCount = 10;
 const int32 kDefaultRecentAppCount = 10;
+
+const int32 kMenuTrackMargin = 20;
+
 
 TBarView::TBarView(BRect frame, bool vertical, bool left, bool top,
 	bool showInterval, uint32 state, float, bool showTime)
@@ -87,6 +91,7 @@ TBarView::TBarView(BRect frame, bool vertical, bool left, bool top,
 {		
 }
 
+
 TBarView::~TBarView()
 {
 	delete fDragMessage;
@@ -96,6 +101,7 @@ TBarView::~TBarView()
 	//	to be symetric	
 	delete fTrackingHookData.fDragMessage;
 }
+
 
 void
 TBarView::AttachedToWindow()
@@ -124,6 +130,7 @@ TBarView::AttachedToWindow()
 	fTrackingHookData.fDragMessage = new BMessage(B_REFS_RECEIVED);
 }
 
+
 void
 TBarView::Draw(BRect)
 {
@@ -144,6 +151,7 @@ TBarView::Draw(BRect)
 		StrokeLine(frame.LeftTop() + BPoint(0, -1), frame.RightTop() + BPoint(0, -1));
 	}
 }
+
 
 void
 TBarView::MessageReceived(BMessage *message)
@@ -170,6 +178,7 @@ TBarView::MessageReceived(BMessage *message)
 			BView::MessageReceived(message);
 	}
 }
+
 
 void
 TBarView::PlaceBeMenu()
@@ -219,6 +228,7 @@ TBarView::PlaceBeMenu()
 	fBarMenuBar->MoveTo(loc);
 }
 
+
 void
 TBarView::PlaceTray(bool, bool, BRect screenFrame)
 {
@@ -264,6 +274,7 @@ TBarView::PlaceTray(bool, bool, BRect screenFrame)
 	}
 }
 
+
 #if SA_CLOCK
 void
 TBarView::PlaceClock()
@@ -294,6 +305,7 @@ TBarView::PlaceClock()
 	}	
 }
 #endif
+
 
 void
 TBarView::PlaceApplicationBar(BRect screenFrame)
@@ -346,6 +358,7 @@ TBarView::PlaceApplicationBar(BRect screenFrame)
 	AddChild(fExpando);
 }
 
+
 void
 TBarView::GetPreferredWindowSize(BRect screenFrame, float *width, float *height)
 {
@@ -376,6 +389,7 @@ TBarView::GetPreferredWindowSize(BRect screenFrame, float *width, float *height)
 	*height = windowHeight;
 }
 
+
 void
 TBarView::SizeWindow(BRect screenFrame)
 {
@@ -385,6 +399,7 @@ TBarView::SizeWindow(BRect screenFrame)
 	if (fExpando)
 		fExpando->CheckForSizeOverrun();
 }
+
 
 void
 TBarView::PositionWindow(BRect screenFrame)
@@ -408,6 +423,7 @@ TBarView::PositionWindow(BRect screenFrame)
 	Window()->MoveTo(moveLoc);
 }
 
+
 void
 TBarView::SaveSettings()
 {
@@ -425,11 +441,13 @@ TBarView::SaveSettings()
 	settings->alwaysOnTop = (Window()->Feel() & B_FLOATING_ALL_WINDOW_FEEL) != 0;
 }
 
+
 void
 TBarView::UpdatePlacement()
 {
 	ChangeState(fState, fVertical, fLeft, fTop);	
 }
+
 
 void
 TBarView::ChangeState(int32 state, bool vertical, bool left, bool top)
@@ -464,6 +482,7 @@ TBarView::ChangeState(int32 state, bool vertical, bool left, bool top)
 	Invalidate();
 }
 
+
 //	window placement functions
 
 bool
@@ -472,11 +491,13 @@ TBarView::Vertical() const
 	return fVertical;
 }
 
+
 bool
 TBarView::Left() const
 {
 	return fLeft;
 }
+
 
 bool
 TBarView::AcrossTop() const
@@ -484,11 +505,13 @@ TBarView::AcrossTop() const
 	return fTop && !fVertical;
 }
 
+
 bool
 TBarView::AcrossBottom() const
 {
 	return !fTop && !fVertical;
 }
+
 
 bool
 TBarView::Expando() const
@@ -496,17 +519,20 @@ TBarView::Expando() const
 	return fState == kExpandoState;
 }
 
+
 bool
 TBarView::Top() const
 {
 	return fTop;
 }
 
+
 int32
 TBarView::State() const
 {
 	return fState;
 }
+
 
 // optional functionality functions
 
@@ -516,17 +542,20 @@ TBarView::MilTime() const
 	return fShowInterval;
 }
 
+
 void
 TBarView::ShowClock(bool on)
 {
 	fShowClock = on;
 }
 
+
 bool
 TBarView::ShowingClock() const
 {
 	return fShowClock;
 }
+
 
 #if SA_CLOCK
 void
@@ -545,7 +574,9 @@ TBarView::ToggleClock()
 }
 #endif
 
+
 // Drag and Drop
+
 void
 TBarView::CacheDragData(BMessage *incoming)
 {
@@ -560,6 +591,7 @@ TBarView::CacheDragData(BMessage *incoming)
 	SpringLoadedFolderCacheDragData(incoming, &fDragMessage, &fCachedTypesList);
 }
 
+
 static void
 init_tracking_hook(BMenuItem *item,
 	bool (*hookfunction)(BMenu *, void *), void *state)
@@ -572,6 +604,7 @@ init_tracking_hook(BMenuItem *item,
 		//	have a menu, set the tracking hook
 		windowmenu->SetTrackingHook(hookfunction, state);					
 }
+
 
 status_t
 TBarView::DragStart()
@@ -610,7 +643,6 @@ TBarView::DragStart()
 	return B_OK;
 }
 
-const int32 kMenuTrackMargin = 20;
 
 bool
 TBarView::MenuTrackingHook(BMenu *menu, void *castToThis)
@@ -667,6 +699,7 @@ TBarView::MenuTrackingHook(BMenu *menu, void *castToThis)
 	return returnvalue;
 }
 
+
 //
 //	used by WindowMenu and TeamMenu to
 //	set the tracking hook for dragging
@@ -679,6 +712,7 @@ TBarView::GetTrackingHookData()
 	//	data should never change
 	return &fTrackingHookData;
 }
+
 
 void
 TBarView::DragStop(bool full)
@@ -706,6 +740,7 @@ TBarView::DragStop(bool full)
 		fCachedTypesList = NULL;
 	}
 }
+
 
 bool
 TBarView::AppCanHandleTypes(const char *signature)
@@ -746,17 +781,20 @@ TBarView::AppCanHandleTypes(const char *signature)
 	return false;
 }
 
+
 void
 TBarView::SetDragOverride(bool on)
 {
 	fRefsRcvdOnly = on;
 }
 
+
 bool
 TBarView::DragOverride()
 {
 	return fRefsRcvdOnly;
 }
+
 
 status_t
 TBarView::SendDragMessage(const char *signature, entry_ref *ref)
@@ -783,6 +821,7 @@ TBarView::SendDragMessage(const char *signature, entry_ref *ref)
 	return err;
 }
 
+
 bool
 TBarView::InvokeItem(const char *signature)
 {
@@ -796,6 +835,7 @@ TBarView::InvokeItem(const char *signature)
 		
 	return false;
 }
+
 
 void
 TBarView::HandleBeMenu(BMessage *messagewithdestination)
@@ -834,6 +874,7 @@ TBarView::HandleBeMenu(BMessage *messagewithdestination)
 	DragStop(true);
 }
 
+
 //	Add-on convenience functions
 
 //	shelf is ignored for now,
@@ -847,6 +888,7 @@ TBarView::ItemInfo(int32 id, const char **name, DeskbarShelf *shelf)
 	return fReplicantTray->ItemInfo(id, name);
 }
 
+
 status_t
 TBarView::ItemInfo(const char *name, int32 *id, DeskbarShelf *shelf)
 {
@@ -854,11 +896,13 @@ TBarView::ItemInfo(const char *name, int32 *id, DeskbarShelf *shelf)
 	return fReplicantTray->ItemInfo(name, id);
 }
 
+
 bool
 TBarView::ItemExists(int32 id, DeskbarShelf)
 {
 	return fReplicantTray->IconExists(id);
 }
+
 
 bool
 TBarView::ItemExists(const char *name, DeskbarShelf)
@@ -866,11 +910,13 @@ TBarView::ItemExists(const char *name, DeskbarShelf)
 	return fReplicantTray->IconExists(name);
 }
 
+
 int32
 TBarView::CountItems(DeskbarShelf)
 {	
 	return fReplicantTray->IconCount();	
 }	
+
 
 status_t
 TBarView::AddItem(BMessage *item, DeskbarShelf, int32 *id)
@@ -878,17 +924,20 @@ TBarView::AddItem(BMessage *item, DeskbarShelf, int32 *id)
 	return fReplicantTray->AddIcon(item, id);
 }
 
+
 void
 TBarView::RemoveItem(int32 id)
 {
 	fReplicantTray->RemoveIcon(id);
 }
 
+
 void
 TBarView::RemoveItem(const char *name, DeskbarShelf)
 {
 	fReplicantTray->RemoveIcon(name);
 }
+
 
 BRect
 TBarView::OffsetIconFrame(BRect rect) const
@@ -903,11 +952,13 @@ TBarView::OffsetIconFrame(BRect rect) const
 	return frame;
 }
 
+
 BRect
 TBarView::IconFrame(int32 id) const
 {
 	return OffsetIconFrame(fReplicantTray->IconFrame(id));
 }
+
 
 BRect
 TBarView::IconFrame(const char *name) const

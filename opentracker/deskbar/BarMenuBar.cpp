@@ -62,9 +62,11 @@ TBarMenuBar::TBarMenuBar(TBarView *bar, BRect frame, const char *name)
 	AddItem(fBeMenuItem);
 }
 
+
 TBarMenuBar::~TBarMenuBar()
 {
 }
+
 
 void
 TBarMenuBar::SmartResize(float width, float height)
@@ -87,6 +89,7 @@ TBarMenuBar::SmartResize(float width, float height)
 
 	InvalidateLayout();
 }
+
 
 void
 TBarMenuBar::AddTeamMenu()
@@ -128,11 +131,13 @@ TBarMenuBar::Draw(BRect rect)
 	BMenu::Draw(rect);
 }
 
+
 void
 TBarMenuBar::DrawBackground(BRect rect)
 {
 	BMenu::DrawBackground(rect);
 }
+
 
 //	the following code parallels that in ExpandoMenuBar for DnD tracking
 void
@@ -164,8 +169,7 @@ TBarMenuBar::MouseMoved(BPoint where, uint32 code, const BMessage *message)
 
 
 static void
-init_tracking_hook(BMenuItem *item,
-	bool (*hookfunction)(BMenu *, void *), void *state)
+init_tracking_hook(BMenuItem *item,bool (*hookfunction)(BMenu *, void *), void *state)
 {
 	if (!item)
 		return;
@@ -175,6 +179,7 @@ init_tracking_hook(BMenuItem *item,
 		//	have a menu, set the tracking hook
 		windowmenu->SetTrackingHook(hookfunction, state);					
 }
+
 
 void
 TBarMenuBar::InitTrackingHook(bool (*hookfunction)(BMenu *, void *), void *state, bool both)

@@ -45,12 +45,27 @@ All rights reserved.
 
 #include "BarWindow.h"
 #include "BarApp.h"
+#include "BarMenuBar.h"
 #include "BarView.h"
 #include "BeMenu.h"
 #include "PublicCommands.h"
 #include "StatusView.h"
 
-TBeMenu* TBarWindow::sBeMenu = NULL;
+
+// This is a very ugly hack to be able to call the private BMenuBar::StartMenuBar()
+// method from the TBarWindow::ShowBeMenu() method.
+// Don't do this at home -- but why the hell is this method private?
+#if __MWERKS__
+	extern "C" void StartMenuBar__8BMenuBarFlbbP5BRect(BMenuBar *,int32,bool,bool,BRect *);
+#elif __GCC__ <= 2
+	extern "C" void StartMenuBar__8BMenuBarlbT2P5BRect(BMenuBar *,int32,bool,bool,BRect *);
+#else
+#	error "You may want to port this ugly hack to your compiler ABI"
+#endif
+
+
+TBeMenu *TBarWindow::sBeMenu = NULL;
+
 
 
 TBarWindow::TBarWindow()
@@ -73,6 +88,7 @@ TBarWindow::TBarWindow()
 #endif
 }
 
+
 void
 TBarWindow::DispatchMessage(BMessage *message, BHandler *handler)
 {
@@ -81,6 +97,7 @@ TBarWindow::DispatchMessage(BMessage *message, BHandler *handler)
 
 	BWindow::DispatchMessage(message, handler);
 }
+
 
 void
 TBarWindow::MenusBeginning()
@@ -130,6 +147,7 @@ TBarWindow::MenusEnded()
 	while ((item = sBeMenu->RemoveItem((int32)0)) != NULL)
 		delete item;
 }
+
 
 void
 TBarWindow::MessageReceived(BMessage *message)
@@ -195,11 +213,13 @@ TBarWindow::MessageReceived(BMessage *message)
 	}
 }
 
+
 void
 TBarWindow::SaveSettings()
 {
 	fBarView->SaveSettings();
 }
+
 
 bool
 TBarWindow::QuitRequested()
@@ -219,6 +239,7 @@ TBarWindow::WorkspaceActivated(int32 workspace, bool active)
 		fBarView->UpdatePlacement();
 }
 
+
 void
 TBarWindow::ScreenChanged(BRect size, color_space depth)
 {
@@ -234,11 +255,49 @@ TBarWindow::SetBeMenu(TBeMenu *menu)
 	sBeMenu = menu;
 }
 
+
 TBeMenu *
 TBarWindow::BeMenu()
 {
 	return sBeMenu;
 }
+
+
+void 
+TBarWindow::ShowBeMenu()
+{
+	BMenuBar *menuBar = fBarView->BarMenuBar();
+	if (menuBar == NULL)
+		menuBar = KeyMenuBar();
+	
+	if (menuBar == NULL)
+		return;
+
+#if __MWERKS__
+	StartMenuBar__8BMenuBarFlbbP5BRect(menuBar,0,true,true,NULL);
+#elif __GCC__ <= 2
+	StartMenuBar__8BMenuBarlbT2P5BRect(menuBar,0,true,true,NULL);
+#endif
+}
+
+
+void 
+TBarWindow::ShowTeamMenu()
+{
+	int32 index = 0;
+	if (fBarView->BarMenuBar() == NULL)
+		index = 2;
+	
+	if (KeyMenuBar() == NULL)
+		return;
+
+#if __MWERKS__
+	StartMenuBar__8BMenuBarFlbbP5BRect(KeyMenuBar(),index,true,true,NULL);
+#elif __GCC__ <= 2
+	StartMenuBar__8BMenuBarlbT2P5BRect(KeyMenuBar(),index,true,true,NULL);
+#endif
+}
+
 
 //	determines the actual location of the window
 deskbar_location

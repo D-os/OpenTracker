@@ -42,21 +42,24 @@ class TBeMenu;
 class TBarView;
 
 class TBarWindow : public BWindow {
-public:
-						TBarWindow();
+	public:
+		TBarWindow();
 
-virtual void			MenusBeginning();
-virtual void			MenusEnded();
-virtual	bool			QuitRequested();
-virtual void			WorkspaceActivated(int32 ws, bool activate);
-virtual void			ScreenChanged(BRect size, color_space depth);
-virtual void			DispatchMessage(BMessage *m, BHandler *h);
-virtual void			MessageReceived(BMessage *m);
+		virtual void	MenusBeginning();
+		virtual void	MenusEnded();
+		virtual	bool	QuitRequested();
+		virtual void	WorkspaceActivated(int32 ws, bool activate);
+		virtual void	ScreenChanged(BRect size, color_space depth);
+		virtual void	DispatchMessage(BMessage *m, BHandler *h);
+		virtual void	MessageReceived(BMessage *m);
 
 		void			SaveSettings();
 		TBarView*		BarView() const { return fBarView; };
-static 	void			SetBeMenu(TBeMenu *menu);
+		static 	void	SetBeMenu(TBeMenu *menu);
 		TBeMenu*		BeMenu();
+
+		void			ShowBeMenu();
+		void			ShowTeamMenu();
 
 		void 			GetLocation(BMessage*);
 		deskbar_location 	DeskbarLocation() const;
@@ -77,8 +80,8 @@ static 	void			SetBeMenu(TBeMenu *menu);
 		void			GetIconFrame(BMessage*);
 
 private:
-static 	TBeMenu*		sBeMenu;
-		TBarView*		fBarView;
+		static 	TBeMenu	*sBeMenu;
+		TBarView		*fBarView;
 };
 
-#endif
+#endif	/* BAR_WINDOW_H */

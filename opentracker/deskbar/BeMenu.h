@@ -40,21 +40,22 @@ All rights reserved.
 class TBarView;
 
 class TRecentsMenu : public BNavMenu {
-public:
-						TRecentsMenu(const char* name, TBarView *bar, int32 which);
+	public:
+		TRecentsMenu(const char* name, TBarView *bar, int32 which);
+
 		void			DetachedFromWindow();
 		void			ResetTargets();
-		
-		int32			RecentsCount();	
-		
-private:		
-virtual	bool 			StartBuildingItemList();
-virtual	bool 			AddNextItem();
-		bool			AddRecents(int32 count);
-virtual	void 			DoneBuildingItemList();	
-virtual	void 			ClearMenuBuildingState();
 
-private:		
+		int32			RecentsCount();	
+
+	private:		
+		virtual	bool	StartBuildingItemList();
+		virtual	bool	AddNextItem();
+				bool	AddRecents(int32 count);
+		virtual	void	DoneBuildingItemList();	
+		virtual	void	ClearMenuBuildingState();
+
+	private:		
 		int32			fWhich;
 		int32			fRecentsCount;
 
@@ -64,37 +65,40 @@ private:
 		TBarView*		fBarView;
 };
 
+
 inline int32
 TRecentsMenu::RecentsCount()
 {
 	return fRecentsCount;
 }
 
+
 class TBeMenu : public BNavMenu {
-public:
+	public:
 						TBeMenu(TBarView *bar);
 						
 		void			AttachedToWindow();
 		void			DetachedFromWindow();
 
 		void			ResetTargets();		
-	
-private:
+
+	private:
 		enum State {
 			kStart,
 			kAddingRecents,
 			kAddingBeMenu,
 			kDone
 		};
-protected:
+	protected:
 		BPoint			ScreenLocation();
 		
 		bool			AddStandardBeMenuItems();
-private:		
-virtual	bool 			StartBuildingItemList();
-virtual void			DoneBuildingItemList();
-virtual	bool 			AddNextItem();
-virtual	void 			ClearMenuBuildingState();
+
+	private:		
+		virtual	bool	StartBuildingItemList();
+		virtual void	DoneBuildingItemList();
+		virtual	bool	AddNextItem();
+		virtual	void	ClearMenuBuildingState();
 
 		//	to keep track of the menu building state
 		State 			fAddState;	
