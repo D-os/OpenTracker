@@ -322,18 +322,18 @@ DesktopPoseView::AddNonBootItems()
 void
 DesktopPoseView::StartSettingsWatch()
 {
-	BHandler::StartWatching(be_app, kShowDisksIconChanged);
-	BHandler::StartWatching(be_app, kVolumesOnDesktopChanged);
-	BHandler::StartWatching(be_app, kDesktopIntegrationChanged);
+	be_app->StartWatching(this, kShowDisksIconChanged);
+	be_app->StartWatching(this, kVolumesOnDesktopChanged);
+	be_app->StartWatching(this, kDesktopIntegrationChanged);
 }
 
 
 void
 DesktopPoseView::StopSettingsWatch()
 {
-	BHandler::StopWatching(be_app, kShowDisksIconChanged);
-	BHandler::StopWatching(be_app, kVolumesOnDesktopChanged);
-	BHandler::StopWatching(be_app, kDesktopIntegrationChanged);
+	be_app->StopWatching(this, kShowDisksIconChanged);
+	be_app->StopWatching(this, kVolumesOnDesktopChanged);
+	be_app->StopWatching(this, kDesktopIntegrationChanged);
 }
 
 

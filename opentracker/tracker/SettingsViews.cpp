@@ -646,13 +646,13 @@ FilePanelSettingsView::FilePanelSettingsView(BRect rect)
 	
 	recentBox->ResizeTo(recentBox->Frame().Width(), fRecentFoldersTextControl->Frame().bottom + kBorderSpacing);
 	
-	StartWatching(be_app, kFavoriteCountChangedExternally);
+	be_app->StartWatching(this, kFavoriteCountChangedExternally);
 }
 
 
 FilePanelSettingsView::~FilePanelSettingsView()
 {
-	StopWatching(be_app, kFavoriteCountChangedExternally);
+	be_app->StopWatching(this, kFavoriteCountChangedExternally);
 }
 
 

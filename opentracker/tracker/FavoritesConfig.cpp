@@ -228,6 +228,7 @@ CenterWindowOnScreen(BWindow *window)
 		window->MoveTo(point);
 }
 
+
 float
 FontHeight(const BFont *font, bool full)
 {
@@ -240,6 +241,10 @@ FontHeight(const BFont *font, bool full)
 	
 	return height;
 }
+
+
+//	#pragma mark -
+
 
 TFavoritesConfigWindow::TFavoritesConfigWindow(BRect frame, const char *title,
 	bool modal, uint32 filePanelNodeFlavors, BMessenger parent, const entry_ref *startRef,
@@ -261,7 +266,7 @@ TFavoritesConfigWindow::TFavoritesConfigWindow(BRect frame, const char *title,
 	AddParts(maxApps, maxDocs, maxFolders);
 	CenterWindowOnScreen(this);
 	Unlock();
-	
+
 	AddShortcut('R', B_COMMAND_KEY, new BMessage(kRemove));
 	AddShortcut('A', B_COMMAND_KEY, new BMessage(kAdd));
 	AddShortcut('E', B_COMMAND_KEY, new BMessage(kEditItem));
@@ -269,10 +274,10 @@ TFavoritesConfigWindow::TFavoritesConfigWindow(BRect frame, const char *title,
 	AddShortcut('N', B_COMMAND_KEY, new BMessage(kNewGroup));
 
 	AddShortcut(B_UP_ARROW, B_COMMAND_KEY, new BMessage(kTraverseUp));
-	
-	BMessenger tracker(kTrackerSignature);
-	StartWatching(tracker, kFavoriteCountChanged);
+
+	be_app->StartWatching(this, kFavoriteCountChanged);
 }
+
 
 TFavoritesConfigWindow::~TFavoritesConfigWindow()
 {
@@ -283,10 +288,9 @@ TFavoritesConfigWindow::~TFavoritesConfigWindow()
 		//	kill the filepanel if its still showing
 		fAddPanel->Hide();		
 
-	BMessenger tracker(kTrackerSignature);
-	StopWatchingAll(tracker);
-
+	be_app->StopWatching(this, kFavoriteCountChanged);
 }
+
 
 void 
 TFavoritesConfigWindow::MessageReceived(BMessage *message)
@@ -489,6 +493,7 @@ TFavoritesConfigWindow::MessageReceived(BMessage *message)
 	}
 }
 
+
 bool 
 TFavoritesConfigWindow::QuitRequested()
 {
@@ -521,6 +526,7 @@ TFavoritesConfigWindow::QuitRequested()
 	return true;
 }
 
+
 void
 TFavoritesConfigWindow::AddParts(int32 maxApps, int32 maxDocs, int32 maxFolders)
 {
@@ -534,6 +540,7 @@ TFavoritesConfigWindow::AddParts(int32 maxApps, int32 maxDocs, int32 maxFolders)
 	// fill the pseudo menu
 	OpenGroup(&fCurrentRef);
 }
+
 
 void
 TFavoritesConfigWindow::BuildCommon(BRect *frame, int32 count, const char *string,
@@ -575,6 +582,7 @@ TFavoritesConfigWindow::BuildCommon(BRect *frame, int32 count, const char *strin
 	*button = newButton;
 	*field = newFld;
 }
+
 
 void
 TFavoritesConfigWindow::AddBeMenuPane(int32 maxApps, int32 maxDocs, int32 maxFolders)
@@ -776,6 +784,7 @@ TFavoritesConfigWindow::AddBeMenuPane(int32 maxApps, int32 maxDocs, int32 maxFol
 		fGroupBtn->Frame().top);
 }
 
+
 static void
 GetNextGroupName(BDirectory *dir, char *directoryName)
 {
@@ -788,6 +797,7 @@ GetNextGroupName(BDirectory *dir, char *directoryName)
 			index++;
 	}
 }
+
 
 void
 TFavoritesConfigWindow::AddNewGroup(entry_ref *dirRef, entry_ref *newGroup)
@@ -805,6 +815,7 @@ TFavoritesConfigWindow::AddNewGroup(entry_ref *dirRef, entry_ref *newGroup)
 	entry.GetRef(newGroup);
 }
 
+
 void
 TFavoritesConfigWindow::AddSymLink(const entry_ref *dirRef, const entry_ref *target)
 {
@@ -816,6 +827,7 @@ TFavoritesConfigWindow::AddSymLink(const entry_ref *dirRef, const entry_ref *tar
 	dir.CreateSymLink(target->name, path.Path(), &symlink);
 }
 
+
 void
 TFavoritesConfigWindow::AddNewGroup()
 {
@@ -824,6 +836,7 @@ TFavoritesConfigWindow::AddNewGroup()
 	entry_ref newGroup;
 	AddNewGroup(&fCurrentRef, &newGroup);
 }
+
 
 void
 TFavoritesConfigWindow::PromptForAdd()
@@ -853,6 +866,7 @@ TFavoritesConfigWindow::PromptForAdd()
 	}
 }
 
+
 void
 TFavoritesConfigWindow::AddRefs(BMessage *message)
 {
@@ -865,7 +879,9 @@ TFavoritesConfigWindow::AddRefs(BMessage *message)
 	}
 }
 
+
 //	open a new ref to show, tunnelling down
+
 void
 TFavoritesConfigWindow::OpenGroup(const entry_ref *ref)
 {
@@ -886,7 +902,9 @@ TFavoritesConfigWindow::OpenGroup(const entry_ref *ref)
 	UpdateButtons();
 }
 
+
 //	specify a new ref to show, tunnelling up
+
 void
 TFavoritesConfigWindow::ShowGroup(const entry_ref *groupRef)
 {
@@ -926,6 +944,7 @@ TFavoritesConfigWindow::ShowGroup(const entry_ref *groupRef)
 	UpdateButtons();
 }
 
+
 void
 TFavoritesConfigWindow::UpdateButtons()
 {
@@ -943,6 +962,7 @@ TFavoritesConfigWindow::UpdateButtons()
 	fEditBtn->SetEnabled(selection >= 0);
 	fRemoveBtn->SetEnabled(selection >= 0);
 }
+
 
 void
 TFavoritesConfigWindow::UpdateFoldersCount(int32 count, bool notifyTracker)
@@ -962,6 +982,7 @@ TFavoritesConfigWindow::UpdateFoldersCount(int32 count, bool notifyTracker)
 	}
 }
 
+
 void
 TFavoritesConfigWindow::UpdateDocsCount(int32 count, bool notifyTracker)
 {
@@ -979,6 +1000,7 @@ TFavoritesConfigWindow::UpdateDocsCount(int32 count, bool notifyTracker)
 		tracker.SendMessage(&notificationMessage);
 	}
 }
+
 
 void
 TFavoritesConfigWindow::UpdateAppsCount(int32 count, bool notifyTracker)
@@ -998,7 +1020,9 @@ TFavoritesConfigWindow::UpdateAppsCount(int32 count, bool notifyTracker)
 	}
 }
 
+
 // ***************************************************************************************
+
 
 TDraggableIconButton::TDraggableIconButton(BRect frame, const char *label,
 	BMessage *message, uint32 resizeMask, uint32 flags)
@@ -1007,9 +1031,11 @@ TDraggableIconButton::TDraggableIconButton(BRect frame, const char *label,
 {
 }
 
+
 TDraggableIconButton::~TDraggableIconButton()
 {
 }
+
 
 void 
 TDraggableIconButton::AttachedToWindow()
@@ -1028,6 +1054,7 @@ TDraggableIconButton::AttachedToWindow()
 	ResizeToPreferred();	
 }
 
+
 void
 TDraggableIconButton::DetachedFromWindow()
 {
@@ -1035,6 +1062,7 @@ TDraggableIconButton::DetachedFromWindow()
 	delete fIcon;
 	fIcon = NULL;
 }
+
 
 void 
 TDraggableIconButton::Draw(BRect)
@@ -1062,6 +1090,7 @@ TDraggableIconButton::Draw(BRect)
 	PopState();
 }
 
+
 void 
 TDraggableIconButton::MouseDown(BPoint where)
 {
@@ -1079,6 +1108,7 @@ TDraggableIconButton::MouseDown(BPoint where)
 	InvertRect(fIconRect);
 }
 
+
 void 
 TDraggableIconButton::MouseUp(BPoint where)
 {
@@ -1093,6 +1123,7 @@ TDraggableIconButton::MouseUp(BPoint where)
 	} else
 		BControl::MouseUp(where);
 }
+
 
 void 
 TDraggableIconButton::MouseMoved(BPoint where, uint32 code,
@@ -1109,6 +1140,7 @@ TDraggableIconButton::MouseMoved(BPoint where, uint32 code,
 		BControl::MouseMoved(where, code, message);
 }
 
+
 void 
 TDraggableIconButton::GetPreferredSize(float *width, float *height)
 {
@@ -1122,6 +1154,7 @@ TDraggableIconButton::GetPreferredSize(float *width, float *height)
 		*height - fontHeight - 5, *width, *height - 5);
 }
 
+
 void 
 TDraggableIconButton::ResizeToPreferred()
 {
@@ -1129,6 +1162,7 @@ TDraggableIconButton::ResizeToPreferred()
 	GetPreferredSize(&width, &height);
 	ResizeTo(width, height);
 }
+
 
 const float kLeftGutter = 15.0f;
 const float kHorizontalGap = 4.0f;
@@ -1138,22 +1172,23 @@ const float kHorizontalBorderSize = 2.0f;
 const int32 kMaxItemCount = 12;
 const float kScrollerHeight = 16.0f;
 
+
 TContentsMenu::TContentsMenu(BRect frame, BMessage *singleClick, BMessage *doubleClick,
 	int32 visibleItemCount, const entry_ref *startRef)
 	:	BControl(frame, "contents menu", "contents menu label",
 			singleClick, B_FOLLOW_NONE, B_WILL_DRAW | B_NAVIGABLE),
-		fDoubleClickMessage(doubleClick),
-		fVisibleItemCount(visibleItemCount),
-		fStartRef(*startRef),
-		fItemHeight(16),
+	fDoubleClickMessage(doubleClick),
+	fVisibleItemCount(visibleItemCount),
+	fStartRef(*startRef),
+	fItemHeight(16),
 #ifdef ITEM_EDIT
-		fEditingItem(false),
-		fEditingFld(NULL),
+	fEditingItem(false),
+	fEditingFld(NULL),
 #endif
-		fFirstItem(0),
-		fContentsList(NULL),
-		fUpBtn(NULL),
-		fDownBtn(NULL)
+	fFirstItem(0),
+	fContentsList(NULL),
+	fUpBtn(NULL),
+	fDownBtn(NULL)
 {
 }
 
@@ -1162,6 +1197,7 @@ TContentsMenu::~TContentsMenu()
 {
 	delete fDoubleClickMessage;
 }
+
 
 void 
 TContentsMenu::AttachedToWindow()
@@ -1229,6 +1265,7 @@ TContentsMenu::AttachedToWindow()
 	SetStartRef(&fStartRef);
 }
 
+
 void
 TContentsMenu::DetachedFromWindow()
 {
@@ -1243,6 +1280,7 @@ TContentsMenu::DetachedFromWindow()
 	fSymlinkIcon = NULL;
 	BControl::DetachedFromWindow();
 }
+
 
 const char *kUntitledItemStr = "<Untitled Item>";
 
@@ -1387,6 +1425,7 @@ TContentsMenu::Draw(BRect updateRect)
 	PopState();
 }
 
+
 void
 TContentsMenu::InvalidateItem(int32 index)
 {
@@ -1394,6 +1433,7 @@ TContentsMenu::InvalidateItem(int32 index)
 	if (ItemFrame(index, &dummy, &dummy, &itemrect))
 		Invalidate(itemrect);
 }
+
 
 void
 TContentsMenu::InvalidateAbsoluteItem(int32 index)
@@ -1460,6 +1500,7 @@ TContentsMenu::KeyDown(const char *bytes, int32 numBytes)
 	}
 }
 
+
 void 
 TContentsMenu::MessageReceived(BMessage *message)
 {
@@ -1479,7 +1520,6 @@ TContentsMenu::MessageReceived(BMessage *message)
 	}
 	
 	switch (message->what) {
-
 		//	node monitor of be menu directory
 		case B_NODE_MONITOR:
 			{
@@ -1525,6 +1565,7 @@ TContentsMenu::MessageReceived(BMessage *message)
 	}	
 }
 
+
 void 
 TContentsMenu::MouseDown(BPoint where)
 {
@@ -1550,6 +1591,7 @@ TContentsMenu::MouseDown(BPoint where)
 	SetMouseEventMask(B_POINTER_EVENTS);
 }
 
+
 void
 TContentsMenu::StartTracking(BPoint where)
 {
@@ -1557,12 +1599,14 @@ TContentsMenu::StartTracking(BPoint where)
 	SetTracking(true);
 }
 
+
 void
 TContentsMenu::StopTracking()
 {
 	if (IsTracking())
 		SetTracking(false);		
 }
+
 
 void 
 TContentsMenu::MouseUp(BPoint where)
@@ -1573,6 +1617,7 @@ TContentsMenu::MouseUp(BPoint where)
 #endif	
 	BControl::MouseUp(where);
 }
+
 
 #ifdef ITEM_EDIT
 void
@@ -1610,6 +1655,7 @@ TContentsMenu::BeginItemEdit(BPoint where)
 }
 #endif
 
+
 #ifdef ITEM_EDIT
 void
 TContentsMenu::StopItemEdit()
@@ -1636,6 +1682,7 @@ TContentsMenu::StopItemEdit()
 	}
 }
 #endif
+
 
 void 
 TContentsMenu::MouseMoved(BPoint where, uint32 code, const BMessage *message)
@@ -1667,6 +1714,7 @@ TContentsMenu::MouseMoved(BPoint where, uint32 code, const BMessage *message)
 	BControl::MouseMoved(where, code, message);
 }
 
+
 void 
 TContentsMenu::GetPreferredSize(float *width, float *height)
 {
@@ -1682,6 +1730,7 @@ TContentsMenu::GetPreferredSize(float *width, float *height)
 		+ (2 * kHorizontalBorderSize) + 1;		//	border
 }
 
+
 void 
 TContentsMenu::ResizeToPreferred()
 {
@@ -1689,6 +1738,7 @@ TContentsMenu::ResizeToPreferred()
 	GetPreferredSize(&width, &height);
 	ResizeTo(width, height);
 }
+
 
 void
 TContentsMenu::SetStartRef(const entry_ref *ref)
@@ -1710,6 +1760,7 @@ TContentsMenu::SetStartRef(const entry_ref *ref)
 	Invalidate();
 }
 
+
 void
 TContentsMenu::UpdateScrollers()
 {
@@ -1722,6 +1773,7 @@ TContentsMenu::UpdateScrollers()
 		fDownBtn->SetEnabled(count-fFirstItem > kMaxItemCount);
 	}
 }
+
 
 void
 TContentsMenu::Scroll(bool direction)
@@ -1759,11 +1811,13 @@ TContentsMenu::Scroll(bool direction)
 	}
 }
 
+
 static int
 CompareOne(const Model *model1, const Model *model2)
 {
 	return strcasecmp(model1->Name(), model2->Name());
 }
+
 
 void
 TContentsMenu::FillMenu(const entry_ref *ref)
@@ -1794,6 +1848,7 @@ TContentsMenu::FillMenu(const entry_ref *ref)
 	UpdateScrollers();
 }
 
+
 void
 TContentsMenu::EmptyMenu()
 {
@@ -1810,7 +1865,9 @@ TContentsMenu::EmptyMenu()
 	}
 }
 
-//	returns frames for visible items
+
+/**	returns frames for visible items */
+
 bool
 TContentsMenu::ItemFrame(int32 index, BRect *iconFrame, BRect *textFrame,
 	BRect *itemFrame) const
@@ -1837,7 +1894,9 @@ TContentsMenu::ItemFrame(int32 index, BRect *iconFrame, BRect *textFrame,
 	return true;
 }
 
-//	returns index of visible item at location
+
+/**	returns index of visible item at location */
+
 int32
 TContentsMenu::ItemAt(BPoint where, BRect *iconFrame, BRect *textFrame,
 	BRect *itemFrame)
@@ -1852,12 +1911,15 @@ TContentsMenu::ItemAt(BPoint where, BRect *iconFrame, BRect *textFrame,
 	return -1;
 }
 
-//	returns entry_ref for item at absolute index
+
+/**	returns entry_ref for item at absolute index */
+
 const Model*
 TContentsMenu::ItemAt(int32 index) const
 {
 	return fContentsList->ItemAt(index);
 }
+
 
 void
 TContentsMenu::SelectItemAt(BPoint where)
@@ -1885,6 +1947,7 @@ TContentsMenu::SelectItemAt(BPoint where)
 	}
 }
 
+
 void
 TContentsMenu::Select(const entry_ref *ref)
 {
@@ -1904,6 +1967,7 @@ TContentsMenu::Select(const entry_ref *ref)
 	SetValue(select);
 	Invoke();
 }
+
 
 void
 TContentsMenu::OpenItem(int32 index)
@@ -1929,16 +1993,19 @@ TContentsMenu::OpenItem(int32 index)
 	}
 }
 
+
 int32
 TContentsMenu::ItemCount() const
 {
 	return fContentsList->CountItems();
 }
 
-//	should this delete on DB created items?
+
 static void
 RemoveEntries(const entry_ref *ref)
 {
+	//	should this delete on DB created items?
+
 	BEntry entry(ref);
 	if (entry.InitCheck() == B_OK && entry.Exists()) {
 		//	if its a directory
@@ -1959,6 +2026,7 @@ RemoveEntries(const entry_ref *ref)
 	}
 }
 
+
 void
 TContentsMenu::RemoveItem(int32 index)
 {
@@ -1977,6 +2045,7 @@ TContentsMenu::RemoveItem(int32 index)
 	}
 }
 
+
 void
 TContentsMenu::AddTempItem(BPoint)
 {
@@ -1987,7 +2056,10 @@ TContentsMenu::AddTempItem(BPoint)
 		window->AddNewGroup();
 }
 
+
 // ***************************************************************************************
+//	#pragma mark -
+
 
 TScrollerButton::TScrollerButton(BRect frame, BMessage *message, bool direction)
 	:	BControl(frame, "scroller", "scroller label", message,
@@ -2016,12 +2088,14 @@ TScrollerButton::AttachedToWindow()
 		fHiliteFrame.top += 4;
 }
 
+
 void 
 TScrollerButton::DetachedFromWindow()
 {
 	delete fTicker;
 	BControl::DetachedFromWindow();
 }
+
 
 void 
 TScrollerButton::Draw(BRect)
@@ -2075,6 +2149,7 @@ TScrollerButton::Draw(BRect)
 	PopState();
 }
 
+
 void 
 TScrollerButton::MouseDown(BPoint where)
 {
@@ -2087,6 +2162,7 @@ TScrollerButton::MouseDown(BPoint where)
 	}
 }
 
+
 void 
 TScrollerButton::MouseUp(BPoint)
 {
@@ -2096,6 +2172,7 @@ TScrollerButton::MouseUp(BPoint)
 	if (IsTracking())
 		SetTracking(false);
 }
+
 
 void 
 TScrollerButton::MouseMoved(BPoint where, uint32 code, const BMessage *message)
@@ -2121,6 +2198,7 @@ TScrollerButton::MouseMoved(BPoint where, uint32 code, const BMessage *message)
 	BControl::MouseMoved(where, code, message);
 }
 
+
 // ***************************************************************************************
 
 const char *kNewItemNameLabel = "New item name:";
@@ -2142,9 +2220,11 @@ NameItemPanel::NameItemPanel(BWindow *parent, const char *initialtext)
 	CenterWindowOnScreen(this);
 } 
 
+
 NameItemPanel::~NameItemPanel()
 {
 }
+
 
 void 
 NameItemPanel::MessageReceived(BMessage *message) 
@@ -2175,6 +2255,7 @@ NameItemPanel::MessageReceived(BMessage *message)
 			break;
 	}
 }
+
 
 void 
 NameItemPanel::AddParts(const char *initialtext) 

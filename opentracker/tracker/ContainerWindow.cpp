@@ -306,10 +306,10 @@ BContainerWindow::BContainerWindow(LockingList<BWindow> *list,
 	Run();
 
 	// Watch out for settings changes:
-	StartWatching(be_app, kWindowsShowFullPathChanged);
-	StartWatching(be_app, kSingleWindowBrowseChanged);
-	StartWatching(be_app, kShowNavigatorChanged);
-	StartWatching(be_app, kDontMoveFilesToTrashChanged);
+	be_app->StartWatching(this, kWindowsShowFullPathChanged);
+	be_app->StartWatching(this, kSingleWindowBrowseChanged);
+	be_app->StartWatching(this, kShowNavigatorChanged);
+	be_app->StartWatching(this, kDontMoveFilesToTrashChanged);
 }
 
 

@@ -326,8 +326,7 @@ TFilePanel::TFilePanel(file_panel_mode mode, BMessenger *target,
 	AddCommonFilter(new BMessageFilter(B_SIMPLE_DATA, TFilePanel::MessageDropFilter));
 	AddCommonFilter(new BMessageFilter(B_NODE_MONITOR, TFilePanel::FSFilter));
 
-	BMessenger tracker(kTrackerSignature);
-	StartWatching(tracker, kDesktopFilePanelRootChanged);
+	be_app->StartWatching(this, kDesktopFilePanelRootChanged);
 
 	Init();
 }
@@ -344,9 +343,8 @@ TFilePanel::~TFilePanel()
 		fConfigWindow->Lock();
 		fConfigWindow->Quit();
 	}
-	
-	BMessenger tracker(kTrackerSignature);
-	StopWatchingAll(tracker);
+
+	be_app->StopWatching(this, kDesktopFilePanelRootChanged);
 
 	delete fMessage;
 }
@@ -1516,9 +1514,8 @@ BFilePanelPoseView::StartWatching()
 {
 	TTracker::WatchNode(0, B_WATCH_MOUNT, this);
 
-	BMessenger tracker(kTrackerSignature);
-	BHandler::StartWatching(tracker, kVolumesOnDesktopChanged);
-	BHandler::StartWatching(tracker, kDesktopIntegrationChanged);
+	be_app->StartWatching(this, kVolumesOnDesktopChanged);
+	be_app->StartWatching(this, kDesktopIntegrationChanged);
 }
 
 
@@ -1527,8 +1524,8 @@ BFilePanelPoseView::StopWatching()
 {
 	stop_watching(this);
 
-	BMessenger tracker(kTrackerSignature);
-	BHandler::StopWatchingAll(tracker);
+	be_app->StopWatching(this, kVolumesOnDesktopChanged);
+	be_app->StopWatching(this, kDesktopIntegrationChanged);
 }
 
 

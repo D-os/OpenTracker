@@ -794,7 +794,12 @@ BPoseView::DetachedFromWindow()
 	if (fTitleView && !fTitleView->Window())
 		delete fTitleView;
 
-	BHandler::StopWatchingAll(be_app);
+	be_app->StopWatching(this, kShowSelectionWhenInactiveChanged);
+	be_app->StopWatching(this, kTransparentSelectionChanged);
+	be_app->StopWatching(this, kSortFolderNamesFirstChanged);
+	be_app->StopWatching(this, kShowVolumeSpaceBar);
+	be_app->StopWatching(this, kSpaceBarColorChanged);
+	be_app->StopWatching(this, kUpdateVolumeSpaceBar);
 
 	StopWatching();
 	CommitActivePose();
@@ -872,12 +877,12 @@ BPoseView::AttachedToWindow()
 		fFontHeight = fFontInfo.ascent + fFontInfo.descent + fFontInfo.leading;
 	}
 
-	BHandler::StartWatching(be_app, kShowSelectionWhenInactiveChanged);
-	BHandler::StartWatching(be_app, kTransparentSelectionChanged);
-	BHandler::StartWatching(be_app, kSortFolderNamesFirstChanged);
-	BHandler::StartWatching(be_app, kShowVolumeSpaceBar);
-	BHandler::StartWatching(be_app, kSpaceBarColorChanged);
-	BHandler::StartWatching(be_app, kUpdateVolumeSpaceBar);
+	be_app->StartWatching(this, kShowSelectionWhenInactiveChanged);
+	be_app->StartWatching(this, kTransparentSelectionChanged);
+	be_app->StartWatching(this, kSortFolderNamesFirstChanged);
+	be_app->StartWatching(this, kShowVolumeSpaceBar);
+	be_app->StartWatching(this, kSpaceBarColorChanged);
+	be_app->StartWatching(this, kUpdateVolumeSpaceBar);
 }
 
 
@@ -8933,12 +8938,7 @@ BPoseView::IsWatchingDateFormatChange()
 void
 BPoseView::StartWatchDateFormatChange()
 {
-	if (IsFilePanel()) {
-		BMessenger tracker(kTrackerSignature);
-		BHandler::StartWatching(tracker, kDateFormatChanged);
-	} else
-		BHandler::StartWatching(be_app, kDateFormatChanged);
-	 
+	be_app->StartWatching(this, kDateFormatChanged); 
 	fIsWatchingDateFormatChange = true;
 }
 
@@ -8946,13 +8946,8 @@ BPoseView::StartWatchDateFormatChange()
 void
 BPoseView::StopWatchDateFormatChange()
 {
-	if (IsFilePanel()) {
-		BMessenger tracker(kTrackerSignature);
-		BHandler::StopWatching(tracker, (uint32)kDateFormatChanged);
-	} else {
-		BHandler::StopWatching(be_app, (uint32)kDateFormatChanged);
-		fIsWatchingDateFormatChange = false;
-	}	
+	be_app->StopWatching(this, kDateFormatChanged);
+	fIsWatchingDateFormatChange = false;
 }
 
 
