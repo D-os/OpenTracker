@@ -26,9 +26,13 @@ main(int argc, char **argv)
 	}
 	status_t res;
 	BString s;
+	size_t hashVal = __stl_hash_string("string\x01\x01");
 	DefaultCatalog catalog("TestCat", "german", "./TestCat.catalog", true);
 	if (catalog.InitCheck() == B_OK) {
 		res = catalog.SetString("string", "Schnur");
+		assert( res == B_OK);
+		res = catalog.SetString(hashVal, "Schnur_id");
+			// add a second entry for the same hash-value, but with different translation
 		assert( res == B_OK);
 		res = catalog.SetString("string", "String", "programming");
 		assert( res == B_OK);
@@ -40,6 +44,8 @@ main(int argc, char **argv)
 		assert( res == B_OK);
 		s = catalog.GetString("string");
 		assert( s == "Schnur");
+		s = catalog.GetString(hashVal);
+		assert( s == "Schnur_id");
 		s = catalog.GetString("string", "programming");
 		assert( s == "String");
 		s = catalog.GetString("string", "programming", "Deutsches Fachbuch");
@@ -47,10 +53,12 @@ main(int argc, char **argv)
 		s = catalog.GetString("string", "", "Deutsches Fachbuch");
 		assert( s == "Leine");
 	}
-	DefaultCatalog catalog2("TestCat", "german");
+	DefaultCatalog catalog2("TestCat", "german", "./TestCat.catalog", false);
 	if (catalog2.InitCheck() == B_OK) {
 		s = catalog2.GetString("string");
 		assert( s == "Schnur");
+		s = catalog2.GetString(hashVal);
+		assert( s == "Schnur_id");
 		s = catalog2.GetString("string", "programming");
 		assert( s == "String");
 		s = catalog2.GetString("string", "programming", "Deutsches Fachbuch");
