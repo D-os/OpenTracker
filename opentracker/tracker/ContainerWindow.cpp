@@ -439,7 +439,8 @@ DraggableContainerIcon::Draw(BRect /*updateRect*/)
 
 	// Draw the icon, straddling the border
 	SetDrawingMode(B_OP_OVER);
-	IconCache::sIconCache->Draw(window->TargetModel(), this, BPoint(0, 0),
+	float iconOffset = (Bounds().Width()-B_MINI_ICON)/2;
+	IconCache::sIconCache->Draw(window->TargetModel(), this, BPoint(iconOffset, iconOffset),
 		kNormalIcon, B_MINI_ICON, true);
 }
 
@@ -836,7 +837,12 @@ BContainerWindow::Init(const BMessage *message)
 
 		// add folder icon to menu bar
 		if (!TargetModel()->IsRoot() && !TargetModel()->IsVolume() && !IsTrash() && !IsPrintersDir()) {
-			BView *icon = new DraggableContainerIcon(BRect(Bounds().Width() - 20, 2, Bounds().Width() - 4, 18),
+			float iconSize = fMenuBar->Bounds().Height() - 2;
+			if (iconSize < 16)
+				iconSize = 16;
+			float iconPosY = 1 + (fMenuBar->Bounds().Height() - 2 - iconSize) / 2;
+			BView *icon = new DraggableContainerIcon(BRect(Bounds().Width() - 4 - iconSize + 1, 
+					iconPosY, Bounds().Width() - 4, iconPosY + iconSize - 1),
 				"ThisContainer", B_FOLLOW_RIGHT);
 			fMenuBar->AddChild(icon);
 		}
