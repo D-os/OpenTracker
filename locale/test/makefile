@@ -3,15 +3,22 @@
 LIBS = -lbe -llocale
 LIBPATHS = -L../lib
 INCPATHS = -I../include
-CFLAGS = -g # -fcheck-memory-usage -D_NO_INLINE_ASM
+
+ifeq ($(DEBUG_BUILD), true)
+	CFLAGS = -g -DDEBUG=1
+else
+	CFLAGS = -O1
+endif
 
 
 default: all
 
-all:	localeTest collatorTest collatorSpeed catalogTest catalogSpeed
+all:	localeTest collatorTest collatorSpeed catalogTest catalogTestAddOn \
+		catalogSpeed
 
 clean:
-	rm -rf localeTest collatorTest collatorSpeed catalogTest
+	rm -rf localeTest collatorTest collatorSpeed catalogTest catalogTestAddOn \
+			 catalogSpeed
 
 localeTest:	localeTest.cpp
 	gcc localeTest.cpp $(CFLAGS) $(INCPATHS) $(LIBPATHS) $(LIBS)
@@ -24,6 +31,9 @@ collatorSpeed:	collatorSpeed.cpp
 
 catalogTest:	catalogTest.cpp
 	gcc catalogTest.cpp $(CFLAGS) $(INCPATHS) $(LIBPATHS) $(LIBS)
+
+catalogTestAddOn:	catalogTestAddOn.cpp
+	gcc catalogTestAddOn.cpp $(CFLAGS) -nostart -Xlinker -soname=catalogTestAddOn $(INCPATHS) $(LIBPATHS) $(LIBS)
 
 catalogSpeed:	catalogSpeed.cpp
 	gcc catalogSpeed.cpp $(CFLAGS) $(INCPATHS) $(LIBPATHS) $(LIBS)
