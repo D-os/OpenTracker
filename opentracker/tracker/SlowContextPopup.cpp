@@ -59,6 +59,7 @@ All rights reserved.
 #include "Thread.h"
 #include "Tracker.h"
 
+
 BSlowContextMenu::BSlowContextMenu(const char *title)
 	:	BPopUpMenu(title, false, false),
 		fMenuBuilt(false),
@@ -69,15 +70,17 @@ BSlowContextMenu::BSlowContextMenu(const char *title)
 		fTypesList(NULL),
 		fIsShowing(false)
 {
-	TTrackerState::InitIfNeeded();
+	InitIconPreloader();
 
 	SetFont(be_plain_font);
 	SetTriggersEnabled(false);
 }
 
+
 BSlowContextMenu::~BSlowContextMenu()
 {
 }
+
 
 void
 BSlowContextMenu::AttachedToWindow()
@@ -104,6 +107,7 @@ BSlowContextMenu::AttachedToWindow()
 	//	allow an opportunity to reset the target for each of the items
 	SetTargetForItems(Target());
 }
+
 
 void
 BSlowContextMenu::DetachedFromWindow()
@@ -135,6 +139,7 @@ BSlowContextMenu::DetachedFromWindow()
 	}
 }
 
+
 void
 BSlowContextMenu::SetNavDir(const entry_ref *ref)
 {
@@ -144,6 +149,7 @@ BSlowContextMenu::SetNavDir(const entry_ref *ref)
 	fNavDir = *ref;
 }
 
+
 void 
 BSlowContextMenu::ForceRebuild()
 {
@@ -151,11 +157,13 @@ BSlowContextMenu::ForceRebuild()
 	fMenuBuilt = false;
 }
 
+
 bool 
 BSlowContextMenu::NeedsToRebuild() const
 {
 	return !fMenuBuilt;
 }
+
 
 void
 BSlowContextMenu::ClearMenu()
@@ -166,6 +174,7 @@ BSlowContextMenu::ClearMenu()
 
 	fMenuBuilt = false;
 }
+
 
 void
 BSlowContextMenu::ClearMenuBuildingState()
@@ -220,6 +229,7 @@ BSlowContextMenu::AddDynamicItem(add_state state)
 	return true;	// call me again, got more to show
 }
 
+
 bool
 BSlowContextMenu::StartBuildingItemList()
 {
@@ -267,6 +277,7 @@ BSlowContextMenu::StartBuildingItemList()
 	return true;
 }
 
+
 void
 BSlowContextMenu::AddRootItemsIfNeeded()
 {
@@ -286,6 +297,7 @@ BSlowContextMenu::AddRootItemsIfNeeded()
 		AddOneItem(&model);
 	}
 }
+
 
 bool
 BSlowContextMenu::AddNextItem()
@@ -334,6 +346,7 @@ BSlowContextMenu::AddNextItem()
 	return true;
 }
 
+
 void 
 BSlowContextMenu::AddOneItem(Model *model)
 {
@@ -345,6 +358,7 @@ BSlowContextMenu::AddOneItem(Model *model)
 	if (item) 
 		fItemList->AddItem(item);
 }
+
 
 ModelMenuItem * 
 BSlowContextMenu::NewModelItem(Model *model, const BMessage *invokeMessage,
@@ -476,11 +490,12 @@ BSlowContextMenu::BuildVolumeMenu()
 	}
 }
 
+
 void
 BSlowContextMenu::DoneBuildingItemList()
 {
 	// add sorted items to menu
-	if (TTrackerState().SortFolderNamesFirst())
+	if (TrackerSettings().SortFolderNamesFirst())
 		fItemList->SortItems(&BNavMenu::CompareFolderNamesFirstOne);
 	else
 		fItemList->SortItems(&BNavMenu::CompareOne);
@@ -500,17 +515,20 @@ BSlowContextMenu::DoneBuildingItemList()
 	SetTargetForItems(fMessenger);
 }
 
+
 void
 BSlowContextMenu::SetTypesList(const BObjectList<BString> *list)
 {
 	fTypesList = list;
 }
 
+
 void
 BSlowContextMenu::SetTarget(const BMessenger &target)
 {
 	fMessenger = target;
 }
+
 
 TrackingHookData *
 BSlowContextMenu::InitTrackingHook(bool (*hook)(BMenu *, void *), const BMessenger *target,
@@ -523,6 +541,7 @@ BSlowContextMenu::InitTrackingHook(bool (*hook)(BMenu *, void *), const BMesseng
 	SetTrackingHookDeep(this, hook, &fTrackingHook);
 	return &fTrackingHook;
 }
+
 
 void 
 BSlowContextMenu::SetTrackingHookDeep(BMenu *menu, bool (*func)(BMenu *, void *), void *state)
