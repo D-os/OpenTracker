@@ -38,9 +38,11 @@ All rights reserved.
 
 #include <stdlib.h>
 
+
 const uint32 kPermissionsChanged = 'prch';
 const uint32 kNewOwnerEntered = 'nwow';
-const uint32 kNewGrupEntered = 'nwgr';
+const uint32 kNewGroupEntered = 'nwgr';
+
 
 FilePermissionsView::FilePermissionsView(BRect rect, Model *model)
 	:	BView(rect, "FilePermissionsView", B_FOLLOW_LEFT_RIGHT, B_WILL_DRAW),
@@ -103,10 +105,10 @@ FilePermissionsView::FilePermissionsView(BRect rect, Model *model)
 		kHorizontalSpacing = kColumnLabelSpacing, kVerticalSpacing = kRowLabelVerticalSpacing,
 		kCheckBoxWidth = 18, kCheckBoxHeight = 18;
 
-	FocusCheckBox **checkBoxArray[3][3] =
-		{{ &fReadUserCheckBox, &fReadGroupCheckBox, &fReadOtherCheckBox },
-		 { &fWriteUserCheckBox, &fWriteGroupCheckBox, &fWriteOtherCheckBox },
-		 { &fExecuteUserCheckBox, &fExecuteGroupCheckBox, &fExecuteOtherCheckBox }};
+	FocusCheckBox **checkBoxArray[3][3] = {
+		{ &fReadUserCheckBox, &fReadGroupCheckBox, &fReadOtherCheckBox },
+		{ &fWriteUserCheckBox, &fWriteGroupCheckBox, &fWriteOtherCheckBox },
+		{ &fExecuteUserCheckBox, &fExecuteGroupCheckBox, &fExecuteOtherCheckBox }};
 
 	for (int32 x = 0; x < 3; x++)
 		for (int32 y = 0; y < 3; y++) {
@@ -150,7 +152,7 @@ FilePermissionsView::FilePermissionsView(BRect rect, Model *model)
 	fGroupTextControl = new BTextControl(BRect(kTextControlLeft, kTextControlTop
 		+ 3 * kTextControlSpacing, kTextControlRight, kTextControlTop
 		+ 3 * kTextControlSpacing + kTextControlHeight), "", "", "",
-		new BMessage(kNewGrupEntered));
+		new BMessage(kNewGroupEntered));
 
 	fGroupTextControl->SetDivider(0);
 
@@ -176,7 +178,6 @@ FilePermissionsView::ModelChanged(Model *model)
 		BNode node(fModel->EntryRef());
 	
 		if (node.InitCheck() == B_OK) {
-			
 			if (fReadUserCheckBox->IsHidden()) {
 				fReadUserCheckBox->Show();
 				fReadGroupCheckBox->Show();
@@ -201,7 +202,7 @@ FilePermissionsView::ModelChanged(Model *model)
 				fExecuteOtherCheckBox->SetValue((int32)(perms & S_IXOTH));
 			} else
 				hideCheckBoxes = true;
-			
+
 			if (node.GetOwner(&nodeOwner) == B_OK) {
 				BString user;
 				if (nodeOwner == 0)
@@ -214,7 +215,7 @@ FilePermissionsView::ModelChanged(Model *model)
 				fOwnerTextControl->SetText(user.String());	
 			} else
 				fOwnerTextControl->SetText("Unknown");	
-			
+
 			if (node.GetGroup(&nodeGroup) == B_OK) {
 				BString group;
 				if (nodeGroup == 0)
@@ -227,7 +228,7 @@ FilePermissionsView::ModelChanged(Model *model)
 				fGroupTextControl->SetText(group.String());	
 			} else
 				fGroupTextControl->SetText("Unknown");	
-				
+
 			// Unless we're root, only allow the owner to transfer the ownership,
 			// i.e. disable text controls if uid:s doesn't match:
 			thread_id thisThread = find_thread(NULL);
@@ -242,12 +243,11 @@ FilePermissionsView::ModelChanged(Model *model)
 				fOwnerTextControl->SetEnabled(true);
 				fGroupTextControl->SetEnabled(true);
 			}
-
 		} else
 			hideCheckBoxes = true;
 	} else
 		hideCheckBoxes = true;
-			
+
 	if (hideCheckBoxes) {
 		fReadUserCheckBox->Hide();
 		fReadGroupCheckBox->Hide();
@@ -260,6 +260,7 @@ FilePermissionsView::ModelChanged(Model *model)
 		fExecuteOtherCheckBox->Hide();
 	}
 }
+
 	
 void
 FilePermissionsView::MessageReceived(BMessage *message)
@@ -267,7 +268,6 @@ FilePermissionsView::MessageReceived(BMessage *message)
 	switch(message->what) {
 		case kPermissionsChanged:
 			if (fModel != NULL) {
-				
 				mode_t newPermissions = 0;
 				newPermissions = (mode_t)((fReadUserCheckBox->Value() ? S_IRUSR : 0)
 					| (fReadGroupCheckBox->Value() ? S_IRGRP : 0)
@@ -280,8 +280,7 @@ FilePermissionsView::MessageReceived(BMessage *message)
 					| (fExecuteUserCheckBox->Value() ? S_IXUSR : 0)
 					| (fExecuteGroupCheckBox->Value() ? S_IXGRP :0)
 					| (fExecuteOtherCheckBox->Value() ? S_IXOTH : 0));
-				
-				
+
 				BNode node(fModel->EntryRef());
 
 				if (node.InitCheck() == B_OK) 
@@ -292,7 +291,7 @@ FilePermissionsView::MessageReceived(BMessage *message)
 				}
 			}
 			break;
-			
+
 		case kNewOwnerEntered:
 			if (fModel != NULL) {
 				uid_t owner;
@@ -310,8 +309,8 @@ FilePermissionsView::MessageReceived(BMessage *message)
 				}
 			}
 			break;
-	
-		case kNewGrupEntered:
+
+		case kNewGroupEntered:
 			if (fModel != NULL) {
 				gid_t group;
 				if (sscanf(fGroupTextControl->Text(), "%d", &group) == 1) {
@@ -334,6 +333,7 @@ FilePermissionsView::MessageReceived(BMessage *message)
 			break;
 	}
 }
+
 
 void
 FilePermissionsView::AttachedToWindow()
