@@ -254,7 +254,7 @@ DefaultCatalog::ReadFromFile(const char *path)
 		return res;
 	}
 	if (res < sz) {
-		log_team(LOG_ERR, "only got %d instead of %d bytes from catalog-file %s", 
+		log_team(LOG_ERR, "only got %lu instead of %Lu bytes from catalog-file %s", 
 			res, sz, path);
 		return res;
 	}
@@ -281,7 +281,7 @@ DefaultCatalog::ReadFromAttribute(entry_ref *appOrAddOnRef)
 	BNode node;
 	status_t res = node.SetTo(appOrAddOnRef);
 	if (res != B_OK) {
-		log_team(LOG_ERR, "couldn't find app or add-on (dev=%d, dir=%d, name=%s)",
+		log_team(LOG_ERR, "couldn't find app or add-on (dev=%lu, dir=%Lu, name=%s)",
 			appOrAddOnRef->device, appOrAddOnRef->directory, 
 			appOrAddOnRef->name);
 		return B_ENTRY_NOT_FOUND;
@@ -289,7 +289,7 @@ DefaultCatalog::ReadFromAttribute(entry_ref *appOrAddOnRef)
 
 	log_team(LOG_DEBUG, 
 		"looking for embedded catalog-attribute in app/add-on"
-		"(dev=%d, dir=%d, name=%s)", appOrAddOnRef->device, 
+		"(dev=%lu, dir=%Lu, name=%s)", appOrAddOnRef->device, 
 		appOrAddOnRef->directory, appOrAddOnRef->name);
 
 	attr_info attrInfo;
@@ -326,7 +326,7 @@ DefaultCatalog::ReadFromResource(entry_ref *appOrAddOnRef)
 	BFile file;
 	status_t res = file.SetTo(appOrAddOnRef, B_READ_ONLY);
 	if (res != B_OK) {
-		log_team(LOG_ERR, "couldn't find app or add-on (dev=%d, dir=%d, name=%s)",
+		log_team(LOG_ERR, "couldn't find app or add-on (dev=%lu, dir=%Lu, name=%s)",
 			appOrAddOnRef->device, appOrAddOnRef->directory, 
 			appOrAddOnRef->name);
 		return B_ENTRY_NOT_FOUND;
@@ -334,7 +334,7 @@ DefaultCatalog::ReadFromResource(entry_ref *appOrAddOnRef)
 
 	log_team(LOG_DEBUG, 
 		"looking for embedded catalog-resource in app/add-on"
-		"(dev=%d, dir=%d, name=%s)", appOrAddOnRef->device, 
+		"(dev=%lu, dir=%Lu, name=%s)", appOrAddOnRef->device, 
 		appOrAddOnRef->directory, appOrAddOnRef->name);
 
 	BResources rsrc;
@@ -610,7 +610,7 @@ DefaultCatalog::Unflatten(BDataIO *dataIO)
 		if (foundFingerprint != 0 && fFingerprint != 0 
 			&& foundFingerprint != fFingerprint) {
 			log_team(LOG_INFO, "default-catalog(sig=%s, lang=%s) "
-				"has mismatching fingerprint (%d instead of the requested %d), "
+				"has mismatching fingerprint (%ld instead of the requested %ld), "
 				"so this catalog is skipped.",
 				fSignature.String(), fLanguageName.String(), foundFingerprint,
 				fFingerprint);
@@ -641,7 +641,7 @@ DefaultCatalog::Unflatten(BDataIO *dataIO)
 		int32 checkFP = ComputeFingerprint();
 		if (fFingerprint != checkFP) {
 			log_team(LOG_WARNING, "default-catalog(sig=%s, lang=%s) "
-				"has wrong fingerprint after load (%d instead of the %d). "
+				"has wrong fingerprint after load (%ld instead of the %ld). "
 				"The catalog data may be corrupted, so this catalog is skipped.",
 				fSignature.String(), fLanguageName.String(), checkFP,
 				fFingerprint);
