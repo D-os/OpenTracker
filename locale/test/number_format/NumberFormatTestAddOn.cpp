@@ -4,6 +4,7 @@
 #include "generic_number_format/GenericNumberFormatTests.h"
 
 // getTestSuite
+_EXPORT
 BTestSuite*
 getTestSuite()
 {
