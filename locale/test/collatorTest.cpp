@@ -14,8 +14,8 @@
 const char *kStrings[] = {
 	"a-b-c",
 	"a b c",
-	"a.b.c",
-	"a,b,c",
+	"A.b.c",
+	"ä,b,c",
 	"abc",
 	"gehen",
 	"géhen",
