@@ -667,7 +667,7 @@ BPoseView::SetProperty(BMessage *_SCRIPTING_ONLY(message), BMessage *,
 						&& message->FindInt32("data", 1, &selEnd) == B_OK) {
 
 						if (selStart < 0 || selStart >= fPoseList->CountItems()
-							|| selEnd < 0 || selStart >= fPoseList->CountItems()) {
+							|| selEnd < 0 || selEnd >= fPoseList->CountItems()) {
 							error = B_BAD_INDEX;
 							handled = true;
 							break;
