@@ -69,11 +69,11 @@ SelectionWindow::SelectionWindow(BContainerWindow *window)
 
 	BMenu *menu = new BPopUpMenu("");
 	
-	menu->AddItem(new BMenuItem("Name starts with:", NULL));
-	menu->AddItem(new BMenuItem("Name ends with:", NULL));
-	menu->AddItem(new BMenuItem("Name contains:", NULL));
-	menu->AddItem(new BMenuItem("Name matches wildcard expression:", NULL));
-	menu->AddItem(new BMenuItem("Name matches regular expression:", NULL));
+	menu->AddItem(new BMenuItem("starts with", NULL));
+	menu->AddItem(new BMenuItem("ends with", NULL));
+	menu->AddItem(new BMenuItem("contains", NULL));
+	menu->AddItem(new BMenuItem("matches wildcard expression", NULL));
+	menu->AddItem(new BMenuItem("matches regular expression", NULL));
 
 	menu->SetLabelFromMarked(true);
 	menu->ItemAt(3)->SetMarked(true);
@@ -81,9 +81,9 @@ SelectionWindow::SelectionWindow(BContainerWindow *window)
 	
 	// Set up the menu field
 	fMatchingTypeMenuField = new BMenuField(BRect(7, 6, Bounds().right - 5, 0),
-		NULL, NULL, menu);
+		NULL, "Name", menu);
 	backgroundView->AddChild(fMatchingTypeMenuField);
-	fMatchingTypeMenuField->SetDivider(0);
+	fMatchingTypeMenuField->SetDivider(fMatchingTypeMenuField->StringWidth("Name") + 8);
 	fMatchingTypeMenuField->ResizeToPreferred();
 	
 	// Set up the expression text control
