@@ -555,22 +555,24 @@ BPose::Draw(BRect rect, BPoseView *poseView, BView *drawView, bool fullDraw,
 					
 					widget->Draw(widgetRect, widgetTextRect, column->Width(),
 						poseView, drawView, selected, fClipboardMode, offset, directDraw);
-
-					if (index == 0 && selected && (windowActive || isDrawingSelectionRect)) {
-						widgetTextRect.OffsetBy(offset);
-						drawView->InvertRect(widgetTextRect);
-					} else if (index == 0 && selected && !windowActive && showSelectionWhenInactive) {
-						widgetTextRect.OffsetBy(offset);
-						drawView->PushState();
-						drawView->SetDrawingMode(B_OP_BLEND);
-						drawView->SetHighColor(128, 128, 128, 255);
-						drawView->FillRect(widgetTextRect);
-						drawView->PopState();
+					
+					if (index == 0 && selected) {
+						if (windowActive || isDrawingSelectionRect) {
+							widgetTextRect.OffsetBy(offset);
+							drawView->InvertRect(widgetTextRect);
+						} else if (!windowActive && showSelectionWhenInactive) {
+							widgetTextRect.OffsetBy(offset);
+							drawView->PushState();
+							drawView->SetDrawingMode(B_OP_BLEND);
+							drawView->SetHighColor(128, 128, 128, 255);
+							drawView->FillRect(widgetTextRect);
+							drawView->PopState();
+						}
 					}
 				}
 			}
 
-			if (index == 1 && !fullDraw)
+			if (!fullDraw)
 				break;
 		}
 	} else {
@@ -611,15 +613,17 @@ BPose::Draw(BRect rect, BPoseView *poseView, BView *drawView, bool fullDraw,
 
 		if (selectDuringDraw)
 			drawView->PopState();
-		else if (selected && directDraw && (windowActive || isDrawingSelectionRect)) {
-			rect.OffsetBy(offset);
-			drawView->InvertRect(rect);
-		} else if (selected && directDraw && !windowActive && showSelectionWhenInactive) {
-			drawView->PushState();
-			drawView->SetDrawingMode(B_OP_BLEND);
-			drawView->SetHighColor(128, 128, 128, 255);
-			drawView->FillRect(rect);
-			drawView->PopState();
+		else if (selected && directDraw) {
+			if (windowActive || isDrawingSelectionRect) {
+				rect.OffsetBy(offset);
+				drawView->InvertRect(rect);
+			} else if (!windowActive && showSelectionWhenInactive) {
+				drawView->PushState();
+				drawView->SetDrawingMode(B_OP_BLEND);
+				drawView->SetHighColor(128, 128, 128, 255);
+				drawView->FillRect(rect);
+				drawView->PopState();
+			}
 		}
 	}
 }
