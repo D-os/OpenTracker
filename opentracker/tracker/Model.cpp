@@ -420,8 +420,11 @@ Model::OpenNodeCommon(bool writable)
 #endif
 			TRESPASS();
 				// this can only happen if GetStat failed before, in which case
-				// we shouldn't be here 
-			return B_ERROR;
+				// we shouldn't be here
+			// ToDo: Obviously, we can also be here if the type could not be determined,
+			// for example for block devices (so the TRESPASS() macro shouldn't be
+			// used here)!
+			return fStatus = B_ERROR;
 	}
 
 	fStatus = fNode->InitCheck();
