@@ -217,7 +217,7 @@ protected:
 	virtual void SetCloseItem(BMenu *);
 	virtual	void SetupNavigationMenu(const entry_ref *, BMenu *);
 	virtual	void SetupMoveCopyMenus(const entry_ref *, BMenu *);
-	virtual	void PopulateMoveCopyNavMenu(BNavMenu *, uint32, dev_t, bool);
+	virtual	void PopulateMoveCopyNavMenu(BNavMenu *, uint32, const entry_ref *, bool);
 
 	virtual	void SetupOpenWithMenu(BMenu *);
 	virtual	void SetUpEditQueryItem(BMenu *);

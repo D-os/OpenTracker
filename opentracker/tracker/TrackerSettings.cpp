@@ -495,9 +495,12 @@ TrackerSettings::SetShowNavigator(bool enabled)
 void
 TrackerSettings::RecentCounts(int32 *applications, int32 *documents, int32 *folders)
 {
-	*applications = gTrackerState.fRecentApplicationsCount->Value();
-	*documents = gTrackerState.fRecentDocumentsCount->Value();
-	*folders = gTrackerState.fRecentFoldersCount->Value();
+	if (applications)
+		*applications = gTrackerState.fRecentApplicationsCount->Value();
+	if (documents)
+		*documents = gTrackerState.fRecentDocumentsCount->Value();
+	if (folders)
+		*folders = gTrackerState.fRecentFoldersCount->Value();
 }
 
 

@@ -81,15 +81,18 @@ ModelMenuItem::ModelMenuItem(const Model *model, BMenu *menu, bool drawText,
 	SetTimeout(kSynchMenuInvokeTimeout);
 }
 
+
+ModelMenuItem::~ModelMenuItem()
+{
+}
+
+
 status_t
 ModelMenuItem::SetEntry(const BEntry *entry)
 {
 	return fModel.SetTo(entry);
 }
 
-ModelMenuItem::~ModelMenuItem()
-{
-}
 
 void
 ModelMenuItem::DrawContent()
@@ -105,12 +108,14 @@ ModelMenuItem::DrawContent()
 	DrawIcon();
 }
 
+
 void
 ModelMenuItem::Highlight(bool hilited)
 {
 	_inherited::Highlight(hilited);
 	DrawIcon();
 }
+
 
 static void
 DimmedIconBlitter(BView *view, BPoint where, BBitmap *bitmap, void *)
@@ -119,6 +124,7 @@ DimmedIconBlitter(BView *view, BPoint where, BBitmap *bitmap, void *)
 	view->DrawBitmap(bitmap, where);
 	view->SetDrawingMode(B_OP_OVER);
 }
+
 
 void
 ModelMenuItem::DrawIcon()
@@ -162,6 +168,7 @@ ModelMenuItem::GetContentSize(float *width, float *height)
 	*width = *width + 20 + (fExtraPad ? 18 : 0);
 }
 
+
 status_t 
 ModelMenuItem::Invoke(BMessage *message)
 {
@@ -190,6 +197,34 @@ ModelMenuItem::Invoke(BMessage *message)
 	return BInvoker::Invoke(&clone);
 }
 
+
+//	#pragma mark -
+
+
+SpecialModelMenuItem::SpecialModelMenuItem(const Model *model,BMenu *menu)
+	: ModelMenuItem(model,menu)
+{
+}
+
+
+void 
+SpecialModelMenuItem::DrawContent()
+{
+	Menu()->PushState();
+
+	BFont font;
+	Menu()->GetFont(&font);
+	font.SetFace(B_ITALIC_FACE);
+	Menu()->SetFont(&font);
+
+	_inherited::DrawContent();
+	Menu()->PopState();
+}
+
+
+//	#pragma mark -
+
+
 IconMenuItem::IconMenuItem(const char *label, BMessage *message, BBitmap *icon)
 	:	PositionPassingMenuItem(label, message),
 		fDeviceIcon(icon)
@@ -198,6 +233,7 @@ IconMenuItem::IconMenuItem(const char *label, BMessage *message, BBitmap *icon)
 	// we invoke with a timeout
 	SetTimeout(kSynchMenuInvokeTimeout);
 }
+
 
 IconMenuItem::IconMenuItem(const char *label, BMessage *message,
 	const BNodeInfo *nodeInfo, icon_size which)
@@ -217,6 +253,7 @@ IconMenuItem::IconMenuItem(const char *label, BMessage *message,
 	SetTimeout(kSynchMenuInvokeTimeout);
 }
 
+
 IconMenuItem::IconMenuItem(const char *label, BMessage *message,
 	const char *iconType, icon_size which)
 	:	PositionPassingMenuItem(label, message),
@@ -234,6 +271,7 @@ IconMenuItem::IconMenuItem(const char *label, BMessage *message,
 	// we invoke with a timeout
 	SetTimeout(kSynchMenuInvokeTimeout);
 }
+
 
 IconMenuItem::IconMenuItem(BMenu *submenu, BMessage *message,
 	const char *iconType, icon_size which)
@@ -259,6 +297,7 @@ IconMenuItem::~IconMenuItem()
 	delete fDeviceIcon;
 }
 
+
 void
 IconMenuItem::GetContentSize(float *width, float *height)
 {
@@ -266,6 +305,7 @@ IconMenuItem::GetContentSize(float *width, float *height)
 	*width += 20;
 	*height += 3;
 }
+
 
 void
 IconMenuItem::DrawContent()
@@ -287,3 +327,4 @@ IconMenuItem::DrawContent()
 		Menu()->DrawBitmapAsync(fDeviceIcon, where);
 	}
 }
+

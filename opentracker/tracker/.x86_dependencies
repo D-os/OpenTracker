@@ -30,10 +30,10 @@ $(OBJ_DIR)/ContainerWindow.o : ContainerWindow.cpp Attributes.h AttributeStream.
  DeskWindow.h DesktopPoseView.h EntryIterator.h NodeWalker.h \
  PoseView.h PendingNodeMonitorCache.h Pose.h TextWidget.h \
  WidgetAttributeText.h TrackerSettings.h Settings.h SettingsHandler.h \
- PoseList.h TitleView.h ViewState.h FindPanel.h DialogPane.h \
- MimeTypeList.h FSUtils.h IconMenuItem.h OpenWithWindow.h MountMenu.h \
- Navigator.h SelectionWindow.h TrackerString.h RegExp.h Tracker.h \
- ../shared/tracker_private.h Thread.h TemplatesMenu.h
+ PoseList.h TitleView.h ViewState.h FavoritesMenu.h FindPanel.h \
+ DialogPane.h MimeTypeList.h FSUtils.h IconMenuItem.h OpenWithWindow.h \
+ MountMenu.h Navigator.h SelectionWindow.h TrackerString.h RegExp.h \
+ Tracker.h ../shared/tracker_private.h Thread.h TemplatesMenu.h
 $(OBJ_DIR)/CountView.o : CountView.cpp ../shared/AutoLock.h Bitmaps.h \
  TrackerIcons.h CountView.h ContainerWindow.h LockingList.h \
  ../shared/ObjectList.h Model.h IconCache.h OpenHashTable.h \
@@ -92,9 +92,9 @@ $(OBJ_DIR)/FavoritesConfig.o : FavoritesConfig.cpp Commands.h PublicCommands.h \
  OpenHashTable.h Utilities.h IconMenuItem.h Model.h \
  ../shared/FavoritesConfig.h
 $(OBJ_DIR)/FavoritesMenu.o : FavoritesMenu.cpp EntryIterator.h \
- ../shared/ObjectList.h NodeWalker.h FavoritesMenu.h SlowMenu.h \
- IconMenuItem.h Model.h IconCache.h ../shared/AutoLock.h \
- OpenHashTable.h Utilities.h ../shared/NavMenu.h PoseView.h \
+ ../shared/ObjectList.h NodeWalker.h FavoritesMenu.h \
+ ../shared/NavMenu.h SlowMenu.h IconMenuItem.h Model.h IconCache.h \
+ ../shared/AutoLock.h OpenHashTable.h Utilities.h PoseView.h \
  AttributeStream.h ContainerWindow.h LockingList.h SlowContextPopup.h \
  TaskLoop.h FunctionObject.h PendingNodeMonitorCache.h Pose.h \
  TextWidget.h WidgetAttributeText.h TrackerSettings.h Settings.h \

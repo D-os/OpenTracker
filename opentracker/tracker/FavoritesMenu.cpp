@@ -65,12 +65,14 @@ FavoritesMenu::FavoritesMenu(const char *title, BMessage *openFolderMessage,
 {
 }
 
+
 FavoritesMenu::~FavoritesMenu()
 {
 	delete fOpenFolderMessage;
 	delete fOpenFileMessage;
 	delete fContainer;
 }
+
 
 bool 
 FavoritesMenu::StartBuildingItemList()
@@ -91,6 +93,7 @@ FavoritesMenu::StartBuildingItemList()
 	fState = kStart;
 	return true;
 }
+
 
 bool 
 FavoritesMenu::AddNextItem()
@@ -249,11 +252,13 @@ FavoritesMenu::AddNextItem()
 	return false;
 }
 
+
 void 
 FavoritesMenu::DoneBuildingItemList()
 {
 	SetTargetForItems(fTarget);
 }
+
 
 void 
 FavoritesMenu::ClearMenuBuildingState()
@@ -264,5 +269,148 @@ FavoritesMenu::ClearMenuBuildingState()
 
 	// force the menu to get rebuilt each time
 	fMenuBuilt = false;
+}
+
+
+//	#pragma mark -
+
+
+RecentsMenu::RecentsMenu(const char *name,int32 which,uint32 what,BHandler *target)
+	: BNavMenu(name, what, target),
+	fWhich(which),
+	fRecentsCount(0),
+	fItemIndex(0)
+{
+	int32 applications;
+	int32 documents;
+	int32 folders;
+	TrackerSettings().RecentCounts(&applications,&documents,&folders);
+
+	if (fWhich == 0)
+		fRecentsCount = documents;
+	else if (fWhich == 1)
+		fRecentsCount = applications;
+	else if (fWhich == 2)
+		fRecentsCount = folders;
+}
+
+
+void
+RecentsMenu::DetachedFromWindow()
+{
+	//
+	//	BNavMenu::DetachedFromWindow sets the TypesList to NULL
+	//	
+	BMenu::DetachedFromWindow();
+}
+
+
+bool 
+RecentsMenu::StartBuildingItemList()
+{
+	int32 count = CountItems()-1;
+	for (int32 index = count; index >= 0; index--) {
+		BMenuItem *item = ItemAt(index);
+		ASSERT(item);
+
+		RemoveItem(index);
+		delete item;
+	}
+	//
+	//	!! note: don't call inherited from here
+	//	the navref is not set for this menu
+	//	but it still needs to be a draggable navmenu
+	//	simply return true so that AddNextItem is called
+	//
+	//	return BNavMenu::StartBuildingItemList();
+	return true;
+}
+
+
+bool 
+RecentsMenu::AddNextItem()
+{
+	if (fRecentsCount > 0 && AddRecents(fRecentsCount))
+		return true;
+
+	fItemIndex = 0;
+	return false;
+}
+
+
+bool
+RecentsMenu::AddRecents(int32 count)
+{
+	if (fItemIndex == 0) {
+		fRecentList.MakeEmpty();
+		BRoster roster;
+		
+		switch(fWhich) {
+			case 0:
+				roster.GetRecentDocuments(&fRecentList, count);
+				break;
+			case 1:
+				roster.GetRecentApps(&fRecentList, count);
+				break;
+			case 2:
+				roster.GetRecentFolders(&fRecentList, count);
+				break;
+			default:
+				return false;
+				break;
+		}
+	}
+	for (;;) {
+		entry_ref ref;
+		if (fRecentList.FindRef("refs", fItemIndex++, &ref) != B_OK)
+			break;
+
+		if (ref.name && strlen(ref.name) > 0) {
+			Model model(&ref, true);
+			ModelMenuItem *item = BNavMenu::NewModelItem(&model,
+					new BMessage(fMessage.what),
+					Target(), false, NULL, TypesList());
+
+			if (item) {
+				AddItem(item);
+
+				//	return true so that we know to reenter this list
+				return true;
+			}
+			return true;
+		}
+	}
+
+	//
+	//	return false if we are done with this list
+	//
+	return false;
+}
+
+
+void 
+RecentsMenu::DoneBuildingItemList()
+{
+	//
+	//	!! note: don't call inherited here
+	//	the object list is not built
+	//	and this list does not need to be sorted
+	//	BNavMenu::DoneBuildingItemList();
+	//
+
+	if (CountItems() <= 0) {
+		BMenuItem *item = new BMenuItem("<No Recent Items>", 0);
+		item->SetEnabled(false);
+		AddItem(item);
+	} else
+		SetTargetForItems(Target());
+}
+
+
+void 
+RecentsMenu::ClearMenuBuildingState()
+{
+	fMenuBuilt = false;
+	BNavMenu::ClearMenuBuildingState();
 }
 

@@ -51,6 +51,7 @@ All rights reserved.
 #include <Screen.h>
 #include <Volume.h>
 #include <VolumeRoster.h>
+#include <Roster.h>
 
 #include <fs_attr.h>
 
@@ -63,6 +64,7 @@ All rights reserved.
 #include "Commands.h"
 #include "ContainerWindow.h"
 #include "DeskWindow.h"
+#include "FavoritesMenu.h"
 #include "FindPanel.h"
 #include "FSUtils.h"
 #include "IconMenuItem.h"
@@ -928,6 +930,8 @@ BContainerWindow::MessageReceived(BMessage *message)
 				if (message->FindRef("refs", &ref) != B_OK)
 					break;
 
+				BRoster().AddToRecentFolders(&ref);
+
 				Model model(&ref);
 				if (model.InitCheck() != B_OK)
 					break;
@@ -945,6 +949,8 @@ BContainerWindow::MessageReceived(BMessage *message)
 				if (message->FindRef("refs", &ref) != B_OK)
 					break;
 				
+				BRoster().AddToRecentFolders(&ref);
+
 				Model model(&ref);
 				if (model.InitCheck() != B_OK)
 					break;
@@ -957,13 +963,15 @@ BContainerWindow::MessageReceived(BMessage *message)
 		case kCreateRelativeLink:
 			{
 				entry_ref ref;
-
 				if (message->FindRef("refs", &ref) == B_OK) {
+					BRoster().AddToRecentFolders(&ref);
+
 					Model model(&ref);
 					if (model.InitCheck() != B_OK)
 						break;
+
 					PoseView()->MoveSelectionInto(&model, this, false, true,
-						(message->what == kCreateRelativeLink));
+						message->what == kCreateRelativeLink);
 				} else {
 					// no destination specified, create link in same dir as item
 					if (!TargetModel()->IsQuery())
@@ -1585,7 +1593,7 @@ BContainerWindow::SetupOpenWithMenu(BMenu *parent)
 
 void
 BContainerWindow::PopulateMoveCopyNavMenu(BNavMenu *navMenu, uint32 what,
-	dev_t device, bool addLocalOnly)
+	const entry_ref *ref, bool addLocalOnly)
 {
 	BVolume volume;
 	BVolumeRoster volumeRoster;
@@ -1593,6 +1601,7 @@ BContainerWindow::PopulateMoveCopyNavMenu(BNavMenu *navMenu, uint32 what,
 	BEntry entry;
 	BPath path;
 	Model model;
+	dev_t device = ref->device;
 
 	int32 volumeCount = 0;
 
@@ -1601,6 +1610,35 @@ BContainerWindow::PopulateMoveCopyNavMenu(BNavMenu *navMenu, uint32 what,
 	while (volumeRoster.GetNextVolume(&volume) == B_OK)
 		if (!volume.IsReadOnly() && volume.IsPersistent())
 			volumeCount++;
+
+	// add the current folder
+	if (entry.SetTo(ref) == B_OK
+		&& entry.GetParent(&entry) == B_OK
+		&& model.SetTo(&entry) == B_OK) {
+		BNavMenu *menu = new BNavMenu("Current Folder",what,this);
+		menu->SetNavDir(model.EntryRef());
+		menu->SetShowParent(true);
+
+		BMenuItem *item = new SpecialModelMenuItem(&model,menu);
+		item->SetMessage(new BMessage((uint32)what));
+
+		navMenu->AddItem(item);
+	}
+
+	// add the recent folder menu
+	// the "Tracker" settings directory is only used to get its icon
+	if (find_directory(B_USER_SETTINGS_DIRECTORY, &path) == B_OK) {
+		path.Append("Tracker");
+		if (entry.SetTo(path.Path()) == B_OK
+			&& model.SetTo(&entry) == B_OK) {
+			BMenu *menu = new RecentsMenu("Recent Folders",kRecentFolders,what,this);
+
+			BMenuItem *item = new SpecialModelMenuItem(&model,menu);
+			item->SetMessage(new BMessage((uint32)what));
+
+			navMenu->AddItem(item);
+		}
+	}
 
 	// add Desktop
 	FSGetBootDeskDir(&directory);
@@ -1617,6 +1655,10 @@ BContainerWindow::PopulateMoveCopyNavMenu(BNavMenu *navMenu, uint32 what,
 		navMenu->AddNavDir(&model, what, this, true);
 
 	navMenu->AddSeparatorItem();
+
+	// either add all mounted volumes (for copy), or all the top-level
+	// directories from the same device (for move)
+	// ToDo: can be changed if cross-device moves are implemented
 
 	if (addLocalOnly || volumeCount < 2) {
 		// add volume this item lives on
@@ -1706,23 +1748,23 @@ BContainerWindow::SetupMoveCopyMenus(const entry_ref *item_ref, BMenu *parent)
 
 	// configure "Move to" menu item 
 	PopulateMoveCopyNavMenu(dynamic_cast<BNavMenu *>(fMoveToItem->Submenu()),
-		kMoveSelectionTo, item_ref->device, true);
+		kMoveSelectionTo, item_ref, true);
 
 	// configure "Copy to" menu item 
 	// add all mounted volumes (except the one this item lives on)
 	PopulateMoveCopyNavMenu(dynamic_cast<BNavMenu *>(fCopyToItem->Submenu()),
-		kCopySelectionTo, item_ref->device, false);
+		kCopySelectionTo, item_ref, false);
 
 	// Set "Create Link" menu item message and
 	// add all mounted volumes (except the one this item lives on)
 	if (modifierKeys & B_SHIFT_KEY) {
 		fCreateLinkItem->SetMessage(new BMessage(kCreateRelativeLink));
 		PopulateMoveCopyNavMenu(dynamic_cast<BNavMenu *>(fCreateLinkItem->Submenu()),
-			kCreateRelativeLink, item_ref->device, false);
+			kCreateRelativeLink, item_ref, false);
 	} else {
 		fCreateLinkItem->SetMessage(new BMessage(kCreateLink));
 		PopulateMoveCopyNavMenu(dynamic_cast<BNavMenu *>(fCreateLinkItem->Submenu()),
-		kCreateLink, item_ref->device, false);
+		kCreateLink, item_ref, false);
 	}
 
 	fMoveToItem->SetEnabled(true);

@@ -37,7 +37,7 @@ All rights reserved.
 
 #include <vector>
 
-#include "SlowMenu.h"
+#include "NavMenu.h"
 #include "ObjectList.h"
 
 namespace BPrivate {
@@ -49,47 +49,77 @@ class EntryListBase;
 class FavoritesMenu : public BSlowMenu {
 	// FavoritesMenu is used in the FilePanel -
 	// displays recent files, recent folders and favorites items
-public:
-	FavoritesMenu(const char *title, BMessage *openFolderMessage,
-		BMessage *openFileMessage, const BMessenger &,
-		bool isSavePanel);
-	virtual ~FavoritesMenu();
+	public:
+		FavoritesMenu(const char *title, BMessage *openFolderMessage,
+			BMessage *openFileMessage, const BMessenger &,
+			bool isSavePanel);
+		virtual ~FavoritesMenu();
 
-private:
-	// override the necessary SlowMenu hooks
-	virtual bool StartBuildingItemList();
-	virtual bool AddNextItem();
-	virtual void DoneBuildingItemList();	
-	virtual void ClearMenuBuildingState();
+	private:
+		// override the necessary SlowMenu hooks
+		virtual bool StartBuildingItemList();
+		virtual bool AddNextItem();
+		virtual void DoneBuildingItemList();	
+		virtual void ClearMenuBuildingState();
 
-	BMessage *fOpenFolderMessage;
-	BMessage *fOpenFileMessage;
-	BMessenger fTarget;
-	
-	enum State {
-		kStart,
-		kAddingFavorites,
-		kAddingFiles,
-		kAddingFolders,
-		kDone
-	};
-	
-	State fState;
+		BMessage *fOpenFolderMessage;
+		BMessage *fOpenFileMessage;
+		BMessenger fTarget;
 
-	int32 fIndex;
-	int32 fSectionItemCount;
-	bool fAddedSeparatorForSection;
-		// keeps track wether a separator will be needed before the
-		// next inserted item
-	BMessage fItems;
+		enum State {
+			kStart,
+			kAddingFavorites,
+			kAddingFiles,
+			kAddingFolders,
+			kDone
+		};
 
-	EntryListBase *fContainer;
-	BObjectList<BMenuItem> *fItemList;
-	int32 fInitialItemCount;
-	std::vector<entry_ref> fUniqueRefCheck;
-	bool fIsSavePanel;
+		State fState;
 
-	typedef BSlowMenu _inherited;
+		int32 fIndex;
+		int32 fSectionItemCount;
+		bool fAddedSeparatorForSection;
+			// keeps track wether a separator will be needed before the
+			// next inserted item
+		BMessage fItems;
+
+		EntryListBase *fContainer;
+		BObjectList<BMenuItem> *fItemList;
+		int32 fInitialItemCount;
+		std::vector<entry_ref> fUniqueRefCheck;
+		bool fIsSavePanel;
+
+		typedef BSlowMenu _inherited;
+};
+
+
+enum recent_type {
+	kRecentDocuments = 0,
+	kRecentApplications = 1,
+	kRecentFolders = 2
+};
+
+class RecentsMenu : public BNavMenu {
+	public:
+		RecentsMenu(const char *name,int32 which,uint32 what,BHandler *target);
+
+		void			DetachedFromWindow();
+
+		int32			RecentsCount();	
+
+	private:		
+		virtual	bool	StartBuildingItemList();
+		virtual	bool	AddNextItem();
+				bool	AddRecents(int32 count);
+		virtual	void	DoneBuildingItemList();	
+		virtual	void	ClearMenuBuildingState();
+
+	private:		
+		int32			fWhich;
+		int32			fRecentsCount;
+
+		int32 			fItemIndex;
+		BMessage		fRecentList;
 };
 
 } // namespace BPrivate

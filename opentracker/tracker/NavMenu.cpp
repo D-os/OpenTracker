@@ -68,6 +68,11 @@ namespace BPrivate {
 
 const int32 kMinMenuWidth = 150;
 
+enum nav_flags {
+	kVolumesOnly = 1,
+	kShowParent = 2
+};
+
 
 bool
 SpringLoadedFolderCompareMessages(const BMessage *incoming, const BMessage *dragmessage)
@@ -239,12 +244,13 @@ SpringLoadedFolderCacheDragData(const BMessage *incoming, BMessage **message, BO
 //	#pragma mark -
 
 
-BNavMenu::BNavMenu(const char* title, uint32 message, const BHandler *target,
+BNavMenu::BNavMenu(const char *title, uint32 message, const BHandler *target,
 	BWindow *parentWindow, const BObjectList<BString> *list)
 	:	BSlowMenu(title),
 		fMessage(message),
 		fMessenger(target, target->Looper()),
 		fParentWindow(parentWindow),
+		fFlags(0),
 		fItemList(0),
 		fContainer(0),
 		fTypesList(list)
@@ -271,6 +277,7 @@ BNavMenu::BNavMenu(const char *title, uint32 message, const BMessenger &messenge
 		fMessage(message),
 		fMessenger(messenger),
 		fParentWindow(parentWindow),
+		fFlags(0),
 		fItemList(0),
 		fContainer(0),
 		fTypesList(list)
@@ -390,11 +397,10 @@ BNavMenu::StartBuildingItemList()
 	fItemList = new BObjectList<BMenuItem>(50);
 
 	// if ref is the root item then build list of volume root dirs
-	fVolsOnly = (err == B_ENTRY_NOT_FOUND);
-
-	if (fVolsOnly)
+	fFlags |= (err == B_ENTRY_NOT_FOUND) ? kVolumesOnly : 0;
+	if (fFlags & kVolumesOnly)
 		return true;
-		
+
 	Model startModel(&entry, true);
 	if (startModel.InitCheck() != B_OK || !startModel.IsContainer()) 
 		return false;
@@ -426,7 +432,7 @@ BNavMenu::StartBuildingItemList()
 	} else
 		fContainer = new DirectoryEntryList(*dynamic_cast<BDirectory *>
 			(startModel.Node()));
-	
+
 	if (fContainer == NULL || fContainer->InitCheck() != B_OK)
 		return false;
 
@@ -460,11 +466,11 @@ BNavMenu::AddRootItemsIfNeeded()
 bool
 BNavMenu::AddNextItem()
 {
-	if (fVolsOnly) {
+	if (fFlags & kVolumesOnly) {
 		BuildVolumeMenu();
 		return false;
 	}
-	
+
 	// limit nav menus to 500 items only
 	if (fItemList->CountItems() > 500)
 		return false;
@@ -678,6 +684,20 @@ BNavMenu::DoneBuildingItemList()
 	else
 		fItemList->SortItems(CompareOne);
 
+	// if the parent link should be shown, it will be the first
+	// entry in the menu - but don't add the item if we're already
+	// at the file system's root
+	if (fFlags & kShowParent) {
+		BDirectory directory(&fNavDir);
+		BEntry entry(&fNavDir);
+		if (!directory.IsRootDirectory()
+			&& entry.GetParent(&entry) == B_OK) {
+			Model model(&entry, true);
+			BLooper *looper;
+			AddNavParentDir(&model,fMessage.what,fMessenger.Target(&looper));
+		}
+	}
+
 	int32 count = fItemList->CountItems();
 	for (int32 index = 0; index < count; index++) 
 		AddItem(fItemList->ItemAt(index));
@@ -707,7 +727,8 @@ BNavMenu::AddNavDir(const Model *model, uint32 what, BHandler *target,
 {
 	BMessage *message = new BMessage((uint32)what);
 	message->AddRef("refs", model->EntryRef());
-	ModelMenuItem *item = 0;
+	ModelMenuItem *item = NULL;
+
 	if (populateSubmenu) {
 		BNavMenu *navMenu = new BNavMenu(model->Name(), what, target);
 		navMenu->SetNavDir(model->EntryRef());
@@ -719,6 +740,39 @@ BNavMenu::AddNavDir(const Model *model, uint32 what, BHandler *target,
 		item = new ModelMenuItem(model, model->Name(), message);
 
 	AddItem(item);
+}
+
+
+void
+BNavMenu::AddNavParentDir(const char *name,const Model *model,uint32 what,BHandler *target)
+{
+	BNavMenu *menu = new BNavMenu(name,what,target);
+	menu->SetNavDir(model->EntryRef());
+	menu->SetShowParent(true);
+	menu->InitTrackingHook(fTrackingHook.fTrackingHook, &(fTrackingHook.fTarget),
+			fTrackingHook.fDragMessage);
+
+	BMenuItem *item = new SpecialModelMenuItem(model,menu);
+
+	BMessage *message = new BMessage(what);
+	message->AddRef("refs",model->EntryRef());
+	item->SetMessage(message);
+
+	AddItem(item);
+}
+
+
+void
+BNavMenu::AddNavParentDir(const Model *model, uint32 what, BHandler *target)
+{
+	AddNavParentDir("parent folder",model,what,target);
+}
+
+
+void
+BNavMenu::SetShowParent(bool show)
+{
+	fFlags = (fFlags & ~kShowParent) | (show ? kShowParent : 0);
 }
 
 
