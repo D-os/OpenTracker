@@ -630,6 +630,8 @@ TRecentsMenu::AddRecents(int32 count)
 				ModelMenuItem *item = NULL;
 				BMessage doc;
 				be_roster->GetRecentDocuments(&doc, 1, NULL, signature);
+					// ToDo: check if the documents do exist at all to
+					//		avoid the creation of the submenu.
 
 				if (doc.CountNames(B_REF_TYPE) > 0) {
 					// create recents menu that will contain the recent docs of this app
