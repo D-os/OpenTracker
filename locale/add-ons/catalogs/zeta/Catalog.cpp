@@ -3,6 +3,7 @@
 ** Distributed under the terms of the OpenBeOS License.
 */
 
+#include <syslog.h>
 
 #include <Application.h>
 #include <Directory.h>
@@ -47,7 +48,11 @@ ZetaCatalog::ZetaCatalog(const char *signature, const char *language,
 	BDirectory appDir( &nref);
 
 	// ToDo: implement loading of zeta-catalog 
-	fInitCheck = B_NO_INIT;
+	fInitCheck = EOPNOTSUPP;
+
+	log_team(LOG_DEBUG, 
+		"trying to load zeta-catalog with sig %s for lang %s results in %s",
+		signature, language, strerror(fInitCheck));
 }
 
 ZetaCatalog::~ZetaCatalog()
