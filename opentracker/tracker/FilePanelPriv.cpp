@@ -129,6 +129,121 @@ key_down_filter(BMessage *message, BHandler **, BMessageFilter *filter)
 }
 
 
+//	#pragma mark -
+
+
+TFilePanel::TFilePanel(file_panel_mode mode, BMessenger *target,
+		const BEntry *startDir, uint32 nodeFlavors, bool multipleSelection,
+		BMessage *message, BRefFilter *filter, uint32 containerWindowFlags,
+		window_look look, window_feel feel, bool hideWhenDone)
+	: BContainerWindow(0, containerWindowFlags, look, feel, 0, B_CURRENT_WORKSPACE),
+	fDirMenu(NULL),
+	fDirMenuField(NULL),
+	fTextControl(NULL),
+	fClientObject(NULL),
+	fSelectionIterator(0),
+	fMessage(NULL),
+	fHideWhenDone(hideWhenDone),
+	fIsTrackingMenu(false),
+	fConfigWindow(NULL)
+{
+	InitIconPreloader();
+
+	fIsSavePanel = (mode == B_SAVE_PANEL);
+
+	BRect windRect(85, 50, 510, 296);
+	MoveTo(windRect.LeftTop());
+	ResizeTo(windRect.Width(), windRect.Height());
+
+	fNodeFlavors = (nodeFlavors == 0) ? B_FILE_NODE : nodeFlavors;
+
+	if (target)
+		fTarget = *target;
+	else
+		fTarget = BMessenger(be_app);
+
+	if (message)
+		SetMessage(message);
+	else if (fIsSavePanel)
+		fMessage = new BMessage(B_SAVE_REQUESTED);
+	else
+		fMessage = new BMessage(B_REFS_RECEIVED);
+
+	// check for legal starting directory
+	Model *model = new Model();
+	bool useRoot = true;
+
+	if (startDir) {
+		if (model->SetTo(startDir) == B_OK && model->IsDirectory()) 
+			useRoot = false;
+		else {
+			delete model;
+			model = new Model();
+		}
+	}
+
+	if (useRoot) {
+		BPath path;
+		if (find_directory(B_USER_DIRECTORY, &path) == B_OK) {
+			BEntry entry(path.Path(), true);
+			if (entry.InitCheck() == B_OK && model->SetTo(&entry) == B_OK)
+				useRoot = false;
+		}
+	}
+
+	if (useRoot) {
+		BVolume volume;
+		BDirectory root;
+		BVolumeRoster volumeRoster;
+		volumeRoster.GetBootVolume(&volume);
+		volume.GetRootDirectory(&root);
+		
+		BEntry entry;
+		root.GetEntry(&entry);
+		model->SetTo(&entry);
+	}
+
+	fTaskLoop = new PiggybackTaskLoop;
+
+	AutoLock<BWindow> lock(this);
+	CreatePoseView(model);
+	fPoseView->SetRefFilter(filter);
+	if (!fIsSavePanel)
+		fPoseView->SetMultipleSelection(multipleSelection);
+
+	fPoseView->SetFlags(fPoseView->Flags() | B_NAVIGABLE);
+	fPoseView->SetPoseEditing(false);
+	AddCommonFilter(new BMessageFilter(B_KEY_DOWN, key_down_filter));
+	AddCommonFilter(new BMessageFilter(B_SIMPLE_DATA, TFilePanel::MessageDropFilter));
+	AddCommonFilter(new BMessageFilter(B_NODE_MONITOR, TFilePanel::FSFilter));
+
+	// inter-application observing
+	BMessenger tracker(kTrackerSignature);
+	BHandler::StartWatching(tracker, kDesktopFilePanelRootChanged);
+
+	Init();
+}
+
+
+TFilePanel::~TFilePanel()
+{
+	//	regardless of the hide/close method
+	//	always get rid of the config window
+	if (fConfigWindow) {
+		//	moved from QuitRequested to ensure that
+		//	if the config window is showing that
+		//	it gets closed as well
+		fConfigWindow->Lock();
+		fConfigWindow->Quit();
+	}
+
+	BMessenger tracker(kTrackerSignature);
+	BHandler::StopWatching(tracker, kDesktopFilePanelRootChanged);
+
+	delete fMessage;
+}
+
+
 filter_result
 TFilePanel::MessageDropFilter(BMessage *message, BHandler **, BMessageFilter *filter)
 {
@@ -238,118 +353,6 @@ TFilePanel::FSFilter(BMessage *message, BHandler **, BMessageFilter *filter)
 			break;
 	}
 	return B_DISPATCH_MESSAGE;
-}
-
-
-TFilePanel::TFilePanel(file_panel_mode mode, BMessenger *target,
-		const BEntry *startDir, uint32 nodeFlavors, bool multipleSelection,
-		BMessage *message, BRefFilter *filter, uint32 containerWindowFlags,
-		window_look look, window_feel feel, bool hideWhenDone)
-	:	BContainerWindow(0, containerWindowFlags, look, feel, 0, B_CURRENT_WORKSPACE),
-		fDirMenu(NULL),
-		fDirMenuField(NULL),
-		fTextControl(NULL),
-		fClientObject(NULL),
-		fSelectionIterator(0),
-		fMessage(NULL),
-		fHideWhenDone(hideWhenDone),
-		fIsTrackingMenu(false),
-		fConfigWindow(NULL)
-{
-	InitIconPreloader();
-
-	fIsSavePanel = (mode == B_SAVE_PANEL);
-
-	BRect windRect(85, 50, 510, 296);
-	MoveTo(windRect.LeftTop());
-	ResizeTo(windRect.Width(), windRect.Height());
-
-	fNodeFlavors = (nodeFlavors == 0) ? B_FILE_NODE : nodeFlavors;
-
-	if (target)
-		fTarget = *target;
-	else
-		fTarget = BMessenger(be_app);
-
-	if (message)
-		SetMessage(message);
-	else if (fIsSavePanel)
-		fMessage = new BMessage(B_SAVE_REQUESTED);
-	else
-		fMessage = new BMessage(B_REFS_RECEIVED);
-
-	// check for legal starting directory
-	Model *model = new Model();
-	bool useRoot = true;
-
-	if (startDir) {
-		if (model->SetTo(startDir) == B_OK && model->IsDirectory()) 
-			useRoot = false;
-		else {
-			delete model;
-			model = new Model();
-		}
-	}
-
-	if (useRoot) {
-		BPath path;
-		if (find_directory(B_USER_DIRECTORY, &path) == B_OK) {
-			BEntry entry(path.Path(), true);
-			if (entry.InitCheck() == B_OK && model->SetTo(&entry) == B_OK)
-				useRoot = false;
-		}
-	}
-
-	if (useRoot) {
-		BVolume volume;
-		BDirectory root;
-		BVolumeRoster volumeRoster;
-		volumeRoster.GetBootVolume(&volume);
-		volume.GetRootDirectory(&root);
-		
-		BEntry entry;
-		root.GetEntry(&entry);
-		model->SetTo(&entry);
-	}
-
-	fTaskLoop = new PiggybackTaskLoop;
-
-	AutoLock<BWindow> lock(this);
-	CreatePoseView(model);
-	fPoseView->SetRefFilter(filter);
-	if (!fIsSavePanel)
-		fPoseView->SetMultipleSelection(multipleSelection);
-
-	fPoseView->SetFlags(fPoseView->Flags() | B_NAVIGABLE);
-	fPoseView->SetPoseEditing(false);
-	AddCommonFilter(new BMessageFilter(B_KEY_DOWN, key_down_filter));
-	AddCommonFilter(new BMessageFilter(B_SIMPLE_DATA, TFilePanel::MessageDropFilter));
-	AddCommonFilter(new BMessageFilter(B_NODE_MONITOR, TFilePanel::FSFilter));
-
-	// inter-application observing
-	BMessenger tracker(kTrackerSignature);
-	BHandler::StartWatching(tracker, kDesktopFilePanelRootChanged);
-
-	Init();
-}
-
-
-TFilePanel::~TFilePanel()
-{
-	//	regardless of the hide/close method
-	//	always get rid of the config window
-	if (fConfigWindow) {
-		//	moved from QuitRequested to ensure that
-		//	if the config window is showing that
-		//	it gets closed as well
-		fConfigWindow->Lock();
-		fConfigWindow->Quit();
-	}
-
-	BMessenger tracker(kTrackerSignature);
-	BHandler::StopWatching(tracker, kDesktopFilePanelRootChanged);
-
-	delete fMessage;
 }
 
 
@@ -1191,7 +1194,7 @@ TFilePanel::MessageReceived(BMessage *message)
 					switch (observerWhat) {
 						case kDesktopFilePanelRootChanged:
 						{
-							bool desktopIsRoot =   true;
+							bool desktopIsRoot = true;
 							message->FindBool("DesktopFilePanelRoot", &desktopIsRoot);
 							TrackerSettings().SetDesktopFilePanelRoot(desktopIsRoot);
 							SetTo(TargetModel()->EntryRef());
