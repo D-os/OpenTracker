@@ -3,6 +3,7 @@
 LOCALE_BUILD_DIR			= [ FDirName $(LOCALE_TOP) build ] ;
 LOCALE_INCLUDE_DIR			= [ FDirName $(LOCALE_TOP) include ] ;
 LOCALE_POSIX_INCLUDE_DIR	= [ FDirName $(LOCALE_TOP) include posix ] ;
+LOCALE_GENERATED_DIR		= [ FDirName $(LOCALE_TOP) generated ] ;
 LOCALE_DISTRO_DIR			= [ FDirName $(LOCALE_TOP) generated distro ] ;
 LOCALE_DOWNLOADS_DIR		= [ FDirName $(LOCALE_TOP) generated downloads ] ;
 LOCALE_OBJECTS_DIR			= [ FDirName $(LOCALE_TOP) generated objects ] ;
@@ -15,6 +16,12 @@ LOCATE on $(HCACHEFILE) $(JCACHEFILE) = $(LOCALE_OBJECTS_DIR) ;
 
 include [ FDirName $(LOCALE_BUILD_DIR) HelperRules ] ;
 include [ FDirName $(LOCALE_BUILD_DIR) ConfigRules ] ;
+include [ FDirName $(LOCALE_BUILD_DIR) DownloadRules ] ;
+include [ FDirName $(LOCALE_BUILD_DIR) FinalRules ] ;
+include [ FDirName $(LOCALE_BUILD_DIR) FileRules ] ;
+include [ FDirName $(LOCALE_BUILD_DIR) OverriddenJamRules ] ;
+include [ FDirName $(LOCALE_BUILD_DIR) MainBuildRules ] ;
+include [ FDirName $(LOCALE_BUILD_DIR) BuildSettings ] ;
 
 # Include UserBuildConfig.
 {
@@ -25,8 +32,3 @@ include [ FDirName $(LOCALE_BUILD_DIR) ConfigRules ] ;
 		include UserBuildConfig ;
 	}
 }
-
-include [ FDirName $(LOCALE_BUILD_DIR) DownloadRules ] ;
-include [ FDirName $(LOCALE_BUILD_DIR) OverriddenJamRules ] ;
-include [ FDirName $(LOCALE_BUILD_DIR) MainBuildRules ] ;
-include [ FDirName $(LOCALE_BUILD_DIR) BuildSettings ] ;
