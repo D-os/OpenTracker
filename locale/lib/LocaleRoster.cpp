@@ -1,6 +1,9 @@
 /* 
-** Copyright 2003, Axel Dörfler, axeld@pinc-software.de. All rights reserved.
 ** Distributed under the terms of the OpenBeOS License.
+** Copyright 2003-2004. All rights reserved.
+**
+** Authors:	Axel Dörfler, axeld@pinc-software.de
+**			Oliver Tappe, zooey@hirschkaefer.de
 */
 
 #include <Catalog.h>
@@ -54,8 +57,8 @@ struct BCatalogAddOnInfo {
 BLocaleRoster::BLocaleRoster()
 {
 	// ToDo: change this to fetch preferred languages from prefs
-	fPreferredLanguages.AddItem( (void*)"German-Germany");
-	fPreferredLanguages.AddItem( (void*)"English");
+	fPreferredLanguages.AddItem("Deutsch");
+	fPreferredLanguages.AddItem("English");
 }
 
 
