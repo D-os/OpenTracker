@@ -5712,18 +5712,49 @@ BPoseView::KeyDown(const char *bytes, int32 count)
 		case B_HOME:
 			// select the first entry (if in listview mode), and
 			// scroll to the top of the view
-			if (ViewMode() == kListMode)
-				SelectPose(fPoseList->FirstItem(), 0);
-			else if (fVScrollBar)
+			if (ViewMode() == kListMode) {
+				BPose *pose = fSelectionList->LastItem();
+
+				if (pose != NULL && fMultipleSelection && (modifiers() & B_SHIFT_KEY) != 0) {
+					int32 index = fPoseList->IndexOf(pose);
+
+					// select all items from the current one till the top
+					for (int32 i = index; i-- > 0; ) {
+						pose = fPoseList->ItemAt(i);
+						if (pose == NULL)
+							continue;
+
+						if (!pose->IsSelected())
+							AddPoseToSelection(pose, i, i == 0);
+					}
+				} else
+					SelectPose(fPoseList->FirstItem(), 0);
+			} else if (fVScrollBar)
 				fVScrollBar->SetValue(0);
 			break;
 
 		case B_END:
 			// select the last entry (if in listview mode), and
 			// scroll to the bottom of the view
-			if (ViewMode() == kListMode)
-				SelectPose(fPoseList->LastItem(), fPoseList->CountItems() - 1);
-			else if (fVScrollBar) {
+			if (ViewMode() == kListMode) {
+				BPose *pose = fSelectionList->FirstItem();
+
+				if (pose != NULL && fMultipleSelection && (modifiers() & B_SHIFT_KEY) != 0) {
+					int32 index = fPoseList->IndexOf(pose);
+					int32 count = fPoseList->CountItems() - 1;
+
+					// select all items from the current one to the bottom
+					for (int32 i = index; i <= count; i++) {
+						pose = fPoseList->ItemAt(i);
+						if (pose == NULL)
+							continue;
+
+						if (!pose->IsSelected())
+							AddPoseToSelection(pose, i, i == count);
+					}
+				} else
+					SelectPose(fPoseList->LastItem(), fPoseList->CountItems() - 1);
+			} else if (fVScrollBar) {
 				float max, min;
 				fVScrollBar->GetRange(&min, &max);
 				fVScrollBar->SetValue(max);
