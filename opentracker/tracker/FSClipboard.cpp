@@ -88,6 +88,7 @@ FSClipboardHasRefs()
 	return result;
 }
 
+
 void
 FSClipboardStartWatch(BMessenger target)
 {
@@ -104,6 +105,7 @@ FSClipboardStartWatch(BMessenger target)
 		}
 	}
 }
+
 
 void
 FSClipboardStopWatch(BMessenger target)
@@ -158,7 +160,7 @@ MakeModeName(char *name)
 static inline void
 MakeModeNameFromRefName(char *modename, char *refname)
 {
-	strcpy(modename,refname);
+	strcpy(modename, refname);
 	modename[0] = 'm';
 }
 
@@ -182,6 +184,13 @@ FSClipboardClear()
 }
 
 
+/** This function adds the given poses list to the clipboard, for both copy
+ *	and cut. All poses in the list must have "directory" as parent.
+ *	"moveMode" is either kMoveSelection or kCopySelection.
+ *	It will check if the entries are already present, so that there can only
+ *	be one reference to them in the clipboard.
+ */
+
 uint32
 FSClipboardAddPoses(const node_ref *directory, PoseList *list, uint32 moveMode,
 	bool clearClipboard)
@@ -191,8 +200,8 @@ FSClipboardAddPoses(const node_ref *directory, PoseList *list, uint32 moveMode,
 	if (tracker)
 		watcher = tracker->ClipboardRefsWatcher();
 
-	uint32	refsAdded = 0;
-	int32	listSize = list->CountItems();
+	uint32 refsAdded = 0;
+	int32 listSize = list->CountItems();
 
 	if (listSize && be_clipboard->Lock()) {
 		if (clearClipboard) {
@@ -207,16 +216,24 @@ FSClipboardAddPoses(const node_ref *directory, PoseList *list, uint32 moveMode,
 			char modename[64];
 
 			for (int32 index = 0; index < listSize; index++) {
-				BPose *pose = (BPose*)list->ItemAt(index);
+				BPose *pose = (BPose *)list->ItemAt(index);
 				Model *model = pose->TargetModel();
 				const node_ref *node = model->NodeRef();
+
+				BEntry entry;
+				model->GetEntry(&entry);
+				if (model->IsVolume()
+					|| model->IsRoot()
+					|| FSIsTrashDir(&entry)
+					|| FSIsDeskDir(&entry))
+					continue;
 
 				MakeRefName(refname, node);
 				MakeModeNameFromRefName(modename, refname);
 				
 				if (clearClipboard) {
-					if (clip->AddInt32(modename,(int32)moveMode) == B_OK)
-						if (clip->AddRef(refname,model->EntryRef()) == B_OK) {
+					if (clip->AddInt32(modename, (int32)moveMode) == B_OK)
+						if (clip->AddRef(refname, model->EntryRef()) == B_OK) {
 							pose->SetClipboardMode(moveMode);
 							refsAdded++;
 							if (watcher)
@@ -224,9 +241,9 @@ FSClipboardAddPoses(const node_ref *directory, PoseList *list, uint32 moveMode,
 						} else
 							clip->RemoveName(modename);
 				} else {
-					if (clip->ReplaceInt32(modename,(int32)moveMode) == B_OK) {
+					if (clip->ReplaceInt32(modename, (int32)moveMode) == B_OK) {
 						// replace old mode if entry already exists in clipboard
-						if (clip->ReplaceRef(refname,model->EntryRef()) == B_OK) {
+						if (clip->ReplaceRef(refname, model->EntryRef()) == B_OK) {
 							pose->SetClipboardMode(moveMode);
 							refsAdded++;
 						} else {
@@ -333,7 +350,7 @@ FSClipboardPaste(Model *model, uint32 linksMode)
 									// now change "Cut" mode to "Copy" mode, to let the user
 									// cut only once, next paste will just copy poses (from
 									// the new location)
-									clip->ReplaceInt32(modename,kCopySelectionTo);
+									clip->ReplaceInt32(modename, kCopySelectionTo);
 									moveCount++;
 								} else if ((uint32)moveMode == kCopySelectionTo) {
 									srcCopyList->AddItem(ref);
@@ -417,13 +434,13 @@ FSClipboardFindNodeMode(Model *model, bool updateRefIfNeeded)
 		if (clip != NULL) {
 			const node_ref *node = model->NodeRef();
 			char modename[64];
-			MakeModeName(modename,node);
-			if ((clip->FindInt32(modename,&moveMode) == B_OK)) {
+			MakeModeName(modename, node);
+			if ((clip->FindInt32(modename, &moveMode) == B_OK)) {
 				const entry_ref *ref = model->EntryRef();
 				entry_ref clipref;
 				char refname[64];
-				MakeRefName(refname,node);
-				if ((clip->FindRef(refname,&clipref) == B_OK)) {
+				MakeRefName(refname, node);
+				if ((clip->FindRef(refname, &clipref) == B_OK)) {
 					if (clipref != *ref) {
 						if (updateRefIfNeeded) {
 							clip->ReplaceRef(refname, ref);
@@ -524,7 +541,7 @@ BClipboardRefsWatcher::AddNode(const node_ref *node)
 void
 BClipboardRefsWatcher::RemoveNode(node_ref *node, bool removeFromClipboard)
 {
-	watch_node(node,B_STOP_WATCHING,this);
+	watch_node(node, B_STOP_WATCHING, this);
 
 	if (!removeFromClipboard)
 		return;
@@ -533,7 +550,7 @@ BClipboardRefsWatcher::RemoveNode(node_ref *node, bool removeFromClipboard)
 		BMessage *clip = be_clipboard->Data();
 		if (clip != NULL) {
 			char name[64];
-			MakeRefName(name,node);
+			MakeRefName(name, node);
 			clip->RemoveName(name);
 			MakeModeName(name);
 			clip->RemoveName(name);
@@ -554,7 +571,7 @@ BClipboardRefsWatcher::RemoveNodesByDevice(dev_t device)
 	BMessage *clip = be_clipboard->Data();
 	if (clip != NULL) {
 		char deviceName[6];
-		sprintf(deviceName,"r%ld_",device);
+		sprintf(deviceName, "r%ld_", device);
 
 		int32 index = 0;
 		char *refName;
@@ -565,14 +582,14 @@ BClipboardRefsWatcher::RemoveNodesByDevice(dev_t device)
 			(const char **)
 #endif
 			&refName, &type, &count) == B_OK) {
-			if (!strncmp(deviceName,refName,strlen(deviceName))) {
+			if (!strncmp(deviceName, refName, strlen(deviceName))) {
 				clip->RemoveName(refName);
 				MakeModeName(refName);
 				clip->RemoveName(refName);
 
 				node_ref node;
-				MakeNodeFromName(&node,refName);
-				watch_node(&node,B_STOP_WATCHING,this);
+				MakeNodeFromName(&node, refName);
+				watch_node(&node, B_STOP_WATCHING, this);
 			}
 			index++;
 		}
@@ -591,8 +608,8 @@ BClipboardRefsWatcher::UpdateNode(node_ref *node, entry_ref *ref)
 	BMessage *clip = be_clipboard->Data();
 	if (clip != NULL) {
 		char name[64];
-		MakeRefName(name,node);
-		if ((clip->ReplaceRef(name,ref)) != B_OK) {
+		MakeRefName(name, node);
+		if ((clip->ReplaceRef(name, ref)) != B_OK) {
 			clip->RemoveName(name);
 			MakeModeName(name);
 			clip->RemoveName(name);
@@ -609,10 +626,10 @@ void
 BClipboardRefsWatcher::Clear()
 {
 	stop_watching(this);
-	watch_node(NULL,B_WATCH_MOUNT,this);
+	watch_node(NULL, B_WATCH_MOUNT, this);
 
 	BMessage message(kClipboardPosesChanged);
-	message.AddBool("clearClipboard",true);
+	message.AddBool("clearClipboard", true);
 
 	if (Lock()) {
 		int32 items = fNotifyList.CountItems();
@@ -628,9 +645,9 @@ void
 BClipboardRefsWatcher::UpdatePoseViews(bool clearClipboard, const node_ref *node)
 {
 	BMessage message(kClipboardPosesChanged);
-	message.AddInt32("device",node->device);
-	message.AddInt64("directory",node->node);
-	message.AddBool("clearClipboard",clearClipboard);
+	message.AddInt32("device", node->device);
+	message.AddInt64("directory", node->node);
+	message.AddBool("clearClipboard", clearClipboard);
 
 	if (Lock()) {
 		int32 items = fNotifyList.CountItems();
@@ -646,15 +663,14 @@ void
 BClipboardRefsWatcher::MessageReceived(BMessage *message)
 {
 	if (message->what == B_CLIPBOARD_CHANGED && fRefsInClipboard) {
-		if (!(fRefsInClipboard = FSClipboardHasRefs())) {
+		if (!(fRefsInClipboard = FSClipboardHasRefs()))
 			Clear();
-		}
 		return;
 	} else if (message->what != B_NODE_MONITOR) {
 		_inherited::MessageReceived(message);
 		return;
 	}
-	
+
 	switch (message->FindInt32("opcode")) {	
 		case B_ENTRY_MOVED:
 		{
@@ -667,15 +683,15 @@ BClipboardRefsWatcher::MessageReceived(BMessage *message)
 			message->FindInt64("node", &node.node);
 			message->FindInt32("device", &node.device);
 			message->FindString("name", &name);
-			entry_ref ref(node.device,toDir,name);
-			UpdateNode(&node,&ref);
+			entry_ref ref(node.device, toDir, name);
+			UpdateNode(&node, &ref);
 			break;
 		}			
-			
+
 		case B_DEVICE_UNMOUNTED:
 		{
 			dev_t device;
-			message->FindInt32("device",&device);
+			message->FindInt32("device", &device);
 			RemoveNodesByDevice(device);
 			break;
 		}
@@ -685,7 +701,7 @@ BClipboardRefsWatcher::MessageReceived(BMessage *message)
 			node_ref node;
 			message->FindInt64("node", &node.node);
 			message->FindInt32("device", &node.device);
-			RemoveNode(&node,true);
+			RemoveNode(&node, true);
 			break;
 		}
 	}
