@@ -144,7 +144,7 @@ CatalogTestAddOn::Check() {
 }
 
 
-extern "C" void run_test_add_on()
+extern "C" _EXPORT void run_test_add_on()
 {
 	CatalogTestAddOn catTest;
 	catTest.Run();
