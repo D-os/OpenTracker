@@ -6,7 +6,7 @@
 class GenericNumberFormatConstructorTest : public CppUnit::TestCase {
 	public:
 		GenericNumberFormatConstructorTest() {}
-		GenericNumberFormatConstructorTest(std::string name)
+		GenericNumberFormatConstructorTest(string name)
 			: TestCase(name) {}
 
 		void ConstructorTest1();
