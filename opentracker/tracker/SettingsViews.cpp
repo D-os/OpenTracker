@@ -130,6 +130,14 @@ DesktopSettingsView::DesktopSettingsView(BRect rect)
 			new BMessage(kDesktopIntegrationChanged));
 	AddChild(fIntegrateNonBootBeOSDesktopsCheckBox);
 	fIntegrateNonBootBeOSDesktopsCheckBox->ResizeToPreferred();
+	
+	frame.OffsetBy(0, itemSpacing);
+
+	fEjectWhenUnmountingCheckBox = 
+		new BCheckBox(frame, "", "Eject When Unmounting",
+			new BMessage(kEjectWhenUnmountingChanged));
+	AddChild(fEjectWhenUnmountingCheckBox);
+	fEjectWhenUnmountingCheckBox->ResizeToPreferred();
 
 	frame.OffsetBy(0, itemSpacing);
 
@@ -152,6 +160,7 @@ DesktopSettingsView::AttachedToWindow()
 	fMountVolumesOntoDesktopRadioButton->SetTarget(this);
 	fMountSharedVolumesOntoDesktopCheckBox->SetTarget(this);
 	fIntegrateNonBootBeOSDesktopsCheckBox->SetTarget(this);
+	fEjectWhenUnmountingCheckBox->SetTarget(this);
 }
 
 void
@@ -251,6 +260,24 @@ DesktopSettingsView::MessageReceived(BMessage *message)
 			break;
 		}
 
+		case kEjectWhenUnmountingChanged:
+		{
+			settings.SetEjectWhenUnmounting(
+				fEjectWhenUnmountingCheckBox->Value() == 1);
+			
+			// Construct the notification message:				
+			BMessage notificationMessage;
+			notificationMessage.AddBool("EjectWhenUnmounting",
+				fEjectWhenUnmountingCheckBox->Value() == 1);
+
+			// Send the notification message:
+			tracker->SendNotices(kEjectWhenUnmountingChanged, &notificationMessage);
+			
+			// Tell the settings window the contents have changed:
+			Window()->PostMessage(kSettingsContentsModified);
+			break;
+		}
+		
 		default:
 			_inherited::MessageReceived(message);
 	}
@@ -267,6 +294,7 @@ DesktopSettingsView::SetDefaults()
 	settings.SetMountVolumesOntoDesktop(true);
 	settings.SetMountSharedVolumesOntoDesktop(false);
 	settings.SetIntegrateNonBootBeOSDesktops(true);
+	settings.SetEjectWhenUnmounting(true);
 
 	ShowCurrentSettings(true);
 		// true -> send notices about the change
@@ -282,6 +310,7 @@ DesktopSettingsView::Revert()
 	settings.SetMountVolumesOntoDesktop(fMountVolumesOntoDesktop);
 	settings.SetMountSharedVolumesOntoDesktop(fMountSharedVolumesOntoDesktop);
 	settings.SetIntegrateNonBootBeOSDesktops(fIntegrateNonBootBeOSDesktops);
+	settings.SetEjectWhenUnmounting(fEjectWhenUnmounting);
 
 	ShowCurrentSettings(true);
 		// true -> send notices about the change
@@ -300,6 +329,8 @@ DesktopSettingsView::ShowCurrentSettings(bool sendNotices)
 
 	fIntegrateNonBootBeOSDesktopsCheckBox->SetValue(settings.IntegrateNonBootBeOSDesktops());
 
+	fEjectWhenUnmountingCheckBox->SetValue(settings.EjectWhenUnmounting());
+
 	if (sendNotices) {
 		TTracker *tracker = dynamic_cast<TTracker *>(be_app);
 		if (!tracker)
@@ -315,6 +346,8 @@ DesktopSettingsView::ShowCurrentSettings(bool sendNotices)
 			fMountSharedVolumesOntoDesktopCheckBox->Value() == 1);
 		notificationMessage.AddBool("IntegrateNonBootBeOSDesktops",
 			fIntegrateNonBootBeOSDesktopsCheckBox->Value() == 1);
+		notificationMessage.AddBool("EjectWhenUnmounting",
+			fEjectWhenUnmountingCheckBox->Value() == 1);
 
 		// Send notices to the tracker about the change:
 		tracker->SendNotices(kVolumesOnDesktopChanged, &notificationMessage);
@@ -332,6 +365,7 @@ DesktopSettingsView::RecordRevertSettings()
 	fMountVolumesOntoDesktop = settings.MountVolumesOntoDesktop();
 	fMountSharedVolumesOntoDesktop = settings.MountSharedVolumesOntoDesktop();
 	fIntegrateNonBootBeOSDesktops = settings.IntegrateNonBootBeOSDesktops();
+	fEjectWhenUnmounting = settings.EjectWhenUnmounting();
 }
 
 
@@ -346,7 +380,9 @@ DesktopSettingsView::ShowsRevertSettings() const
 		&& (fMountSharedVolumesOntoDesktop ==
 			(fMountSharedVolumesOntoDesktopCheckBox->Value() > 0))
 		&& (fIntegrateNonBootBeOSDesktops == 
-			(fIntegrateNonBootBeOSDesktopsCheckBox->Value() > 0));
+			(fIntegrateNonBootBeOSDesktopsCheckBox->Value() > 0))
+		&& (fEjectWhenUnmounting == 
+			(fEjectWhenUnmountingCheckBox->Value() > 0));
 }
 
 

@@ -80,6 +80,8 @@ class TrackerSettings {
 		void SetIntegrateNonBootBeOSDesktops(bool);
 		bool IntegrateAllNonBootDesktops();
 		void SetIntegrateAllNonBootDesktops(bool);
+		bool EjectWhenUnmounting();
+		void SetEjectWhenUnmounting(bool);
 	
 		bool ShowVolumeSpaceBar();
 		void SetShowVolumeSpaceBar(bool);

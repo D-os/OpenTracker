@@ -953,27 +953,30 @@ UnmountIfMatchingID(Partition *_DEVICE_MAP_ONLY(partition),
 		params->result = partition->Unmount();
 		Device *device = partition->GetDevice();
 		bool deviceHasMountedPartitions = false;
-		if (params->result == B_OK
-			&& device->Removable()) {
+
+		if (params->result == B_OK && device->Removable()) {
 			for (int32 sessionIndex = 0; ; sessionIndex++) {
 				Session *session = device->SessionAt(sessionIndex);
 				if (!session)
 					break;
-				
+
 				for (int32 partitionIndex = 0; ; partitionIndex++) {
 					Partition *partition = session->PartitionAt(partitionIndex);
 					if (!partition)
 						break;
+
 					if (partition->Mounted() == kMounted) {
 						deviceHasMountedPartitions = true;
 						break;
 					}
 				}
 			}
-			if (!deviceHasMountedPartitions)
+
+			if (!deviceHasMountedPartitions
+				&& TrackerSettings().EjectWhenUnmounting())
 				params->result = partition->GetDevice()->Eject();
 		}
-		
+
 		return partition;
 	}
 
