@@ -100,6 +100,7 @@ All rights reserved.
 
 #undef NODE_CACHE_ASYNC_DRAWS
 
+
 IconCacheEntry::IconCacheEntry()
 	:	fLargeIcon(NULL),
 		fMiniIcon(NULL),
@@ -108,6 +109,7 @@ IconCacheEntry::IconCacheEntry()
 		fAliasForIndex(-1)
 {
 }
+
 
 IconCacheEntry::~IconCacheEntry()
 {
@@ -127,6 +129,7 @@ IconCacheEntry::~IconCacheEntry()
 	fAliasForIndex = -1;
 }
 
+
 void 
 IconCacheEntry::SetAliasFor(const SharedIconCache *sharedCache,
 	const SharedCacheEntry *entry)
@@ -135,11 +138,13 @@ IconCacheEntry::SetAliasFor(const SharedIconCache *sharedCache,
 	ASSERT(fAliasForIndex >= 0);
 }
 
+
 IconCacheEntry *
 IconCacheEntry::ResolveIfAlias(const SharedIconCache *sharedCache)
 {	
 	return sharedCache->ResolveIfAlias(this);
 }
+
 
 IconCacheEntry *
 IconCacheEntry::ResolveIfAlias(const SharedIconCache *sharedCache,
@@ -162,6 +167,7 @@ IconCacheEntry::CanConstructBitmap(IconDrawMode mode, icon_size) const
 	return false;
 }
 
+
 bool 
 IconCacheEntry::HaveIconBitmap(IconDrawMode mode, icon_size size) const
 {
@@ -181,6 +187,7 @@ IconCacheEntry::HaveIconBitmap(IconDrawMode mode, icon_size size) const
 	}
 	return false;
 }
+
 
 BBitmap *
 IconCacheEntry::IconForMode(IconDrawMode mode, icon_size size) const
@@ -202,6 +209,7 @@ IconCacheEntry::IconForMode(IconDrawMode mode, icon_size size) const
 	return NULL;
 }
 
+
 bool 
 IconCacheEntry::IconHitTest(BPoint where, IconDrawMode mode, icon_size size) const
 {
@@ -215,6 +223,7 @@ IconCacheEntry::IconHitTest(BPoint where, IconDrawMode mode, icon_size size) con
 	return *(bits + (int32)(floor(where.y) * size + where.x)) != B_TRANSPARENT_8_BIT;
 }
 
+
 BBitmap *
 IconCacheEntry::ConstructBitmap(BBitmap *constructFrom, IconDrawMode requestedMode,
 	IconDrawMode constructFromMode, icon_size size, LazyBitmapAllocator *lazyBitmap)
@@ -227,6 +236,7 @@ IconCacheEntry::ConstructBitmap(BBitmap *constructFrom, IconDrawMode requestedMo
 	return NULL;
 }
 
+
 BBitmap *
 IconCacheEntry::ConstructBitmap(IconDrawMode requestedMode, icon_size size,
 	LazyBitmapAllocator *lazyBitmap)
@@ -235,6 +245,7 @@ IconCacheEntry::ConstructBitmap(IconDrawMode requestedMode, icon_size size,
 	ASSERT(source);
 	return ConstructBitmap(source, requestedMode, kNormalIcon, size, lazyBitmap);
 }
+
 
 bool
 IconCacheEntry::AlternateModeForIconConstructing(IconDrawMode requestedMode,
@@ -247,6 +258,7 @@ IconCacheEntry::AlternateModeForIconConstructing(IconDrawMode requestedMode,
 	}
 	return false;
 }
+
 
 void 
 IconCacheEntry::SetIcon(BBitmap *bitmap, IconDrawMode mode, icon_size size,
@@ -266,12 +278,12 @@ IconCacheEntry::SetIcon(BBitmap *bitmap, IconDrawMode mode, icon_size size,
 		TRESPASS();
 }
 
+
 IconCache::IconCache()
 	:	fInitHiliteTable(true)
 {
 	InitHiliteTable();
 }
-
 
 
 // The following calls use the icon lookup sequence node-prefered app for node-
@@ -334,6 +346,7 @@ IconCache::GetIconForPreferredApp(const char *fileTypeSignature,
 
 	return entry;
 }
+
 
 IconCacheEntry *
 IconCache::GetIconFromMetaMime(const char *fileType, IconDrawMode mode,
@@ -405,6 +418,7 @@ IconCache::GetIconFromMetaMime(const char *fileType, IconDrawMode mode,
 	ASSERT(entry->HaveIconBitmap(mode, size));
 	return entry;
 }
+
 
 IconCacheEntry *
 IconCache::GetIconFromFileTypes(ModelNodeLazyOpener *modelOpener,
