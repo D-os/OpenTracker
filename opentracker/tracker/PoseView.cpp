@@ -1880,7 +1880,7 @@ BPoseView::MessageReceived(BMessage *message)
 		{
 			// Select widget if there is an active one
 			BTextWidget *widget;
-			if (ActivePose() && (widget = ActivePose()->ActiveWidget()))
+			if (ActivePose() && ((widget = ActivePose()->ActiveWidget())) != 0)
 				widget->SelectAll(this);
 			else
 				SelectAll();

@@ -58,7 +58,7 @@ CalcFreeSpace(dev_t device)
 		if ((!volume.IsReadOnly() && strcmp(info.fsh_name,"cdda"))
 			|| !strcmp(info.fsh_name,"ntfs")
 			|| !strcmp(info.fsh_name,"ext2")) {
-			int32 percent = volume.FreeBytes() / (volume.Capacity() / 100);
+			int32 percent = static_cast<int32>(volume.FreeBytes() / (volume.Capacity() / 100));
 
 			// warn below 20 MB of free space (if this is less than 10% of free space)
 			if (volume.FreeBytes() < 20 * 1024 * 1024 && percent < 10)

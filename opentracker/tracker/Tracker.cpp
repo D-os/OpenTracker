@@ -98,6 +98,7 @@ extern "C" _IMPEXP_ROOT int _kset_mon_limit_(int num);
 const int32 DEFAULT_MON_NUM = 4096;
 	// copied from fsil.c
 
+const int8 kOpenWindowNoFlags = 0;
 const int8 kOpenWindowMinimized = 1;
 const int8 kOpenWindowHasState = 2;
 
@@ -139,7 +140,7 @@ TTracker::~TTracker()
 {
 }
 
-int32
+uint32
 GetVolumeFlags(Model *model)
 {
 	fs_info info;
@@ -191,7 +192,7 @@ TTracker::QuitRequested()
 				BPath path;
 				const entry_ref *ref = window->TargetModel()->EntryRef();
 				if (entry.SetTo(ref) == B_OK && entry.GetPath(&path) == B_OK) {
-					int8 flags = window->IsMinimized() ? kOpenWindowMinimized : 0;
+					int8 flags = window->IsMinimized() ? kOpenWindowMinimized : kOpenWindowNoFlags;
 					uint32 deviceFlags = GetVolumeFlags(window->TargetModel());
 
 					// save state for every window which is
@@ -1819,10 +1820,10 @@ TTrackerState::SetShowVolumeSpaceBar(bool enabled)
 rgb_color ValueToColor(int32 value)
 {
 	rgb_color color;
-	color.alpha = (value >> 24L) & 0xff;
-	color.red = (value >> 16L) & 0xff;
-	color.green = (value >> 8L) & 0xff;
-	color.blue = value & 0xff;
+	color.alpha = static_cast<uchar>((value >> 24L) & 0xff);
+	color.red = static_cast<uchar>((value >> 16L) & 0xff);
+	color.green = static_cast<uchar>((value >> 8L) & 0xff);
+	color.blue = static_cast<uchar>(value & 0xff);
 
 	// zero alpha is invalid
 	if (color.alpha == 0)
