@@ -32,32 +32,28 @@ names are registered trademarks or trademarks of their respective holders.
 All rights reserved.
 */
 
+#include "AutoMounter.h"
+
+#include "AutoLock.h"
+#include "AutoMounterSettings.h"
+#include "Commands.h"
+#include "FSUtils.h"
+#include "Tracker.h"
+#include "TrackerSettings.h"
+
 #include <Alert.h>
-#include <Directory.h>
-#include <Drivers.h>
-#include <Path.h>
-#include <FindDirectory.h>
+#include <fs_info.h>
+#include <Message.h>
+#include <Node.h>
 #include <NodeMonitor.h>
 #include <String.h>
 #include <VolumeRoster.h>
-#include <Volume.h>
 
-#include <fs_info.h>
 #include <string.h>
-#include <stdio.h>
-
-#include "AutoLock.h"
-#include "AutoMounter.h"
-#include "AutoMounterSettings.h"
-#include "Commands.h"
-#include "DeskWindow.h"
-#include "FSUtils.h"
-#include "Tracker.h"
-#include "Utilities.h"
 
 
-const uint32 kStartPolling = 'strp';
-const char *kAutoMounterSettings = "automounter_settings";
+static const uint32 kStartPolling = 'strp';
+static const char *kAutoMounterSettings = "automounter_settings";
 
 
 struct OneMountFloppyParams {
@@ -82,10 +78,58 @@ DumpPartition(Partition *_DEVICE_MAP_ONLY(partition), void*)
 
 #if _INCLUDES_CLASS_DEVICE_MAP
 
+
 struct MountPartitionParams {
 	int32 uniqueID;
 	status_t result;
 };
+
+
+/** Sets the Tracker Shell's AutoMounter to monitor a node.
+ *  n.b. Get's the one AutoMounter and uses Tracker's _special_ WatchNode.
+ *
+ *  @param nodeToWatch (node_ref const * const) The Node to monitor.
+ *  @param flags (uint32) watch_node flags from NodeMonitor.
+ *  @return (status_t) watch_node status or B_BAD_TYPE if not a TTracker app.
+ */
+
+static status_t
+AutoMounterWatchNode(const node_ref *nodeRef, uint32 flags)
+{
+	ASSERT(nodeToWatch != NULL);
+
+	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
+	if (tracker != NULL)
+		return TTracker::WatchNode(nodeRef, flags, BMessenger(0, tracker->AutoMounterLoop()));
+
+	return B_BAD_TYPE;
+}
+
+
+/** Tries to mount the partition and if it can it watches mount point.
+ *
+ *  @param partition (Partition * const) The partition to mount.
+ */
+
+static status_t
+MountAndWatch(Partition *partition)
+{
+	ASSERT(partition != NULL);
+
+	status_t status = partition->Mount();
+	if (status != B_OK)
+		return status;
+
+	// Start watching this mount point
+	node_ref nodeToWatch;
+	status = partition->GetMountPointNodeRef(&nodeToWatch);
+	if (status != B_OK) {
+		PRINT(("Couldn't get mount point node ref: %s\n", strerror(result)));
+		return status;
+	}
+
+	return AutoMounterWatchNode(&nodeToWatch, B_WATCH_NAME);
+}
 
 
 static Partition *
@@ -97,22 +141,9 @@ TryMountingEveryOne(Partition *partition, void *castToParams)
 		if (!gSilentAutoMounter)
 			PRINT(("%s already mounted\n", partition->VolumeName()));
 	} else {
-		status_t result = partition->Mount();
-		if (result == B_OK) {
-			// Start watching this mount point
-			node_ref nodeRef;
-			result = partition->GetMountPointNodeRef(&nodeRef);
-			if (result == B_OK) {
-				TTracker *tracker = dynamic_cast<TTracker *>(be_app);
-				if (tracker != NULL)
-					watch_node(&nodeRef, B_WATCH_NAME, BMessenger(0, tracker->AutoMounterLoop()));
-			} else
-				PRINT(("Couldn't get mount point node ref: %s\n", 	
-					strerror(result)));
-		}
-
+		status_t result = MountAndWatch(partition);
+		// return error if caller asked for it
 		if (params)
-			// return error if caller asked for it
 			params->result = result;
 
 		if (!gSilentAutoMounter) {
@@ -136,18 +167,11 @@ OneTryMountingFloppy(Partition *partition, void *castToParams)
 {
 	OneMountFloppyParams *params = (OneMountFloppyParams *)castToParams;
 	if (partition->GetDevice()->IsFloppy()){
-		params->result = partition->Mount();
-		if (params->result == B_OK) {
-			// Start watching this mount point
-			node_ref nodeRef;
-			status_t error = partition->GetMountPointNodeRef(&nodeRef);
-			if (error == B_OK)
-				watch_node(&nodeRef, B_WATCH_NAME, BMessenger(0, 
-					dynamic_cast<TTracker*>(be_app)->AutoMounterLoop()));
-			else
-				PRINT(("Couldn't get mount point node ref: %s\n", 
-					strerror(error)));
-		}
+
+		status_t result = MountAndWatch(partition);
+		// return error if caller asked for it
+		if (params)
+			params->result = result;
 
 		return partition;
 	}
@@ -230,8 +254,7 @@ TryWatchMountPoint(Partition *partition, void *)
 {
 	node_ref nodeRef;
 	if (partition->GetMountPointNodeRef(&nodeRef) == B_OK)
-		watch_node(&nodeRef, B_WATCH_NAME, BMessenger(0, 
-			dynamic_cast<TTracker*>(be_app)->AutoMounterLoop()));
+		AutoMounterWatchNode(&nodeRef, B_WATCH_NAME);
 
 	return 0;
 }
@@ -289,7 +312,9 @@ NotifyFloppyNotMountable(Partition *partition, void *)
 	return NULL;
 }
 
-#endif
+
+#endif // #if _INCLUDES_CLASS_DEVICE_MAP
+
 
 #ifdef MOUNT_MENU_IN_DESKBAR
 
@@ -320,7 +345,7 @@ AddMountableItemToMessage(Partition *partition, void *castToParams)
 	return NULL;	
 }
 
-#endif
+#endif // #ifdef MOUNT_MENU_IN_DESKBAR
 
 
 AutoMounter::AutoMounter(bool _DEVICE_MAP_ONLY(checkRemovableOnly),
@@ -369,7 +394,7 @@ AutoMounter::AutoMounter(bool _DEVICE_MAP_ONLY(checkRemovableOnly),
 	}
 
 	//	Watch mount/unmount
-	watch_node(0, B_WATCH_MOUNT, BMessenger(0, this));
+	TTracker::WatchNode(0, B_WATCH_MOUNT, this);
 #endif
 }
 
@@ -399,7 +424,7 @@ AutoMounter::RescanDevices()
 	fList.RescanDevices(true);
 	fList.UpdateMountingInfo();
 	fList.EachMountedPartition(TryWatchMountPoint, 0);
-	watch_node(0, B_WATCH_MOUNT, BMessenger(0, this));	
+	TTracker::WatchNode(0, B_WATCH_MOUNT, this);
 	fList.EachMountedPartition(TryWatchMountPoint, 0);
 #endif
 }
