@@ -21,6 +21,8 @@
 #include <DefaultCatalog.h>
 #include <LocaleRoster.h>
 
+#include <cstdio>
+
 /*
  *	This file implements the default catalog-type for the opentracker locale kit.
  *  Alternatively, this could be used as a full add-on, but currently this
@@ -104,6 +106,30 @@ CatKey::operator== (const CatKey& right) const
 	// are equivalent:
 	return fHashVal == right.fHashVal
 		&& fKey == right.fKey;
+}
+
+
+status_t
+CatKey::GetStringParts(BString* str, BString* ctx, BString* cmt) const
+{
+	if (!str || !ctx || !cmt)
+		return B_BAD_VALUE;
+	int32 pos1 = fKey.FindFirst(kSeparator);
+	if (pos1 < B_OK) {
+		str->SetTo(fKey);
+		ctx->Truncate(0);
+		cmt->Truncate(0);
+	} else {
+		fKey.CopyInto(*str, 0, pos1);
+		int32 pos2 = fKey.FindFirst(kSeparator, pos1+1);
+		if (pos2 < B_OK) {
+			ctx->SetTo(fKey, pos1+1);
+			cmt->Truncate(0);
+		} else {
+			fKey.CopyInto(*ctx, pos1+1, pos2-pos1-1);
+			cmt->SetTo(fKey.String()+pos2+1);
+		}
+	}
 }
 
 
@@ -375,9 +401,9 @@ DefaultCatalog::WriteToFile(const char *path)
 		// set a largish block-size in order to avoid reallocs
 	res = Flatten(&mallocIO);
 	if (res == B_OK) {
-		size_t wsz;
+		ssize_t wsz;
 		wsz = catalogFile.Write(mallocIO.Buffer(), mallocIO.BufferLength());
-		if (wsz != mallocIO.BufferLength())
+		if (wsz != (ssize_t)mallocIO.BufferLength())
 			return B_FILE_ERROR;
 
 		// set mimetype-, language- and signature-attributes:
@@ -386,7 +412,8 @@ DefaultCatalog::WriteToFile(const char *path)
 		catalogFile.WriteAttr(BLocaleRoster::kCatFingerprintAttr, B_INT32_TYPE, 
 			0, &fFingerprint, sizeof(int32));
 	}
-	
+	if (res == B_OK)
+		UpdateAttributes(catalogFile);	
 	return res;
 }
 
@@ -407,10 +434,15 @@ DefaultCatalog::WriteToAttribute(entry_ref *appOrAddOnRef)
 		// set a largish block-size in order to avoid reallocs
 	res = Flatten(&mallocIO);
 
-	if (res == B_OK)
-		res = node.WriteAttr(BLocaleRoster::kEmbeddedCatAttr, B_MESSAGE_TYPE, 0,
+	if (res == B_OK) {
+		ssize_t wsz;
+		wsz = node.WriteAttr(BLocaleRoster::kEmbeddedCatAttr, B_MESSAGE_TYPE, 0,
 			mallocIO.Buffer(), mallocIO.BufferLength());
-
+		if (wsz < B_OK)
+			res = wsz;
+		else if (wsz != (ssize_t)mallocIO.BufferLength())
+			res = B_ERROR;
+	}
 	return res;
 }
 
@@ -460,18 +492,22 @@ DefaultCatalog::GetString(const char *string, const char *context,
 	const char *comment)
 {
 	CatKey key(string, context, comment);
-	CatMap::const_iterator iter = fCatMap.find(key);
-	if (iter != fCatMap.end())
-		return iter->second.String();
-	else
-		return NULL;
+	return GetString(key);
 }
 
 
 const char *
 DefaultCatalog::GetString(uint32 id)
 {
-	CatMap::const_iterator iter = fCatMap.find(id);
+	CatKey key(id);
+	return GetString(key);
+}
+
+
+const char *
+DefaultCatalog::GetString(const CatKey& key)
+{
+	CatMap::const_iterator iter = fCatMap.find(key);
 	if (iter != fCatMap.end())
 		return iter->second.String();
 	else
@@ -493,7 +529,17 @@ DefaultCatalog::SetString(const char *string, const char *translated,
 status_t
 DefaultCatalog::SetString(int32 id, const char *translated)
 {
-	fCatMap[id] = translated;
+	CatKey key(id);
+	fCatMap[key] = translated;
+		// overwrite existing element
+	return B_OK;
+}
+
+
+status_t
+DefaultCatalog::SetString(const CatKey& key, const char *translated)
+{
+	fCatMap[key] = translated;
 		// overwrite existing element
 	return B_OK;
 }
@@ -535,9 +581,9 @@ DefaultCatalog::UpdateAttributes(BFile& catalogFile)
 {
 	static const int bufSize = 256;
 	char buf[bufSize];
-	if (catalogFile.ReadAttr("BEOS:MIME", B_STRING_TYPE, 0, &buf, bufSize) <= 0
+	if (catalogFile.ReadAttr("BEOS:TYPE", B_MIME_STRING_TYPE, 0, &buf, bufSize) <= 0
 		|| strcmp(kCatMimeType, buf) != 0) {
-		catalogFile.WriteAttr("BEOS:MIME", B_STRING_TYPE, 0, 
+		catalogFile.WriteAttr("BEOS:TYPE", B_MIME_STRING_TYPE, 0, 
 			kCatMimeType, strlen(kCatMimeType)+1);
 	}
 	if (catalogFile.ReadAttr(BLocaleRoster::kCatLangAttr, B_STRING_TYPE, 0, 

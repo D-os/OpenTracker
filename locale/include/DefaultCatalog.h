@@ -41,6 +41,7 @@ struct _IMPEXP_LOCALE CatKey {
 	CatKey(uint32 id);
 	CatKey();
 	bool operator== (const CatKey& right) const;
+	status_t GetStringParts(BString* str, BString* ctx, BString* cmt) const;
 	static size_t HashFun(const char* s);
 };
 
@@ -64,7 +65,7 @@ struct hash<CatKey>
  * The implementation of the Locale Kit's standard catalog-type.
  * Currently it only maps CatKey to a BString (the translated string),
  * but the value-type might change to add support for shortcuts and/or
- * graphical data (like button-images and the like).
+ * graphical data (button-images and the like).
  */
 class _IMPEXP_LOCALE DefaultCatalog : public BCatalogAddOn {
 
@@ -84,10 +85,12 @@ class _IMPEXP_LOCALE DefaultCatalog : public BCatalogAddOn {
 		const char *GetString(const char *string, const char *context = NULL,
 						const char *comment = NULL);
 		const char *GetString(uint32 id);
+		const char *GetString(const CatKey& key);
 		//
 		status_t SetString(const char *string, const char *translated, 
 					const char *context = NULL, const char *comment = NULL);
 		status_t SetString(int32 id, const char *translated);
+		status_t SetString(const CatKey& key, const char *translated);
 		void UpdateFingerprint();
 
 		// implementation for editor-interface:
@@ -119,7 +122,67 @@ class _IMPEXP_LOCALE DefaultCatalog : public BCatalogAddOn {
 		typedef hash_map<CatKey, BString, hash<CatKey>, equal_to<CatKey> > CatMap;
 		CatMap 				fCatMap;
 		mutable BString 	fPath;
+
+	public:
+		/*
+		 * CatWalker
+		 */
+		class CatWalker {
+			public:
+				CatWalker() {}
+				CatWalker(CatMap &catMap);
+				bool AtEnd() const;
+				const CatKey& GetKey() const;
+				const char *GetValue() const;
+				void Next();
+			private:
+				CatMap::iterator fPos;
+				CatMap::iterator fEnd;
+		};
+		status_t GetWalker(CatWalker *walker);		
 };
+
+inline 
+DefaultCatalog::CatWalker::CatWalker(CatMap &catMap)
+	: fPos(catMap.begin()),
+	  fEnd(catMap.end())
+{
+}
+
+inline bool 
+DefaultCatalog::CatWalker::AtEnd() const
+{
+	return fPos == fEnd;
+}
+
+inline const CatKey & 
+DefaultCatalog::CatWalker::GetKey() const
+{
+	assert(fPos != fEnd);
+	return fPos->first;
+}
+
+inline const char * 
+DefaultCatalog::CatWalker::GetValue() const
+{
+	assert(fPos != fEnd);
+	return fPos->second.String();
+}
+
+inline void 
+DefaultCatalog::CatWalker::Next()
+{
+	++fPos;
+}
+
+inline status_t 
+DefaultCatalog::GetWalker(CatWalker *walker)
+{
+	if (!walker)
+		return B_BAD_VALUE;
+	*walker = CatWalker(fCatMap);
+	return B_OK;
+}		
 
 
 }	// namespace BPrivate
