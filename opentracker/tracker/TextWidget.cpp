@@ -436,6 +436,7 @@ BTextWidget::Draw(BRect eraseRect, BRect textRect, float, BPoseView *view,
 
 	drawView->MovePenTo(loc);
 
+	bool windowActive = view->Window()->IsActive();
 	if (direct) {
 		rgb_color highColor;
 		if (view->IsDesktopWindow()) {
@@ -443,10 +444,11 @@ BTextWidget::Draw(BRect eraseRect, BRect textRect, float, BPoseView *view,
 				highColor = kWhite;
 			else
 				highColor = view->DeskTextColor();
-		} else if (selected && !view->EraseWidgetTextBackground())
+		} else if (selected && windowActive && !view->EraseWidgetTextBackground()) {
 			highColor = kWhite;
-		else
+		} else {
 			highColor = kBlack;
+		}
 
 		drawView->SetHighColor(highColor);
 	}

@@ -619,9 +619,12 @@ BStatusView::Draw(BRect)
 	StrokeLine(bounds.LeftTop(), bounds.RightTop());
 	SetHighColor(0, 0, 0);
 
-	BRect extraTextRect = fStatusBar->Bounds();
-	extraTextRect.OffsetBy(42, 42);
-	MovePenTo(extraTextRect.left, extraTextRect.top);
+	BPoint tp = fStatusBar->Frame().LeftBottom();
+	font_height fh;
+	GetFontHeight(&fh);
+	tp.x += 2;
+	tp.y += fh.leading + fh.ascent;
+	MovePenTo(tp);
 
 	if (IsPaused())
 		DrawString("Paused: click to resume or stop");

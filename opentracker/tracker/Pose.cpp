@@ -543,7 +543,7 @@ BPose::Draw(BRect rect, BPoseView *poseView, BView *drawView, bool fullDraw,
 
 		bool selectDuringDraw = directDraw && selected
 			&& (poseView->IsDesktopWindow()
-			|| !poseView->EraseWidgetTextBackground());
+			|| (windowActive && !poseView->EraseWidgetTextBackground()));
 			
 		if (selectDuringDraw) {
 			// draw with dark background to select text
