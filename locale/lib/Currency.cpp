@@ -105,14 +105,34 @@ BCurrency::DefaultFractionDigits() const
 status_t
 BCurrency::GetSymbol(char *symbol, size_t maxSize, BLocale *locale)
 {
+	// check initialization and parameters
+	if (InitCheck() != B_OK)
+		return B_NO_INIT;
+	if (symbol == NULL)
+		return B_BAD_VALUE;
 	// TODO: get symbol from locale
+	// fall back to the default symbol
+	if (maxSize <= fDefaultSymbol.Length())
+		return EOVERFLOW;	// OpenBeOS: B_BUFFER_OVERFLOW
+	strcpy(symbol, fDefaultSymbol.String());
+	return B_OK;
 }
 
 // GetSymbol
 status_t
 BCurrency::GetSymbol(BString *symbol, BLocale *locale)
 {
+	// check initialization and parameters
+	if (InitCheck() != B_OK)
+		return B_NO_INIT;
+	if (symbol == NULL)
+		return B_BAD_VALUE;
 	// TODO: get symbol from locale
+	// fall back to the default symbol
+	*symbol = fDefaultSymbol;
+	if (symbol->Length() != fDefaultSymbol.Length())
+		return B_NO_MEMORY;
+	return B_OK;
 }
 
 // =
