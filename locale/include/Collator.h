@@ -43,7 +43,7 @@ class BCollator : public BArchivable {
 		bool GreaterOrEqual(const char *, const char *, int32 len = -1, int8 strength = B_COLLATE_DEFAULT);
 
 		// (un-)archiving API
-		status_t Archive(BMessage *archive, bool deep);
+		status_t Archive(BMessage *archive, bool deep) const;
 		static BArchivable *Instantiate(BMessage *archive);
 
 	private:
@@ -91,7 +91,7 @@ class BCollatorAddOn : public BArchivable {
 						bool ignorePunctuation);
 
 		// (un-)archiving API
-		virtual status_t Archive(BMessage *archive, bool deep);
+		virtual status_t Archive(BMessage *archive, bool deep) const;
 		static BArchivable *Instantiate(BMessage *archive);
 
 	protected:

@@ -178,7 +178,7 @@ BCollator::Compare(const char *a, const char *b, int32 length, int8 strength)
 
 
 status_t 
-BCollator::Archive(BMessage *archive, bool deep)
+BCollator::Archive(BMessage *archive, bool deep) const
 {
 	status_t status = BArchivable::Archive(archive, deep);
 	if (status < B_OK)
@@ -450,7 +450,7 @@ BCollatorAddOn::Compare(const char *a, const char *b, int32 length, int8 strengt
 
 
 status_t 
-BCollatorAddOn::Archive(BMessage *archive, bool deep)
+BCollatorAddOn::Archive(BMessage *archive, bool deep) const
 {
 	return BArchivable::Archive(archive, deep);
 }
