@@ -98,6 +98,7 @@ public:
 	virtual bool QuitRequested();
 	virtual void ReadyToRun();
 	virtual void MessageReceived(BMessage *);
+	virtual void Pulse();
 	virtual void RefsReceived(BMessage *);
 	virtual void ArgvReceived(int32 argc, char **argv);
 
@@ -163,6 +164,15 @@ public:
 	static void SetSingleWindowBrowse(bool);
 	static bool ShowNavigator();
 	static void SetShowNavigator(bool);
+
+	static bool ShowVolumeSpaceBar();
+	static void SetShowVolumeSpaceBar(bool);
+ 	static rgb_color UsedSpaceColor();
+	static void SetUsedSpaceColor(rgb_color color);
+ 	static rgb_color FreeSpaceColor();
+	static void SetFreeSpaceColor(rgb_color color);
+ 	static rgb_color WarningSpaceColor();
+	static void SetWarningSpaceColor(rgb_color color);
 
 	void RecentCounts(int32 *applications, int32 *documents, int32 *folders);
 	void SetRecentApplicationsCount(int32);
@@ -297,6 +307,18 @@ public:
 	bool IntegrateAllNonBootDesktops();
 	void SetIntegrateAllNonBootDesktops(bool);
 
+	bool ShowVolumeSpaceBar();
+	void SetShowVolumeSpaceBar(bool);
+
+ 	rgb_color UsedSpaceColor();
+	void SetUsedSpaceColor(rgb_color color);
+
+ 	rgb_color FreeSpaceColor();
+	void SetFreeSpaceColor(rgb_color color);
+
+ 	rgb_color WarningSpaceColor();
+	void SetWarningSpaceColor(rgb_color color);
+
 	bool ShowFullPathInTitleBar();
 	void SetShowFullPathInTitleBar(bool);
 
@@ -348,7 +370,12 @@ private:
 	ScalarValueSetting *fRecentFoldersCount;
 	ScalarValueSetting *fTimeFormatSeparator;
 	ScalarValueSetting *fDateOrderFormat;
-	
+
+	BooleanValueSetting *fShowVolumeSpaceBar;
+	ScalarValueSetting *fUsedSpaceColor;
+	ScalarValueSetting *fFreeSpaceColor;
+	ScalarValueSetting *fWarningSpaceColor;
+
 	Benaphore fInitLock;
 	bool fInited;
 	bool fSettingsLoaded;

@@ -44,8 +44,12 @@ All rights reserved.
 #include <Box.h>
 #include <Button.h>
 #include <MenuField.h>
+#include <ColorControl.h>
 #include <NodeMonitor.h>
 #include <StringView.h>
+
+const uint32 kSpaceBarSwitchColor = 'SBsc';
+
 
 SettingsView::SettingsView(BRect rect, const char *name)
 	:	BView(rect, name, B_FOLLOW_ALL_SIDES, 0)
@@ -86,6 +90,9 @@ namespace BPrivate {
 	const float kItemExtraSpacing = 2.0f;
 	const float kIndentSpacing = 12.0f;
 }
+
+//------------------------------------------------------------------------
+// #pragma mark -
 
 DesktopSettingsView::DesktopSettingsView(BRect rect)
 	:	SettingsView(rect, "DesktopSettingsView")
@@ -339,6 +346,9 @@ DesktopSettingsView::ShowsRevertSettings() const
 			(fIntegrateNonBootBeOSDesktopsCheckBox->Value() > 0));
 }
 
+//------------------------------------------------------------------------
+// #pragma mark -
+
 WindowsSettingsView::WindowsSettingsView(BRect rect)
 	:	SettingsView(rect, "WindowsSettingsView")
 {
@@ -544,6 +554,9 @@ WindowsSettingsView::ShowsRevertSettings() const
 		&& (fSortFolderNamesFirst ==
 			(fSortFolderNamesFirstCheckBox->Value() > 0));
 }
+
+//------------------------------------------------------------------------
+// #pragma mark -
 
 FilePanelSettingsView::FilePanelSettingsView(BRect rect)
 	:	SettingsView(rect, "FilePanelSettingsView")
@@ -781,6 +794,8 @@ FilePanelSettingsView::GetAndRefreshDisplayedFigures() const
 	fRecentFoldersTextControl->SetText(folderCountText.String());
 }
 
+//------------------------------------------------------------------------
+// #pragma mark -
 
 TimeFormatSettingsView::TimeFormatSettingsView(BRect rect)
 	:	SettingsView(rect, "WindowsSettingsView")
@@ -1083,3 +1098,197 @@ TimeFormatSettingsView::UpdateExamples()
 	fShortDateExampleView->ResizeToPreferred();
 }
 
+//------------------------------------------------------------------------
+// #pragma mark -
+
+SpaceBarSettingsView::SpaceBarSettingsView(BRect rect)
+	:	SettingsView(rect, "SpaceBarSettingsView")
+{
+	BRect frame = BRect(kBorderSpacing, kBorderSpacing, rect.Width()
+		- 2 * kBorderSpacing, kBorderSpacing + kItemHeight);
+
+	fSpaceBarShowCheckBox = new BCheckBox(frame, "", "Show Space Bars On Volumes",
+		new BMessage(kUpdateVolumeSpaceBar));
+	AddChild(fSpaceBarShowCheckBox);
+	fSpaceBarShowCheckBox->ResizeToPreferred();
+	float itemSpacing = fSpaceBarShowCheckBox->Bounds().Height() + kItemExtraSpacing;
+	frame.OffsetBy(0, itemSpacing);
+	
+	BPopUpMenu *menu = new BPopUpMenu(B_EMPTY_STRING);
+	menu->SetFont(be_plain_font);
+
+	BMenuItem *item;
+	menu->AddItem(item = new BMenuItem("Used Space Color", new BMessage(kSpaceBarSwitchColor)));
+	item->SetMarked(true);
+	fCurrentColor = 0;
+	menu->AddItem(new BMenuItem("Free Space Color", new BMessage(kSpaceBarSwitchColor)));
+	menu->AddItem(new BMenuItem("Warning Space Color", new BMessage(kSpaceBarSwitchColor)));
+
+	BBox *box = new BBox(frame);
+	box->SetLabel(fColorPicker = new BMenuField(frame,NULL,NULL,menu));
+	AddChild(box);
+
+	fColorControl = new BColorControl(
+			BPoint(8,fColorPicker->Bounds().Height() + 8 + kItemExtraSpacing),
+			B_CELLS_16x16,1,"SpaceColorControl",new BMessage(kSpaceBarColorChanged));
+	fColorControl->SetValue(TTracker::UsedSpaceColor());
+	fColorControl->ResizeToPreferred();
+	box->AddChild(fColorControl);
+	box->ResizeTo(fColorControl->Bounds().Width() + 16,fColorControl->Frame().bottom + 8);
+}
+
+SpaceBarSettingsView::~SpaceBarSettingsView()
+{
+}
+
+void
+SpaceBarSettingsView::AttachedToWindow()
+{
+	fSpaceBarShowCheckBox->SetTarget(this);
+	fColorControl->SetTarget(this);
+	fColorPicker->Menu()->SetTargetForItems(this);
+}
+
+void
+SpaceBarSettingsView::MessageReceived(BMessage *message)
+{
+	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
+	if (!tracker)
+		return;
+		
+	switch (message->what) {
+		case kUpdateVolumeSpaceBar:
+		{
+			tracker->SetShowVolumeSpaceBar(fSpaceBarShowCheckBox->Value() == 1);
+			Window()->PostMessage(kSettingsContentsModified);
+			BMessage notificationMessage;
+			notificationMessage.AddBool("ShowVolumeSpaceBar", tracker->ShowVolumeSpaceBar());
+			tracker->SendNotices(kShowVolumeSpaceBar, &notificationMessage);
+			break;
+		}
+
+		case kSpaceBarSwitchColor:
+		{
+			fCurrentColor = message->FindInt32("index");
+			switch (fCurrentColor) {
+				case 0:
+					fColorControl->SetValue(TTracker::UsedSpaceColor());
+					break;
+				case 1:
+					fColorControl->SetValue(TTracker::FreeSpaceColor());
+					break;
+				case 2:
+					fColorControl->SetValue(TTracker::WarningSpaceColor());
+					break;
+			}
+			break;
+		}
+		case kSpaceBarColorChanged:
+		{
+			switch (fCurrentColor) {
+				case 0:
+					tracker->SetUsedSpaceColor(fColorControl->ValueAsColor());
+					break;
+				case 1:
+					tracker->SetFreeSpaceColor(fColorControl->ValueAsColor());
+					break;
+				case 2:
+					tracker->SetWarningSpaceColor(fColorControl->ValueAsColor());
+					break;
+			}
+
+			Window()->PostMessage(kSettingsContentsModified);
+			BMessage notificationMessage;
+			tracker->SendNotices(kSpaceBarColorChanged, &notificationMessage);
+			break;
+		}
+	
+		default:
+			_inherited::MessageReceived(message);
+			break;
+	}	
+}
+
+void
+SpaceBarSettingsView::SetDefaults()
+{
+	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
+	if (!tracker)
+		return;
+
+	tracker->SetShowVolumeSpaceBar(false);
+
+	tracker->SetUsedSpaceColor(Color(0,0xcb,0));
+	tracker->SetFreeSpaceColor(Color(0xff,0xff,0xff));
+	tracker->SetWarningSpaceColor(Color(0xcb,0,0));
+
+	ShowCurrentSettings(true);
+		// true -> send notices about the change
+}
+
+void
+SpaceBarSettingsView::Revert()
+{
+	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
+	if (!tracker)
+		return;
+
+	tracker->SetShowVolumeSpaceBar(fSpaceBarShow);
+	tracker->SetUsedSpaceColor(fUsedSpaceColor);
+	tracker->SetFreeSpaceColor(fFreeSpaceColor);
+	tracker->SetWarningSpaceColor(fWarningSpaceColor);
+	
+	ShowCurrentSettings(true);
+		// true -> send notices about the change
+}
+
+void
+SpaceBarSettingsView::ShowCurrentSettings(bool sendNotices)
+{
+	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
+	if (!tracker)
+		return;
+
+	fSpaceBarShowCheckBox->SetValue(tracker->ShowVolumeSpaceBar());
+	
+	switch (fCurrentColor) {
+		case 0:
+			fColorControl->SetValue(tracker->UsedSpaceColor());
+			break;
+		case 1:
+			fColorControl->SetValue(tracker->FreeSpaceColor());
+			break;
+		case 2:
+			fColorControl->SetValue(tracker->WarningSpaceColor());
+			break;
+	}
+
+	if (sendNotices) {
+		BMessage notificationMessage;
+		notificationMessage.AddBool("ShowVolumeSpaceBar", tracker->ShowVolumeSpaceBar());
+		tracker->SendNotices(kShowVolumeSpaceBar, &notificationMessage);
+
+		Window()->PostMessage(kSettingsContentsModified);
+		BMessage notificationMessage2;
+		tracker->SendNotices(kSpaceBarColorChanged, &notificationMessage2);
+	}
+}
+
+void
+SpaceBarSettingsView::RecordRevertSettings()
+{
+	TTracker *tracker = dynamic_cast<TTracker *>(be_app);
+	if (!tracker)
+		return;
+	
+	fSpaceBarShow = tracker->ShowVolumeSpaceBar();
+	fUsedSpaceColor = tracker->UsedSpaceColor();
+	fFreeSpaceColor = tracker->FreeSpaceColor();
+	fWarningSpaceColor = tracker->WarningSpaceColor();
+}
+
+bool
+SpaceBarSettingsView::ShowsRevertSettings() const
+{
+	return (fSpaceBarShow == (fSpaceBarShowCheckBox->Value() == 1));
+}

@@ -222,8 +222,6 @@ BPoseView::~BPoseView()
 	delete fKeyRunner;
 	
 	IconCache::iconCache->Deleting(this);
-
-	BHandler::StopWatchingAll(be_app);
 }
 
 void
@@ -760,6 +758,8 @@ BPoseView::DetachedFromWindow()
 	if (fTitleView && !fTitleView->Window())
 		delete fTitleView;
 
+	BHandler::StopWatchingAll(be_app);
+
 	StopWatching();
 	CommitActivePose();
 	SavePoseLocations();
@@ -829,6 +829,9 @@ BPoseView::AttachedToWindow()
 
 	BHandler::StartWatching(be_app, kShowSelectionWhenInactiveChanged);
 	BHandler::StartWatching(be_app, kSortFolderNamesFirstChanged);
+	BHandler::StartWatching(be_app, kShowVolumeSpaceBar);
+	BHandler::StartWatching(be_app, kSpaceBarColorChanged);
+	BHandler::StartWatching(be_app, kUpdateVolumeSpaceBar);
 }
 
 void
@@ -1498,6 +1501,7 @@ BPoseView::CreatePoses(Model **models, PoseInfo *poseInfoArray, int32 count,
 
 		// pose adopts model and deletes it when done
 		BPose *pose = new BPose(model, this);
+		
 		if (resultingPoses)
 			resultingPoses[modelIndex] = pose;
 
@@ -2059,6 +2063,20 @@ BPoseView::MessageReceived(BMessage *message)
 								SortPoses();
 								Invalidate();
 							}
+							break;
+
+						case kShowVolumeSpaceBar:
+							bool enabled;
+							message->FindBool("ShowVolumeSpaceBar", &enabled);
+							TTracker::SetShowVolumeSpaceBar(enabled);
+							// supposed to fall through
+						case kSpaceBarColorChanged:
+							UpdateVolumeIcons();
+							break;
+						case kUpdateVolumeSpaceBar:
+							dev_t device;
+							message->FindInt32("device", (int32 *)&device);
+							UpdateVolumeIcon(&device);	
 							break;
 					}
 				}		
@@ -3051,7 +3069,10 @@ BPoseView::SelectPoses(int32 start, int32 end)
 				poseRect = pose->CalcRect(loc, this);
 
 			if (bounds.Intersects(poseRect)) {
-				pose->Draw(poseRect, this, false);
+				if (EraseWidgetTextBackground(pose))
+					Invalidate(poseRect);
+				else
+					pose->Draw(poseRect, this, false);
 				Flush();
 			}
 		}
@@ -4768,6 +4789,36 @@ BPoseView::AttributeChanged(const BMessage *message)
 	return true;
 }
 
+void 
+BPoseView::UpdateVolumeIcon(dev_t *device, bool forceUpdate)
+{
+	int32 index;
+	BPose *pose = fPoseList->FindVolumePose(device,&index);
+	if (pose == NULL)
+		return;
+
+	if (pose->UpdateVolumeSpaceBar(TTracker::ShowVolumeSpaceBar()) || forceUpdate) {
+		BPoint loc(0, index * fListElemHeight);
+		pose->UpdateIcon(loc, this);
+	}
+}
+
+void 
+BPoseView::UpdateVolumeIcons()
+{
+	BVolumeRoster roster;
+
+	BVolume volume;
+	while(roster.GetNextVolume(&volume) == B_NO_ERROR) {
+		BDirectory dir;
+		volume.GetRootDirectory(&dir);
+		node_ref nodeRef;
+		dir.GetNodeRef(&nodeRef);
+
+		UpdateVolumeIcon(&nodeRef.device, true);
+	}
+}
+
 BPose * 
 BPoseView::ConvertZombieToPose(Model *zombie, int32 index)
 {
@@ -6216,7 +6267,7 @@ BPoseView::SelectPosesIconMode(BRect selectionRect, BList **oldList)
 				newList->AddItem((void *)index);
 
 				if ((selected != pose->IsSelected()) && poseRect.Intersects(bounds))
-					if (pose->IsSelected() || EraseWidgetTextBackground())
+					if (pose->IsSelected() || EraseWidgetTextBackground(pose))
 						pose->Draw(poseRect, this, false);
 					else
 						Invalidate(poseRect);
@@ -6243,7 +6294,7 @@ BPoseView::SelectPosesIconMode(BRect selectionRect, BList **oldList)
 			BRect poseRect(pose->CalcRect(this));
 
 			if (poseRect.Intersects(bounds)) {
-				if (pose->IsSelected() || EraseWidgetTextBackground())
+				if (pose->IsSelected() || EraseWidgetTextBackground(pose))
 					pose->Draw(poseRect, this, false);
 				else
 					Invalidate(poseRect);
@@ -6991,7 +7042,7 @@ BPoseView::ClearSelection()
 					if (pose->IsSelected()) {
 						pose->Select(false);
 						BRect poseRect(pose->CalcRect(this));
-						if (EraseWidgetTextBackground())
+						if (EraseWidgetTextBackground(pose))
 							pose->Draw(poseRect, this, false);
 						else
 							Invalidate(poseRect);
@@ -7053,7 +7104,7 @@ BPoseView::ShowSelection(bool show)
 						if (pose->IsSelected() != show || fShowSelectionWhenInactive) {
 							if (!fShowSelectionWhenInactive)
 								pose->Select(show);
-							if (show && EraseWidgetTextBackground())
+							if (show && EraseWidgetTextBackground(pose))
 								pose->Draw(pose->CalcRect(this), this, false);
 							else
 								Invalidate(pose->CalcRect(this));
@@ -7262,7 +7313,10 @@ BPoseView::DrawPose(BPose *pose, int32 index, bool fullDraw)
 	else
 		rect = pose->CalcRect(this);
 
-	pose->Draw(rect, this, fullDraw);
+	if (TTracker::ShowVolumeSpaceBar() && pose->TargetModel()->IsVolume())
+		Invalidate(rect);
+	else
+		pose->Draw(rect, this, fullDraw);
 }
 
 rgb_color
@@ -8063,7 +8117,7 @@ BPoseView::HiliteDropTarget(bool hiliteState)
 			BPose *pose = fVSPoseList->ItemAt(index);
 			if (pose) {
 				if (pose == fDropTarget) {
-					if (!hiliteState && !EraseWidgetTextBackground())
+					if (!hiliteState && !EraseWidgetTextBackground(pose))
 						// deselecting an icon with widget drawn over background
 						// have to be a little tricky here - draw just the icon,
 						// invalidate the widget
@@ -8352,8 +8406,11 @@ void BPoseView::AdaptToVolumeChange(BMessage *) {}
 void BPoseView::AdaptToDesktopIntegrationChange(BMessage *) {}
 
 bool 
-BPoseView::EraseWidgetTextBackground() const
+BPoseView::EraseWidgetTextBackground(const BPose *pose) const
 {
+	if (!fEraseWidgetBackground && TTracker::ShowVolumeSpaceBar()
+		&& pose && pose->TargetModel()->IsVolume())
+		return true;
 	return fEraseWidgetBackground;
 }
 

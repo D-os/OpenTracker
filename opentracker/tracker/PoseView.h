@@ -158,7 +158,10 @@ public:
 	void SetIconMapping(bool);
 	void SetAutoScroll(bool);
 	void SetPoseEditing(bool);
-	
+
+	void UpdateVolumeIcon(dev_t *device, bool forceUpdate = false);
+	void UpdateVolumeIcons();
+
 	// file change notification handler
 	virtual bool FSNotification(const BMessage *);
 	
@@ -203,7 +206,7 @@ public:
 	rgb_color DeskTextColor() const;
 	rgb_color DeskTextBackColor() const;
 
-	bool EraseWidgetTextBackground() const;
+	bool EraseWidgetTextBackground(const BPose *pose = NULL) const;
 	void SetEraseWidgetTextBackground(bool);
 		// used to not erase when we have a background image and
 		// invalidate instead

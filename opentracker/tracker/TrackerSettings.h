@@ -85,7 +85,7 @@ class ScalarValueSetting : public SettingsArgvDispatcher {
 public:
 	ScalarValueSetting(const char *name, int32 defaultValue,
 		const char *valueExpectedErrorString, const char *wrongValueErrorString,
-		int32 min = LONG_MIN, int32 max = LONG_MAX);
+		int32 min = LONG_MIN, int32 max = LONG_MAX, bool hex = false);
 
 	void ValueChanged(int32 newValue);
 	int32 Value() const;
@@ -100,6 +100,7 @@ protected:
 	int32 fValue;
 	int32 fMax;
 	int32 fMin;
+	bool  fHex;
 	const char *fValueExpectedErrorString;
 	const char *fWrongValueErrorString;
 };

@@ -145,12 +145,13 @@ EnumeratedStringValueSetting::Handle(const char *const *argv)
 
 ScalarValueSetting::ScalarValueSetting(const char *name, int32 defaultValue,
 	const char *valueExpectedErrorString, const char *wrongValueErrorString,
-	int32 min, int32 max)
+	int32 min, int32 max, bool hex)
 	:	SettingsArgvDispatcher(name),
 		fDefaultValue(defaultValue),
 		fValue(defaultValue),
 		fMax(max),
 		fMin(min),
+		fHex(hex),
 		fValueExpectedErrorString(valueExpectedErrorString),
 		fWrongValueErrorString(wrongValueErrorString)
 {
@@ -173,7 +174,7 @@ ScalarValueSetting::Value() const
 void 
 ScalarValueSetting::GetValueAsString(char *buffer) const
 {
-	sprintf(buffer, "%ld", fValue);
+	sprintf(buffer, fHex ? "0x%08lx" : "%ld", fValue);
 }
 
 const char *
@@ -182,7 +183,12 @@ ScalarValueSetting::Handle(const char *const *argv)
 	if (!*++argv) 
 		return fValueExpectedErrorString;
 
-	int32 newValue = atoi(*argv);
+	int32 newValue;
+	if ((*argv)[0] == '0' && (*argv)[1] == 'x')
+		sscanf(*argv,"%lx",&newValue);
+	else
+		newValue = atoi(*argv);
+
 	if (newValue < fMin || newValue > fMax)
 		return fWrongValueErrorString;
 	
@@ -193,7 +199,7 @@ ScalarValueSetting::Handle(const char *const *argv)
 void 
 ScalarValueSetting::SaveSettingValue(Settings *settings)
 {
-	settings->Write("%d", fValue);
+	settings->Write(fHex ? "0x%08lx" : "%ld", fValue);
 }
 
 bool 

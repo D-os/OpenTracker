@@ -117,6 +117,10 @@ const uint32 kFavoriteCountChangedExternally = 'Fvcx';
 
 const uint32 kDateFormatChanged = 'Date';
 
+const uint32 kUpdateVolumeSpaceBar = 'UpSB';
+const uint32 kShowVolumeSpaceBar = 'ShSB';
+const uint32 kSpaceBarColorChanged = 'SBcc';
+
 } // namespace BPrivate
 
 using namespace BPrivate;

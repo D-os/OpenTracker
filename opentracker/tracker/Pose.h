@@ -71,6 +71,8 @@ public:
 		// special purpose draw call for deselecting over a textured
 		// background
 
+	void DrawBar(BPoint where,BView *view,icon_size kind);
+
 	void DrawIcon(BPoint, BView *, icon_size, bool direct, bool drawUnselected = false);
 	void DrawToggleSwitch(BRect, BPoseView *);
 	void MouseUp(BPoint poseLoc, BPoseView *, BPoint where, int32 index);
@@ -94,6 +96,7 @@ public:
 	void UpdateAllWidgets(int32 poseIndex, BPoint poseLoc, BPoseView *);
 	void UpdateWidgetAndModel(Model *resolvedModel, const char *attrName,
 		uint32 attrType, int32 poseIndex, BPoint poseLoc, BPoseView *view);
+	bool UpdateVolumeSpaceBar(bool enabled);
 	void UpdateIcon(BPoint poseLoc, BPoseView *);
 
 	//void UpdateFixedSymlink(BPoint poseLoc, BPoseView *);	
@@ -135,6 +138,8 @@ private:
 	bool fListModeInited : 1;
 	bool fWasAutoPlaced : 1;
 	bool fBrokenSymLink : 1;
+	
+	int32 fPercent;
 };
 
 template<class Param1>

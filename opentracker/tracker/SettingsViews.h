@@ -187,6 +187,37 @@ private:
 	typedef SettingsView _inherited;
 };
 
+class SpaceBarSettingsView : public SettingsView {
+public:
+	SpaceBarSettingsView(BRect);
+	~SpaceBarSettingsView();
+
+	void MessageReceived(BMessage *);
+	void AttachedToWindow();
+	
+	void SetDefaults();
+	void Revert();
+	void ShowCurrentSettings(bool sendNotices = false);
+	void RecordRevertSettings();
+	bool ShowsRevertSettings() const;
+
+private:
+	BCheckBox		*fSpaceBarShowCheckBox;
+	BColorControl	*fColorControl;
+	BMenuField		*fColorPicker;
+//	BRadioButton *fUsedRadio;
+//	BRadioButton *fWarningRadio;
+//	BRadioButton *fFreeRadio;
+	int32			fCurrentColor;
+
+	bool			fSpaceBarShow;
+	rgb_color		fUsedSpaceColor;
+	rgb_color		fFreeSpaceColor;
+	rgb_color		fWarningSpaceColor;
+
+	typedef SettingsView _inherited;
+};
+
 } // namespace BPrivate
 
 using namespace BPrivate;

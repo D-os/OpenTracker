@@ -103,7 +103,6 @@ TTrackerState gTrackerState;
 TTracker::TTracker()
 	:	BApplication(kTrackerSignature),
 		fSettingsWindow(NULL)
-
 {
 	// set the cwd to /boot/home, anything that's launched 
 	// from Tracker will automatically inherit this 
@@ -127,6 +126,9 @@ TTracker::TTracker()
 	SetNewLeakChecking(true);
 	SetMallocLeakChecking(true);
 #endif
+
+	//This is how often it should update the free space bar on the volume icons
+	SetPulseRate(1000000);
 }
 
 TTracker::~TTracker()
@@ -335,6 +337,29 @@ TTracker::MessageReceived(BMessage *message)
 		default:
 			_inherited::MessageReceived(message);
 			break;
+	}
+}
+
+void
+TTracker::Pulse()
+{
+	if (!ShowVolumeSpaceBar())
+		return;
+
+	// update the volume icon's free space bars
+	BVolumeRoster roster;
+
+ 	BVolume volume;
+	while(roster.GetNextVolume(&volume) == B_NO_ERROR)
+	{
+		BDirectory dir;
+		volume.GetRootDirectory(&dir);
+		node_ref nodeRef;
+		dir.GetNodeRef(&nodeRef);
+
+		BMessage notificationMessage;
+		notificationMessage.AddInt32("device", *(int32 *)&nodeRef.device);
+		SendNotices(kUpdateVolumeSpaceBar, &notificationMessage);
 	}
 }
 
@@ -1403,11 +1428,58 @@ TTracker::DesktopFilePanelRoot()
 	return gTrackerState.DesktopFilePanelRoot();
 }
 
-  
 void
 TTracker::SetDesktopFilePanelRoot(bool enabled)
 {
 	gTrackerState.SetDesktopFilePanelRoot(enabled);
+}
+
+bool 
+TTracker::ShowVolumeSpaceBar()
+{
+	return gTrackerState.ShowVolumeSpaceBar();
+}
+
+void
+TTracker::SetShowVolumeSpaceBar(bool enabled)
+{
+	gTrackerState.SetShowVolumeSpaceBar(enabled);
+}
+
+rgb_color 
+TTracker::UsedSpaceColor()
+{
+	return gTrackerState.UsedSpaceColor();
+}
+
+void
+TTracker::SetUsedSpaceColor(rgb_color color)
+{
+	gTrackerState.SetUsedSpaceColor(color);
+}
+
+rgb_color 
+TTracker::FreeSpaceColor()
+{
+	return gTrackerState.FreeSpaceColor();
+}
+
+void
+TTracker::SetFreeSpaceColor(rgb_color color)
+{
+	gTrackerState.SetFreeSpaceColor(color);
+}
+
+rgb_color 
+TTracker::WarningSpaceColor()
+{
+	return gTrackerState.WarningSpaceColor();
+}
+
+void
+TTracker::SetWarningSpaceColor(rgb_color color)
+{
+	gTrackerState.SetWarningSpaceColor(color);
 }
 
 bool
@@ -1709,6 +1781,77 @@ TTrackerState::IntegrateAllNonBootDesktops()
 }
 
 bool 
+TTrackerState::ShowVolumeSpaceBar()
+{
+	LoadSettingsIfNeeded();
+	return fShowVolumeSpaceBar->Value();
+}
+
+void
+TTrackerState::SetShowVolumeSpaceBar(bool enabled)
+{
+	fShowVolumeSpaceBar->SetValue(enabled);
+}
+
+rgb_color ValueToColor(int32 value)
+{
+	rgb_color color;
+	color.alpha = (value >> 24L) & 0xff;
+	color.red = (value >> 16L) & 0xff;
+	color.green = (value >> 8L) & 0xff;
+	color.blue = value & 0xff;
+
+	return color;	
+}
+
+int32 ColorToValue(rgb_color color)
+{
+	return	color.alpha << 24L
+			| color.red << 16L
+			| color.green << 8L
+			| color.blue;
+}
+
+rgb_color
+TTrackerState::UsedSpaceColor()
+{
+	LoadSettingsIfNeeded();
+	return ValueToColor(fUsedSpaceColor->Value());
+}
+
+void
+TTrackerState::SetUsedSpaceColor(rgb_color color)
+{
+	fUsedSpaceColor->ValueChanged(ColorToValue(color));
+}
+
+rgb_color
+TTrackerState::FreeSpaceColor()
+{
+	LoadSettingsIfNeeded();
+	return ValueToColor(fFreeSpaceColor->Value());
+}
+
+void
+TTrackerState::SetFreeSpaceColor(rgb_color color)
+{
+	fFreeSpaceColor->ValueChanged(ColorToValue(color));
+}
+
+rgb_color
+TTrackerState::WarningSpaceColor()
+{
+	LoadSettingsIfNeeded();
+	return ValueToColor(fWarningSpaceColor->Value());
+}
+
+void
+TTrackerState::SetWarningSpaceColor(rgb_color color)
+{
+	fWarningSpaceColor->ValueChanged(ColorToValue(color));
+}
+
+bool 
 TTrackerState::ShowFullPathInTitleBar()
 {
 	LoadSettingsIfNeeded();
@@ -1871,7 +2014,13 @@ TTrackerState::LoadSettingsIfNeeded()
 	Add(fTimeFormatSeparator = new ScalarValueSetting("TimeFormatSeparator", 3, "", ""));
 	Add(fDateOrderFormat = new ScalarValueSetting("DateOrderFormat", 2, "", ""));
 	Add(f24HrClock = new BooleanValueSetting("24HrClock", 0));
-  	
+
+	Add(fShowVolumeSpaceBar = new BooleanValueSetting("ShowVolumeSpaceBar", 0));
+
+	Add(fUsedSpaceColor = new ScalarValueSetting("UsedSpaceColor", 0x0000cb00, "", "", LONG_MIN, LONG_MAX, true));
+	Add(fFreeSpaceColor = new ScalarValueSetting("FreeSpaceColor", 0x00ffffff, "", "", LONG_MIN, LONG_MAX, true));
+	Add(fWarningSpaceColor = new ScalarValueSetting("WarningSpaceColor", 0x00cb0000, "", "", LONG_MIN, LONG_MAX, true));
+
 	TryReadingSettings();
 
 	NameAttributeText::SetSortFolderNamesFirst(fSortFolderNamesFirst->Value());

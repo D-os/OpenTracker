@@ -35,6 +35,7 @@ All rights reserved.
 #include <stdlib.h>
 #include <string.h>
 
+#include <fs_info.h>
 #include <Debug.h>
 
 #include "Attributes.h"
@@ -43,6 +44,29 @@ All rights reserved.
 #include "Utilities.h"
 #include "PoseView.h"
 #include "Pose.h"
+
+
+int32
+CalcFreeSpace(dev_t device)
+{
+	BVolume volume(device);
+	if (volume.InitCheck() == B_OK && !volume.IsReadOnly()) {
+		// special case: check for CDDA
+		if (volume.IsRemovable()) {
+			fs_info info;
+			if (fs_stat_dev(device,&info) == B_OK && !strcmp(info.fsh_name,"cdda"))
+				return -1;
+		}
+		int32 percent = volume.FreeBytes() / (volume.Capacity() / 100);
+
+		// warn below 20 MB of free space
+		if (volume.FreeBytes() < 20 * 1024 * 1024)
+			return -2 - percent;
+
+		return percent;
+	}
+	return -1;
+}
 
 // SymLink handling:
 // symlink pose uses the resolved model to retrive the icon, if not broken
@@ -58,9 +82,15 @@ BPose::BPose(Model *model, BPoseView *view, bool selected)
 		fNeedsSaveLocation(false),
 		fListModeInited(false),
 		fWasAutoPlaced(false),
-		fBrokenSymLink(false)
+		fBrokenSymLink(false),
+		fPercent(-1)
 {
 	CreateWidgets(view);
+
+	if (model->IsVolume() && TTracker::ShowVolumeSpaceBar()) {
+		dev_t device = model->NodeRef()->device;
+		fPercent = CalcFreeSpace(device);
+	}
 }
 
 BPose::~BPose()
@@ -212,6 +242,31 @@ BPose::UpdateWidgetAndModel(Model *resolvedModel, const char *attrName,
 			}
 		}
 	}
+}
+
+bool
+BPose::UpdateVolumeSpaceBar(bool enabled)
+{
+	if (!enabled) {
+		if (fPercent == -1)
+			return false;
+
+		fPercent = -1;
+		return true;
+	}
+
+	dev_t device = TargetModel()->NodeRef()->device;
+	int32 percent = CalcFreeSpace(device);
+
+	if (fPercent != percent) {
+		if (percent > 100)
+			fPercent = 100;
+		else
+			fPercent = percent;
+
+		return true;
+	}
+	return false;		
 }
 
 void
@@ -519,8 +574,11 @@ BPose::DeselectWithoutErasingBackground(BRect, BPoseView *poseView)
 	ASSERT(!IsSelected());
 
 	// draw icon directly
+	if (fPercent == -1)
 	DrawIcon(fLocation, poseView, poseView->ViewMode() == kIconMode ?
 		B_LARGE_ICON : B_MINI_ICON, true);
+	else
+		UpdateIcon(fLocation,poseView);
 
 	BColumn *column = poseView->FirstColumn();
 	if (!column)
@@ -620,6 +678,74 @@ BPose::DrawIcon(BPoint where, BView *view, icon_size kind, bool direct, bool dra
 
 	IconCache::iconCache->Draw(ResolvedModel(), view, where,
 		fIsSelected && !drawUnselected ? kSelectedIcon : kNormalIcon, kind, true);
+
+	if (fPercent != -1)
+		DrawBar(where, view, kind);
+}
+
+void 
+BPose::DrawBar(BPoint where,BView *view,icon_size kind)
+{
+	view->PushState();
+
+	int32 size,barWidth,barHeight,yOffset;
+	if (kind == B_LARGE_ICON) {
+		size = B_LARGE_ICON - 1;
+		barWidth = 7;
+		yOffset = 2;
+		barHeight = size - 4 - 2*yOffset;
+	} else {
+		size = B_MINI_ICON;
+		barWidth = 4;
+		yOffset = 0;
+		barHeight = size - 4 - 2*yOffset;
+	}
+
+	// the black shadowed line 
+	view->SetHighColor(32,32,32,92);
+	view->MovePenTo(BPoint(where.x + size,where.y + 1 + yOffset));
+	view->StrokeLine(BPoint(where.x + size,where.y + size - yOffset));
+	view->StrokeLine(BPoint(where.x + size - barWidth + 1,where.y + size - yOffset));
+
+	view->SetDrawingMode(B_OP_ALPHA);
+
+	// the gray frame
+	view->SetHighColor(76,76,76,192);
+	BRect rect(	where.x + size - barWidth,where.y + yOffset,
+				where.x + size - 1,where.y + size - 1 - yOffset);
+	view->StrokeRect(rect);
+
+	// calculate bar height
+	int32 percent = fPercent > -1 ? fPercent : -2 - fPercent;
+	int32 barPos = int32(barHeight * percent / 100.0);
+	if (barPos < 0)
+		barPos = 0;
+	else if (barPos > barHeight)
+		barPos = barHeight;
+
+	// the free space bar
+	rgb_color color = TTracker::FreeSpaceColor();
+	color.alpha = 192;
+	view->SetHighColor(color);
+
+	rect.InsetBy(1,1);
+	BRect bar(rect);
+	bar.bottom = bar.top + barPos - 1;
+	if (barPos > 0)
+		view->FillRect(bar);
+
+	// the used space bar
+	bar.top = bar.bottom + 1;
+	bar.bottom = rect.bottom;
+	if (fPercent < -1)
+		color = TTracker::WarningSpaceColor();
+	else
+		color = TTracker::UsedSpaceColor();
+	color.alpha = 192;
+	view->SetHighColor(color);
+	view->FillRect(bar);
+
+	view->PopState();
 }
 
 void
