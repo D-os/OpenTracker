@@ -52,9 +52,13 @@ __STL_TEMPLATE_NULL struct hash<CatKey>
 class DefaultCatalog : public BCatalogAddOn {
 
 	public:
-		DefaultCatalog(const char *signature, const char *language);
 		DefaultCatalog(const char *signature, const char *language,
-			const char *path, bool create = false);
+			int32 fingerprint);
+				// constructor for normal use
+		DefaultCatalog(const char *path, const char *signature, 
+			const char *language);
+				// constructor for editor-app
+					   
 		~DefaultCatalog();
 
 		// overrides of BCatalogAddOn:
@@ -65,20 +69,27 @@ class DefaultCatalog : public BCatalogAddOn {
 		status_t SetString(const char *string, const char *translated, 
 					const char *context=NULL, const char *comment=NULL);
 		status_t SetString(uint32 id, const char *translated);
+		void UpdateFingerprint();
 
 		// interface for catalog-editor-app:
-		status_t ReadFromDisk(const char *path);
-		status_t WriteToDisk(const char *path = NULL) const;
+		status_t ReadFromDisk(const char *path = NULL);
+		status_t WriteToDisk(const char *path = NULL);
 		//
 		void MakeEmpty();
 		int32 CountItems() const;
 		void Resize(int32 size);
 
 		static BCatalogAddOn *Instantiate(const char *signature,
+								const char *language,
+								int32 fingerprint);
+		static BCatalogAddOn *Create(const char *signature,
 								const char *language);
 		static const uint8 DefaultCatalog::gDefaultCatalogAddOnPriority;
 
 	private:
+		int32 ComputeFingerprint() const;
+		void UpdateAttributes(BFile& catalogFile);
+
 		typedef hash_map<CatKey, BString> CatMap;
 		CatMap fCatMap;
 		mutable BString fPath;

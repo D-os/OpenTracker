@@ -7,10 +7,10 @@
 #include <memory>
 
 #include <Application.h>
+#include <DataIO.h>
 #include <Directory.h>
 #include <File.h>
 #include <FindDirectory.h>
-#include <DataIO.h>
 #include <Message.h>
 #include <Path.h>
 #include <Roster.h>
@@ -18,7 +18,13 @@
 #include <DefaultCatalog.h>
 #include <LocaleRoster.h>
 
-#include <stdio.h>
+extern "C" uint32 adler32(uint32 adler, const uint8 *buf, uint32 len);
+	// definition lives in adler32.c
+
+#if B_BEOS_VERSION <= B_BEOS_VERSION_5
+// B_BAD_DATA was introduced with DANO, so we define it for R5:
+#	define B_BAD_DATA -2147483632L
+#endif
 
 /*
  *	This implements the default catalog-type for the opentracker locale kit.
@@ -30,8 +36,6 @@ static const char *kCatFolder = "catalogs";
 static const char *kCatExtension = ".catalog";
 
 static const char *kCatMimeType = "x-vnd.Be.locale-catalog.default";
-static const char *kCatLangAttr = "BEOS:LOCALE_LANGUAGE";
-static const char *kCatSigAttr = "BEOS:LOCALE_SIGNATURE";
 
 static int16 kCatArchiveVersion = 1;
 	// version of the archive structure, bump this if you change the structure!
@@ -68,6 +72,7 @@ CatKey::CatKey(const char *str, const char *ctx, const char *cmt)
 		memcpy(keyBuf, cmt, cmtLen);
 		keyBuf += cmtLen;
 	}
+	*keyBuf = '\0';
 	fKey.UnlockBuffer(keyLen);
 	fHashVal = __stl_hash_string(fKey.String());
 }
@@ -95,20 +100,24 @@ CatKey::operator== (const CatKey& right) const
 }
 
 
-DefaultCatalog::DefaultCatalog(const char *signature, const char *language)
+DefaultCatalog::DefaultCatalog(const char *signature, const char *language,
+	int32 fingerprint)
 	:
-	BCatalogAddOn(signature, language)
+	BCatalogAddOn(signature, language, fingerprint)
 {
 	app_info appInfo;
-	be_app->GetAppInfo(&appInfo); 
+	be_app->GetAppInfo(&appInfo);
 	node_ref nref;
 	nref.device = appInfo.ref.device;
 	nref.node = appInfo.ref.directory;
 	BDirectory appDir(&nref);
-	BString catalogName(kCatFolder);
-	catalogName << "/" << fLanguageName << "/" << fSignature << kCatExtension;
+	BString catalogName("locale/");
+	catalogName << kCatFolder 
+		<< "/" << fSignature 
+		<< "/" << fLanguageName 
+		<< kCatExtension;
 	BPath catalogPath(&appDir, catalogName.String());
-	status_t status = ReadFromDisk( catalogPath.Path());
+	status_t status = ReadFromDisk(catalogPath.Path());
 
 	if (status != B_OK) {
 		BPath commonEtcPath;
@@ -116,8 +125,9 @@ DefaultCatalog::DefaultCatalog(const char *signature, const char *language)
 		if (commonEtcPath.InitCheck() == B_OK) {
 			catalogName = BString(commonEtcPath.Path()) 
 							<< "/locale/" << kCatFolder 
+							<< "/" << fSignature 
 							<< "/" << fLanguageName 
-							<< "/" << fSignature << kCatExtension;
+							<< kCatExtension;
 			status = ReadFromDisk(catalogName.String());
 		}
 	}
@@ -128,26 +138,26 @@ DefaultCatalog::DefaultCatalog(const char *signature, const char *language)
 		if (systemEtcPath.InitCheck() == B_OK) {
 			catalogName = BString(systemEtcPath.Path()) 
 							<< "/locale/" << kCatFolder 
+							<< "/" << fSignature 
 							<< "/" << fLanguageName
-							<< "/" << fSignature << kCatExtension;
+							<< kCatExtension;
 			status = ReadFromDisk(catalogName.String());
 		}
 	}
 
+	// ToDo: send info about failures to syslog, as they can't be passed out
+	//       properly (object is being destroyed upon error).
 	fInitCheck = status;
 }
 
 
-DefaultCatalog::DefaultCatalog(const char *signature, const char *language,
-	const char *path, bool create)
+DefaultCatalog::DefaultCatalog(const char *path, const char *signature, 
+	const char *language)
 	:
-	BCatalogAddOn(signature, language),
+	BCatalogAddOn(signature, language, 0),
 	fPath(path)
 {
-	fInitCheck = ReadFromDisk(path);
-	if (fInitCheck != B_OK && create && path)
-		// catalog not found, but we shall create it, so we say we're ok:
-		fInitCheck = B_OK;
+	fInitCheck = B_OK;
 }
 
 
@@ -160,7 +170,7 @@ status_t
 DefaultCatalog::ReadFromDisk(const char *path)
 {
 	if (!path)
-		return B_BAD_VALUE;
+		path = fPath.String();
 
 	BFile catalogFile;
 	status_t res = catalogFile.SetTo(path, B_READ_ONLY);
@@ -170,16 +180,16 @@ DefaultCatalog::ReadFromDisk(const char *path)
 	fPath = path;
 
 	off_t sz = 0;
-	res = catalogFile.GetSize( &sz);
+	res = catalogFile.GetSize(&sz);
 	if (res != B_OK)
 		return res;
 
 	auto_ptr<char> buf(new char [sz]);
-	res = catalogFile.Read( buf.get(), sz);
+	res = catalogFile.Read(buf.get(), sz);
 	if (res < B_OK )
 		return res;
 		
-	BMemoryIO memIO( buf.get(), sz);
+	BMemoryIO memIO(buf.get(), sz);
 
 	// create hash-map from mem-IO:
 	BMessage archiveMsg;
@@ -188,9 +198,30 @@ DefaultCatalog::ReadFromDisk(const char *path)
 		return res;
 
 	fCatMap.clear();
-	int32 count = archiveMsg.FindInt32("c:sz");
-	int16 version = archiveMsg.FindInt16("c:ver");
-	if (count > 0) {
+	int32 count = 0;
+	int16 version;
+	res = archiveMsg.FindInt16("c:ver", &version)
+		|| archiveMsg.FindInt32("c:sz", &count);
+	if (res == B_OK) {
+		fLanguageName = archiveMsg.FindString("c:lang");
+		fSignature = archiveMsg.FindString("c:sig");
+		int32 foundFingerprint = archiveMsg.FindInt32("c:fpr");
+
+		// if a specific fingerprint has been requested and the catalog does in fact
+		// have a fingerprint, both are compared. If they mismatch, we do not accept
+		// this catalog:
+		if (foundFingerprint != 0 && fFingerprint != 0 
+			&& foundFingerprint != fFingerprint)
+			res = B_MISMATCHED_VALUES;
+		fFingerprint = foundFingerprint;
+
+		// some information needs to be copied to attributes. Although these
+		// attributes should have been written when creating the catalog, 
+		// we make sure that they are really there:
+		UpdateAttributes(catalogFile);
+	}
+
+	if (res == B_OK && count > 0) {
 		CatKey key;
 		const char *keyStr;
 		const char *translated;
@@ -207,13 +238,15 @@ DefaultCatalog::ReadFromDisk(const char *path)
 				fCatMap.insert(make_pair(key, translated));
 			}
 		}
+		if (fFingerprint != ComputeFingerprint())
+			return B_BAD_DATA;
 	}
 	return res;
 }
 
 
 status_t
-DefaultCatalog::WriteToDisk(const char *path) const
+DefaultCatalog::WriteToDisk(const char *path)
 {
 	status_t res = B_OK;
 	BMessage archive;
@@ -226,17 +259,23 @@ DefaultCatalog::WriteToDisk(const char *path) const
 			B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE);
 	}
 
+	UpdateFingerprint();
+		// make sure we have the correct fingerprint before we write it
+
 	int32 count = fCatMap.size();
 	res = archive.AddInt32("c:sz", count)
-		|| archive.AddInt16("c:ver", kCatArchiveVersion);
+		|| archive.AddInt16("c:ver", kCatArchiveVersion)
+		|| archive.AddString("c:lang", fLanguageName.String())
+		|| archive.AddString("c:sig", fSignature.String())
+		|| archive.AddInt32("c:fpr", fFingerprint);
 	if (res == B_OK)
 		res = archive.Flatten(&catalogFile);
-	CatMap::const_iterator iter;
 
 	BMallocIO mallocIO;
-	mallocIO.SetBlockSize( count*20);
+	mallocIO.SetBlockSize(count*20);
 		// set a largish block-size in order to avoid reallocs
 
+	CatMap::const_iterator iter;
 	for (iter = fCatMap.begin(); res==B_OK && iter!=fCatMap.end(); ++iter) {
 		archive.MakeEmpty();
 		res = archive.AddString("c:key", iter->first.fKey.String())
@@ -245,7 +284,9 @@ DefaultCatalog::WriteToDisk(const char *path) const
 		if (res == B_OK)
 			res = archive.Flatten(&mallocIO);
 	}
-	catalogFile.Write( mallocIO.Buffer(), mallocIO.BufferLength());
+	catalogFile.Write(mallocIO.Buffer(), mallocIO.BufferLength());
+	// now set mimetype-, language- and signature-attributes:
+	UpdateAttributes(catalogFile);
 
 	return res;
 }
@@ -316,10 +357,77 @@ DefaultCatalog::SetString(uint32 id, const char *translated)
 }
 
 
-BCatalogAddOn *
-DefaultCatalog::Instantiate(const char *signature, const char *language)
+int32
+DefaultCatalog::ComputeFingerprint() const
 {
-	DefaultCatalog *catalog = new DefaultCatalog(signature, language);
+	uint32 adler = adler32(0, NULL, 0);
+
+	int32 hash;
+	CatMap::const_iterator iter;
+	for (iter = fCatMap.begin(); iter!=fCatMap.end(); ++iter) {
+		hash = B_HOST_TO_LENDIAN_INT32(iter->first.fHashVal);
+		adler = adler32(adler, reinterpret_cast<uint8*>(&hash), sizeof(int32));
+	}
+	return adler;
+}
+
+
+void
+DefaultCatalog::UpdateFingerprint()
+{
+	fFingerprint = ComputeFingerprint();
+}
+
+
+void
+DefaultCatalog::UpdateAttributes(BFile& catalogFile)
+{
+	static const int bufSize = 256;
+	char buf[bufSize];
+	if (catalogFile.ReadAttr("BEOS:MIME", B_STRING_TYPE, 0, &buf, bufSize) <= 0
+		|| strcmp(kCatMimeType, buf) != 0) {
+		catalogFile.WriteAttr("BEOS:MIME", B_STRING_TYPE, 0, 
+			kCatMimeType, strlen(kCatMimeType)+1);
+	}
+	if (catalogFile.ReadAttr(BLocaleRoster::kCatLangAttr, B_STRING_TYPE, 0, 
+		&buf, bufSize) <= 0
+		|| fLanguageName != buf) {
+		catalogFile.WriteAttr(BLocaleRoster::kCatLangAttr, B_STRING_TYPE, 0, 
+			fLanguageName.String(), fLanguageName.Length()+1);
+	}
+	if (catalogFile.ReadAttr(BLocaleRoster::kCatSigAttr, B_STRING_TYPE, 0, 
+		&buf, bufSize) <= 0
+		|| fSignature != buf) {
+		catalogFile.WriteAttr(BLocaleRoster::kCatSigAttr, B_STRING_TYPE, 0, 
+			fSignature.String(), fSignature.Length()+1);
+	}
+	int32 fingerprint;
+	if (catalogFile.ReadAttr(BLocaleRoster::kCatFingerprintAttr, B_INT32_TYPE, 0, 
+		&fingerprint, sizeof(int32)) <= 0
+		|| fFingerprint != fingerprint) {
+		catalogFile.WriteAttr(BLocaleRoster::kCatFingerprintAttr, B_INT32_TYPE, 0, 
+			&fFingerprint, sizeof(int32));
+	}
+}
+
+
+BCatalogAddOn *
+DefaultCatalog::Instantiate(const char *signature, const char *language, 
+	int32 fingerprint)
+{
+	DefaultCatalog *catalog = new DefaultCatalog(signature, language, fingerprint);
+	if (catalog && catalog->InitCheck() != B_OK) {
+		delete catalog;
+		return NULL;
+	}
+	return catalog;
+}
+
+
+BCatalogAddOn *
+DefaultCatalog::Create(const char *signature, const char *language)
+{
+	DefaultCatalog *catalog = new DefaultCatalog("", signature, language);
 	if (catalog && catalog->InitCheck() != B_OK) {
 		delete catalog;
 		return NULL;
