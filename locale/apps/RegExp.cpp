@@ -1213,15 +1213,15 @@ RegExp::IsMult(char c) const
 void
 RegExp::Dump()
 {
-	const char *s;
+	char *s;
 	char op = kRegExpExactly;	// Arbitrary non-kRegExpEnd op.
-	const char *next;
+	char *next;
 
 	s = fRegExp->program + 1;
 	while (op != kRegExpEnd) {	// While that wasn't kRegExpEnd last time...
 		op = *s;
 		printf("%2ld%s", s - fRegExp->program, Prop(s));	// Where, what.
-		next = Next(s);
+		next = this->Next(s);
 		if (next == NULL)		// Next ptr.
 			printf("(0)");
 		else 
