@@ -33,7 +33,7 @@ PropertyFile::SetTo(const char *directory, const char *name)
 	UnicodePropertiesHeader header;
 	ssize_t bytes = Read(&header, sizeof(header));
 	if (bytes < sizeof(header)
-		|| header.size != sizeof(header)
+		|| header.size != (int32)sizeof(header)
 		|| header.isBigEndian != B_HOST_IS_BENDIAN
 		|| header.format != PROPERTIES_FORMAT)
 		return B_BAD_DATA;

@@ -53,7 +53,7 @@ vstrfmon(char *string, size_t maxSize, const char *format, va_list args)
 
 	while (*format) {
 		if (format[0] != '%' || *++format == '%') {
-			if (++length >= maxSize)
+			if (++length >= (int32)maxSize)
 				return E2BIG;
 
 			*string++ = *format++;
@@ -151,7 +151,8 @@ vstrfmon(char *string, size_t maxSize, const char *format, va_list args)
 			return B_BAD_VALUE;
 
 		char number[256];
-		sprintf(number, "%*.*f", leftPrecision, rightPrecision, value);
+		sprintf(number, "%*.*f", (int)leftPrecision, (int)rightPrecision,
+				value);
 
 		if (leftPrecision >= 0) {
 			
