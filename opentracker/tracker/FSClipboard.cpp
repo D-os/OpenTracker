@@ -53,13 +53,13 @@ extern const char *kNoCopyToTrashStr;
 extern const char *kNoCopyToRootStr;
 extern const char *kOkToMoveStr;
 
-
+/*
 static bool
 FSClipboardCheckIntegrity()
 {
 	return true;
 }
-
+*/
 
 bool
 FSClipboardHasRefs()
