@@ -5,7 +5,7 @@ NAME= Tracker
 LIB_NAME= libtracker.so
 
 #BIG_TRACKER=TRUE
-DEBUGGER= TRUE
+DEBUGGER= FALSE
 
 ROOT_DIR = ..
 
