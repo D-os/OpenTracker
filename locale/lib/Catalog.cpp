@@ -244,7 +244,7 @@ BCatalogAddOn::SetData(uint32 id, BMessage *msg)
 
 
 status_t 
-BCatalogAddOn::ReadFromFile(const char *path = NULL)
+BCatalogAddOn::ReadFromFile(const char *path)
 {
 	return EOPNOTSUPP;
 }
@@ -265,7 +265,7 @@ BCatalogAddOn::ReadFromResource(entry_ref *appOrAddOnRef)
 
 
 status_t 
-BCatalogAddOn::WriteToFile(const char *path = NULL)
+BCatalogAddOn::WriteToFile(const char *path)
 {
 	return EOPNOTSUPP;
 }
@@ -358,7 +358,7 @@ EditableCatalog::SetData(uint32 id, BMessage *msg)
 
 
 status_t 
-EditableCatalog::ReadFromFile(const char *path = NULL)
+EditableCatalog::ReadFromFile(const char *path)
 {
 	if (!fCatalog)
 		return B_NO_INIT;
@@ -385,7 +385,7 @@ EditableCatalog::ReadFromResource(entry_ref *appOrAddOnRef)
 
 
 status_t 
-EditableCatalog::WriteToFile(const char *path = NULL)
+EditableCatalog::WriteToFile(const char *path)
 {
 	if (!fCatalog)
 		return B_NO_INIT;

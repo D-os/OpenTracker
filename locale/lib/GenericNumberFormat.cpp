@@ -127,6 +127,7 @@ class BGenericNumberFormat::GroupingInfo {
 				fSumSizes[i] = sumSize;
 				fSumSeparators[i] = &fSeparators[min(i, fSeparatorCount)];
 			}
+			return B_OK;
 		}
 
 		void Unset()
@@ -417,14 +418,14 @@ static const BGenericNumberFormat::Symbol kDefaultFractionSeparator = ".";
 static const char *kDefaultGroupingSeparators[] = { "," };
 static const int32 kDefaultGroupingSeparatorCount
 	= sizeof(kDefaultGroupingSeparators) / sizeof(const char*);
-static const char *kNoGroupingSeparators[] = { };
+static const char *kNoGroupingSeparators[] = { NULL };	// to please mwcc
 static const int32 kNoGroupingSeparatorCount = 0;
 
 // grouping sizes
 static const size_t kDefaultGroupingSizes[] = { 3 };
 static const int32 kDefaultGroupingSizeCount
 	= sizeof(kDefaultGroupingSizes) / sizeof(size_t);
-static const size_t kNoGroupingSizes[] = { };
+static const size_t kNoGroupingSizes[] = { 0 };			// to please mwcc
 static const int32 kNoGroupingSizeCount = 0;
 
 // grouping info

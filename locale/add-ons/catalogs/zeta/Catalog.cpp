@@ -60,8 +60,8 @@ ZetaCatalog::~ZetaCatalog()
 }
 
 const char *
-ZetaCatalog::GetString(const char *string, const char *context=NULL,
-	const char *comment=NULL)
+ZetaCatalog::GetString(const char *string, const char *context,
+	const char *comment)
 {
 	return "zeta-string-by-string";
 }
