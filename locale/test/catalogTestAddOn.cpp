@@ -31,56 +31,52 @@ CatalogTestAddOn::Run() {
 	system("mkdir -p ./locale/catalogs/"catSig);
 
 	// create an empty catalog of default type...
-	BCatalog cat1("Default", catSig, "German");
+	BPrivate::EditableCatalog cat1("Default", catSig, "German");
 	assert(cat1.InitCheck() == B_OK);
 
 	// ...and populate the catalog with some data:
-	DefaultCatalog *catalog = dynamic_cast<DefaultCatalog*>(cat1.fCatalog);
-	assert(catalog != NULL);
-	res = catalog->SetString("string", "Schnur_A", TR_CONTEXT);
+	res = cat1.SetString("string", "Schnur_A", TR_CONTEXT);
 	assert(res == B_OK);
-	res = catalog->SetString(hashVal, "Schnur_id_A");
+	res = cat1.SetString(hashVal, "Schnur_id_A");
 		// add a second entry for the same hash-value, but with different translation
 	assert(res == B_OK);
-	res = catalog->SetString("string", "String_A", "programming");
+	res = cat1.SetString("string", "String_A", "programming");
 	assert(res == B_OK);
-	res = catalog->SetString("string", "Textpuffer_A", "programming", "Deutsches Fachbuch");
+	res = cat1.SetString("string", "Textpuffer_A", "programming", "Deutsches Fachbuch");
 	assert(res == B_OK);
-	res = catalog->SetString("string", "Leine_A", TR_CONTEXT, "Deutsches Fachbuch");
+	res = cat1.SetString("string", "Leine_A", TR_CONTEXT, "Deutsches Fachbuch");
 	assert(res == B_OK);
-	res = catalog->WriteToFile("./locale/catalogs/"catSig"/german.catalog");
+	res = cat1.WriteToFile("./locale/catalogs/"catSig"/german.catalog");
 	assert(res == B_OK);
 
 	// check if we are getting back the correct strings:
-	s = catalog->GetString("string", TR_CONTEXT);
+	s = cat1.GetString("string", TR_CONTEXT);
 	assert(s == "Schnur_A");
-	s = catalog->GetString(hashVal);
+	s = cat1.GetString(hashVal);
 	assert(s == "Schnur_id_A");
-	s = catalog->GetString("string", "programming");
+	s = cat1.GetString("string", "programming");
 	assert(s == "String_A");
-	s = catalog->GetString("string", "programming", "Deutsches Fachbuch");
+	s = cat1.GetString("string", "programming", "Deutsches Fachbuch");
 	assert(s == "Textpuffer_A");
-	s = catalog->GetString("string", TR_CONTEXT, "Deutsches Fachbuch");
+	s = cat1.GetString("string", TR_CONTEXT, "Deutsches Fachbuch");
 	assert(s == "Leine_A");
 
 	// now we create a new (base) catalog and embed this one into the app-file:
-	BCatalog cat2("Default", catSig, "English");
+	BPrivate::EditableCatalog cat2("Default", catSig, "English");
 	assert(cat2.InitCheck() == B_OK);
-	catalog = dynamic_cast<DefaultCatalog*>(cat2.fCatalog);
-	assert(catalog != NULL);
 	// the following string is unique to the embedded catalog:
-	res = catalog->SetString("string", "string_A", "base");
+	res = cat2.SetString("string", "string_A", "base");
 	assert(res == B_OK);
 	// the following id is unique to the embedded catalog:
-	res = catalog->SetString(32, "hashed string_A");
+	res = cat2.SetString(32, "hashed string_A");
 	assert(res == B_OK);
 	// the following string will be hidden by the definition inside the german catalog:
-	res = catalog->SetString("string", "hidden_A", TR_CONTEXT);
+	res = cat2.SetString("string", "hidden_A", TR_CONTEXT);
 	assert(res == B_OK);
 	entry_ref addOnRef;
 	res = get_add_on_ref(&addOnRef);
 	assert(res == B_OK);
-	res = catalog->WriteToResource(&addOnRef);
+	res = cat2.WriteToResource(&addOnRef);
 	assert(res == B_OK);
 
 	printf("ok.\n");

@@ -55,26 +55,24 @@ CatalogSpeed::TestCreation()
 	system("mkdir -p ./locale/catalogs/"catSig);
 
 	// create an empty catalog of default type...
-	BCatalog cat1("Default", catSig, "klingon");
+	BPrivate::EditableCatalog cat1("Default", catSig, "klingon");
 	assert(cat1.InitCheck() == B_OK);
-	// ...and populate the catalog with some data:
-	DefaultCatalog *catalog = dynamic_cast<DefaultCatalog*>(cat1.fCatalog);
-	assert(catalog != NULL);
 
+	// ...and populate the catalog with some data:
 	for (int i = 0; i < kNumStrings; i++) {
-		catalog->SetString(strs[i].String(), trls[i].String(), ctxs[i].String());
+		cat1.SetString(strs[i].String(), trls[i].String(), ctxs[i].String());
 	}
 	watch.Suspend();
 	printf("\tadded %d strings in           %9Ld usecs\n", 
-		catalog->CountItems(), watch.ElapsedTime());
+		cat1.CountItems(), watch.ElapsedTime());
 
 	watch.Reset();
 	watch.Resume();
-	res = catalog->WriteToFile("./locale/catalogs/"catSig"/klingon.catalog");
+	res = cat1.WriteToFile("./locale/catalogs/"catSig"/klingon.catalog");
 	assert(res == B_OK);
 	watch.Suspend();
 	printf("\t%d strings written to disk in %9Ld usecs\n", 
-		catalog->CountItems(), watch.ElapsedTime());
+		cat1.CountItems(), watch.ElapsedTime());
 }
 
 
@@ -87,11 +85,9 @@ CatalogSpeed::TestLookup()
 	
 	assert(cat != NULL);
 	assert(cat->InitCheck() == B_OK);
-	DefaultCatalog *catalog = dynamic_cast<DefaultCatalog*>(cat->fCatalog);
-	assert(catalog != NULL);
 	watch.Suspend();
 	printf("\t%d strings read from disk in  %9Ld usecs\n", 
-		catalog->CountItems(), watch.ElapsedTime());
+		cat->CountItems(), watch.ElapsedTime());
 
 	watch.Reset();
 	watch.Resume();
@@ -120,31 +116,29 @@ CatalogSpeed::TestIdCreation()
 	system("mkdir -p ./locale/catalogs/"catSig);
 
 	// create an empty catalog of default type...
-	BCatalog cat1("Default", catSig, "klingon");
+	BPrivate::EditableCatalog cat1("Default", catSig, "klingon");
 	assert(cat1.InitCheck() == B_OK);
-	// ...and populate the catalog with some data:
-	DefaultCatalog *catalog = dynamic_cast<DefaultCatalog*>(cat1.fCatalog);
-	assert(catalog != NULL);
 
+	// ...and populate the catalog with some data:
 	for (int i = 0; i < kNumStrings; i++) {
 		trls[i] = BString("id_translation#") << 6000000+i;
 	}
 	watch.Reset();
 	watch.Resume();
 	for (int i = 0; i < kNumStrings; i++) {
-		catalog->SetString(i, trls[i].String());
+		cat1.SetString(i, trls[i].String());
 	}
 	watch.Suspend();
 	printf("\tadded %d strings by id in     %9Ld usecs\n", 
-		catalog->CountItems(), watch.ElapsedTime());
+		cat1.CountItems(), watch.ElapsedTime());
 
 	watch.Reset();
 	watch.Resume();
-	res = catalog->WriteToFile("./locale/catalogs/"catSig"/klingon.catalog");
+	res = cat1.WriteToFile("./locale/catalogs/"catSig"/klingon.catalog");
 	assert( res == B_OK);
 	watch.Suspend();
 	printf("\t%d strings written to disk in %9Ld usecs\n", 
-		catalog->CountItems(), watch.ElapsedTime());
+		cat1.CountItems(), watch.ElapsedTime());
 }
 
 
@@ -157,11 +151,9 @@ CatalogSpeed::TestIdLookup()
 
 	assert(cat != NULL);
 	assert(cat->InitCheck() == B_OK);
-	DefaultCatalog *catalog = dynamic_cast<DefaultCatalog*>(cat->fCatalog);
-	assert(catalog != NULL);
 	watch.Suspend();
 	printf("\t%d strings read from disk in  %9Ld usecs\n", 
-		catalog->CountItems(), watch.ElapsedTime());
+		cat->CountItems(), watch.ElapsedTime());
 
 	watch.Reset();
 	watch.Resume();

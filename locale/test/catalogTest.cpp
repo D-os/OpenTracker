@@ -27,7 +27,8 @@ class CatalogTest {
 #define catName catSig".catalog"
 
 void 
-CatalogTest::Run() {
+CatalogTest::Run() 
+{
 	printf("app...", be_locale);
 	status_t res;
 	BString s;
@@ -37,56 +38,56 @@ CatalogTest::Run() {
 	system("mkdir -p ./locale/catalogs/"catSig);
 
 	// create an empty catalog of default type...
-	BCatalog cat1("Default", catSig, "German");
-	assert(cat1.InitCheck() == B_OK);
+	BPrivate::EditableCatalog cata("Default", catSig, "German");
+	assert(cata.InitCheck() == B_OK);
 
 	// ...and populate the catalog with some data:
-	DefaultCatalog *catalog = dynamic_cast<DefaultCatalog*>(cat1.fCatalog);
-	assert(catalog != NULL);
-	res = catalog->SetString("string", "Schnur", TR_CONTEXT);
+	res = cata.SetString("string", "Schnur", TR_CONTEXT);
 	assert(res == B_OK);
-	res = catalog->SetString(hashVal, "Schnur_id");
-		// add a second entry for the same hash-value, but with different translation
+	res = cata.SetString(hashVal, "Schnur_id");
+		// add a second entry for the same hash-value, but with different 
+		// translation
 	assert(res == B_OK);
-	res = catalog->SetString("string", "String", "programming");
+	res = cata.SetString("string", "String", "programming");
 	assert(res == B_OK);
-	res = catalog->SetString("string", "Textpuffer", "programming", "Deutsches Fachbuch");
+	res = cata.SetString("string", "Textpuffer", "programming", 
+		"Deutsches Fachbuch");
 	assert(res == B_OK);
-	res = catalog->SetString("string", "Leine", TR_CONTEXT, "Deutsches Fachbuch");
+	res = cata.SetString("string", "Leine", TR_CONTEXT, "Deutsches Fachbuch");
 	assert(res == B_OK);
-	res = catalog->WriteToFile("./locale/catalogs/"catSig"/german.catalog");
+	res = cata.WriteToFile("./locale/catalogs/"catSig"/german.catalog");
 	assert(res == B_OK);
 
 	// check if we are getting back the correct strings:
-	s = catalog->GetString("string", TR_CONTEXT);
+	s = cata.GetString(("string"), TR_CONTEXT);
 	assert(s == "Schnur");
-	s = catalog->GetString(hashVal);
+	s = cata.GetString(hashVal);
 	assert(s == "Schnur_id");
-	s = catalog->GetString("string", "programming");
+	s = cata.GetString("string", "programming");
 	assert(s == "String");
-	s = catalog->GetString("string", "programming", "Deutsches Fachbuch");
+	s = cata.GetString("string", "programming", "Deutsches Fachbuch");
 	assert(s == "Textpuffer");
-	s = catalog->GetString("string", TR_CONTEXT, "Deutsches Fachbuch");
+	s = cata.GetString("string", TR_CONTEXT, "Deutsches Fachbuch");
 	assert(s == "Leine");
 
 	// now we create a new (base) catalog and embed this one into the app-file:
-	BCatalog cat2("Default", catSig, "English");
-	assert(cat2.InitCheck() == B_OK);
-	catalog = dynamic_cast<DefaultCatalog*>(cat2.fCatalog);
-	assert(catalog != NULL);
+	BPrivate::EditableCatalog catb("Default", catSig, "English");
+	assert(catb.InitCheck() == B_OK);
 	// the following string is unique to the embedded catalog:
-	res = catalog->SetString("string", "string", "base");
+	res = catb.SetString("string", "string", "base");
 	assert(res == B_OK);
 	// the following id is unique to the embedded catalog:
-	res = catalog->SetString(32, "hashed string");
+	res = catb.SetString(32, "hashed string");
 	assert(res == B_OK);
-	// the following string will be hidden by the definition inside the german catalog:
-	res = catalog->SetString("string", "hidden", TR_CONTEXT);
+	// the following string will be hidden by the definition inside the 
+	// german catalog:
+	res = catb.SetString("string", "hidden", TR_CONTEXT);
 	assert(res == B_OK);
 	app_info appInfo;
 	res = be_app->GetAppInfo(&appInfo);
 	assert(res == B_OK);
-	res = catalog->WriteToResource(&appInfo.ref);
+	// embed created catalog into application file (catalogTest):
+	res = catb.WriteToResource(&appInfo.ref);
 	assert(res == B_OK);
 
 	printf("ok.\n");
@@ -95,7 +96,8 @@ CatalogTest::Run() {
 
 
 void 
-CatalogTest::Check() {
+CatalogTest::Check() 
+{
 	status_t res;
 	printf("app-check...");
 	BString s;
@@ -129,7 +131,7 @@ CatalogTest::Check() {
 	s = TR_CMT("string", "Deutsches Fachbuch");
 	assert(s == "Leine");
 	// the following string should be found in the embedded catalog only:
-	s = TR_ALL("string", "base", "");
+	s = TR_ALL("string", "base", NULL);
 	assert(s == "string");
 	// the following id should be found in the embedded catalog only:
 	s = TR_ID(32);
