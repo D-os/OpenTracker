@@ -537,13 +537,13 @@ TTracker::OpenRef(const entry_ref *ref, const node_ref *nodeToClose,
 	status_t result = entry.InitCheck();
 
 	bool brokenLinkWithSpecificHandler = false;
-	BString brokenLikPreferredApp;
+	BString brokenLinkPreferredApp;
 
 	if (result != B_OK) {
 		model = new Model(ref, false);
 		if (model->IsSymLink() && !model->LinkTo()) {
-			model->GetPreferredAppForBrokenSymLink(brokenLikPreferredApp);
-			if (brokenLikPreferredApp.Length() && brokenLikPreferredApp != kTrackerSignature)
+			model->GetPreferredAppForBrokenSymLink(brokenLinkPreferredApp);
+			if (brokenLinkPreferredApp.Length() && brokenLinkPreferredApp != kTrackerSignature)
 				brokenLinkWithSpecificHandler = true;
 		}
 		
@@ -609,7 +609,7 @@ TTracker::OpenRef(const entry_ref *ref, const node_ref *nodeToClose,
 			if (brokenLinkWithSpecificHandler)
 				// This cruft is to support a hacky workaround for double-clicking
 				// broken refs for cifs; should get fixed in R5
-				LaunchBrokenLink(brokenLikPreferredApp.String(), &refsReceived);
+				LaunchBrokenLink(brokenLinkPreferredApp.String(), &refsReceived);
 			else
 				TrackerLaunch(&refsReceived, true);
 		}
