@@ -6,6 +6,7 @@
 **			Oliver Tappe, zooey@hirschkaefer.de
 */
 
+#include <assert.h>
 #include <stdio.h>		// for debug only
 #include <syslog.h>
 
