@@ -378,37 +378,37 @@ BStatusView::BStatusView(BRect bounds, thread_id thread, StatusWindowState type)
 
 	switch (type) {
 		case kCopyState:
-			caption = "Preparing to copy items... ";
+			caption = "Preparing to copy items" B_UTF8_ELLIPSIS;
 			id = kResCopyStatusBitmap;
 			break;
 
 		case kMoveState:
-			caption = "Preparing to move items... ";
+			caption = "Preparing to move items" B_UTF8_ELLIPSIS;
 			id = kResMoveStatusBitmap;
 			break;
 
 		case kCreateLinkState:
-			caption = "Preparing to create links... ";
+			caption = "Preparing to create links" B_UTF8_ELLIPSIS;
 			id = kResMoveStatusBitmap;
 			break;
 
 		case kTrashState:
-			caption = "Preparing to empty Trash...";
+			caption = "Preparing to empty Trash" B_UTF8_ELLIPSIS;
 			id = kResTrashStatusBitmap;
 			break;
 
 
 		case kVolumeState:
-			caption = "Searching for disks to mount...";
+			caption = "Searching for disks to mount" B_UTF8_ELLIPSIS;
 			break;
 
 		case kDeleteState:
-			caption = "Preparing to delete items...";
+			caption = "Preparing to delete items" B_UTF8_ELLIPSIS;
 			id = kResTrashStatusBitmap;
 			break;
 	
 		case kRestoreFromTrashState:
-			caption = "Preparing to restore items...";
+			caption = "Preparing to restore items" B_UTF8_ELLIPSIS;
 			break;
 	
 		default:
@@ -498,7 +498,7 @@ BStatusView::InitStatus(int32 totalItems, off_t totalSize,
 			break;
 
 		case kTrashState:
-			fStatusBar->Reset("Emptying Trash... ", buffer.String());
+			fStatusBar->Reset("Emptying Trash" B_UTF8_ELLIPSIS " ", buffer.String());
 			break;
 
 		case kDeleteState:

@@ -96,7 +96,7 @@ BVolumeWindow::AddFileMenu(BMenu *menu)
 	item->SetEnabled(false);
 	menu->AddItem(item);
 
-	menu->AddItem(new BMenuItem("Mount Settings...", 
+	menu->AddItem(new BMenuItem("Mount Settings" B_UTF8_ELLIPSIS, 
 		new BMessage(kRunAutomounterSettings)));
 
 	menu->AddSeparatorItem();

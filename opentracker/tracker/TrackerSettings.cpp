@@ -256,14 +256,14 @@ const char *
 BooleanValueSetting::Handle(const char *const *argv)
 {
 	if (!*++argv) 
-		return "or or off expected";
+		return "on or off expected";
 
 	if (strcmp(*argv, "on") == 0)
 		fValue = true;
 	else if (strcmp(*argv, "off") == 0)
 		fValue = false;
 	else
-		return "or or off expected";
+		return "on or off expected";
 
 	return 0;
 }
