@@ -295,16 +295,16 @@ DefaultCatalog::ReadFromAttribute(entry_ref *appOrAddOnRef)
 		return B_BAD_TYPE;
 	}
 
-	size_t sz = attrInfo.size;
-	auto_ptr<char> buf(new char [sz]);
+	size_t size = attrInfo.size;
+	auto_ptr<char> buf(new char [size]);
 	res = node.ReadAttr(BLocaleRoster::kEmbeddedCatAttr, B_MESSAGE_TYPE, 0,
-		buf.get(), sz);
-	if (res < sz) {
+		buf.get(), size);
+	if (res < (ssize_t)size) {
 		log_team(LOG_ERR, "unable to read embedded catalog from attribute");
 		return res < B_OK ? res : B_BAD_DATA;
 	}
-		
-	BMemoryIO memIO(buf.get(), sz);
+
+	BMemoryIO memIO(buf.get(), size);
 	res = Unflatten(&memIO);
 
 	return res;
