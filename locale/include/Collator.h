@@ -85,12 +85,29 @@ class BCollatorAddOn : public BArchivable {
 		BCollatorAddOn(BMessage *archive);
 		virtual ~BCollatorAddOn();
 
-		virtual void GetSortKey(const char *string, BString *key, int8 strength, bool ignorePunctuation);
-		virtual int Compare(const char *a, const char *b, int32 length, int8 strength, bool ignorePunctuation);
+		virtual void GetSortKey(const char *string, BString *key, int8 strength,
+						bool ignorePunctuation);
+		virtual int Compare(const char *a, const char *b, int32 length, int8 strength,
+						bool ignorePunctuation);
 
 		// (un-)archiving API
 		virtual status_t Archive(BMessage *archive, bool deep);
 		static BArchivable *Instantiate(BMessage *archive);
+
+	protected:
+		struct input_context {
+			input_context(bool ignorePunctuation);
+
+			bool	ignore_punctuation;
+			uint32	next_char;
+			int32	reserved1;
+			int32	reserved2;
+		};
+
+		virtual uint32 GetNextChar(const char **string, input_context &context);
+		virtual size_t PrimaryKeyLength(size_t length);
+		virtual char *PutPrimaryKey(const char *string, char *buffer, int32 length,
+						bool ignorePunctuation);
 };
 
 // If your add-on should work with the standard tool to create a language, it
