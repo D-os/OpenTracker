@@ -22,7 +22,8 @@
 class ZetaCatalog : public BCatalogAddOn {
 
 	public:
-		ZetaCatalog(const char *signature, const char *language);
+		ZetaCatalog(const char *signature, const char *language, 
+			int32 fingerprint);
 		~ZetaCatalog();
 
 		const char *GetString(const char *string, const char *context=NULL,
@@ -33,9 +34,10 @@ class ZetaCatalog : public BCatalogAddOn {
 
 };
 
-ZetaCatalog::ZetaCatalog(const char *signature, const char *language)
+ZetaCatalog::ZetaCatalog(const char *signature, const char *language, 
+	int32 fingerprint)
 	:
-	BCatalogAddOn(signature, language)
+	BCatalogAddOn(signature, language, fingerprint)
 {
 	app_info appInfo;
 	be_app->GetAppInfo(&appInfo); 
@@ -45,7 +47,7 @@ ZetaCatalog::ZetaCatalog(const char *signature, const char *language)
 	BDirectory appDir( &nref);
 
 	// ToDo: implement loading of zeta-catalog 
-	fInitCheck = B_OK;
+	fInitCheck = B_NO_INIT;
 }
 
 ZetaCatalog::~ZetaCatalog()
@@ -68,9 +70,9 @@ ZetaCatalog::GetString(uint32 id)
 
 
 extern "C" BCatalogAddOn *
-instantiate_catalog(const char *signature, const char *language)
+instantiate_catalog(const char *signature, const char *language, int32 fingerprint)
 {
-	ZetaCatalog *catalog = new ZetaCatalog(signature, language);
+	ZetaCatalog *catalog = new ZetaCatalog(signature, language, fingerprint);
 	if (catalog && catalog->InitCheck() != B_OK) {
 		delete catalog;
 		return NULL;
