@@ -6,10 +6,10 @@ INCPATHS = -I../include
 CFLAGS = # -fcheck-memory-usage -D_NO_INLINE_ASM
 
 
-all:	localeTest collatorTest
+all:	localeTest collatorTest collatorSpeed
 
 clean:
-	rm -rf localeTest collatorTest
+	rm -rf localeTest collatorTest collatorSpeed
 
 localeTest:	localeTest.cpp
 	gcc localeTest.cpp $(CFLAGS) $(INCPATHS) $(LIBPATHS) $(LIBS)
@@ -17,3 +17,5 @@ localeTest:	localeTest.cpp
 collatorTest:	collatorTest.cpp
 	gcc collatorTest.cpp $(CFLAGS) $(INCPATHS) $(LIBPATHS) $(LIBS)
 
+collatorSpeed:	collatorSpeed.cpp
+	gcc collatorSpeed.cpp $(CFLAGS) $(INCPATHS) $(LIBPATHS) $(LIBS)
