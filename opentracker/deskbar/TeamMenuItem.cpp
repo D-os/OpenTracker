@@ -39,19 +39,25 @@ All rights reserved.
 #include <Bitmap.h>
 #include <Font.h>
 #include <Region.h>
+#include <Roster.h>
+#include <Resources.h>
 
 #include "BarApp.h"
 #include "BarMenuBar.h"
 #include "ExpandoMenuBar.h"
-#include "TeamMenu.h"
-#include "WindowMenu.h"
-#include "TeamMenuItem.h"
+#include "ResourceSet.h"
 #include "ShowHideMenuItem.h"
+#include "TeamMenu.h"
+#include "TeamMenuItem.h"
+#include "WindowMenu.h"
 #include "WindowMenuItem.h"
+
 
 const float kHPad = 8.0f;
 const float kVPad = 1.0f;
 const float kLabelOffset = 8.0f;
+const float kSwitchWidth = 12;
+
 
 TTeamMenuItem::TTeamMenuItem(BList *team, BBitmap *icon, char *name, char *sig,
 	float width, float height, bool drawLabel, bool vertical)
@@ -60,11 +66,13 @@ TTeamMenuItem::TTeamMenuItem(BList *team, BBitmap *icon, char *name, char *sig,
 	InitData(team, icon, name, sig, width, height, drawLabel, vertical);
 }
 
+
 TTeamMenuItem::TTeamMenuItem(float width,float height,bool vertical)
 	:	BMenuItem("", NULL)
 {
 	InitData(NULL, NULL, strdup(""), strdup(""), width, height, false, vertical);
 }
+
 
 void
 TTeamMenuItem::InitData(BList *team, BBitmap *icon, char *name, char *sig,
@@ -90,10 +98,13 @@ TTeamMenuItem::InitData(BList *team, BBitmap *icon, char *name, char *sig,
 
 	fOverrideWidth = width;
 	fOverrideHeight = height;
-	
+
 	fDrawLabel = drawLabel;
 	fVertical = vertical;
+
+	fExpanded = false;
 }
+
 
 TTeamMenuItem::~TTeamMenuItem()
 {
@@ -102,6 +113,7 @@ TTeamMenuItem::~TTeamMenuItem()
 	free(fName);
 	free(fSig);
 }
+
 
 status_t
 TTeamMenuItem::Invoke(BMessage *message)
@@ -120,11 +132,12 @@ TTeamMenuItem::Invoke(BMessage *message)
 	// bring to front or minimize shortcuts
 	uint32 mods = modifiers();	
 	if (mods & B_CONTROL_KEY) 
-			TShowHideMenuItem::TeamShowHideCommon((mods & B_SHIFT_KEY)
+		TShowHideMenuItem::TeamShowHideCommon((mods & B_SHIFT_KEY)
 				? B_MINIMIZE_WINDOW : B_BRING_TO_FRONT, Teams());
-		
+
 	return BMenuItem::Invoke(message);
 }
+
 
 void
 TTeamMenuItem::SetOverrideWidth(float width)
@@ -160,17 +173,19 @@ TTeamMenuItem::Signature() const
 	return fSig;
 }
 
+
 const char *
 TTeamMenuItem::Name() const
 {
 	return fName;
 }
 
+
 void
 TTeamMenuItem::GetContentSize(float *width, float *height)
 {
 	BRect iconBounds;
-	
+
 	if (fIcon)
 		iconBounds = fIcon->Bounds();
 	else
@@ -181,8 +196,7 @@ TTeamMenuItem::GetContentSize(float *width, float *height)
 	if (fOverrideWidth != -1.0f)
 		*width = fOverrideWidth;
 	else
-		*width = kHPad + iconBounds.Width() + kLabelOffset
-			+ fLabelWidth + kHPad + 20;
+		*width = kHPad + iconBounds.Width() + kLabelOffset + fLabelWidth + kHPad + 20;
 
 	if (fOverrideHeight != -1.0f) 
 		*height = fOverrideHeight;
@@ -195,6 +209,7 @@ TTeamMenuItem::GetContentSize(float *width, float *height)
 	}
 	*height += 2;
 }
+
 
 void
 TTeamMenuItem::Draw()
@@ -212,7 +227,7 @@ TTeamMenuItem::Draw()
 		menu->SetHighColor(menuColor);
 		menu->FillRect(frame);
 	}
-		
+
 	//	draw the gray, unselected item, border
 	if (!IsSelected() || !IsEnabled()) {
 		rgb_color shadow = tint_color(menuColor, B_DARKEN_1_TINT);
@@ -229,7 +244,7 @@ TTeamMenuItem::Draw()
 			menu->StrokeLine(frame.LeftBottom() + BPoint(1, 0), frame.RightBottom());
 
 		menu->StrokeLine(frame.RightBottom(), frame.RightTop());
-		
+
 		menu->SetHighColor(light);
 		menu->StrokeLine(frame.RightTop() + BPoint(-1, 0), frame.LeftTop());
 		if (fVertical)
@@ -243,7 +258,7 @@ TTeamMenuItem::Draw()
 		// fill
 		menu->SetHighColor(tint_color(menuColor, B_HIGHLIGHT_BACKGROUND_TINT));
 		menu->FillRect(frame);
-		
+
 		// these continue the dark grey border on the left or top edge
 		menu->SetHighColor(tint_color(menuColor, B_DARKEN_4_TINT));
 		if (fVertical)
@@ -260,6 +275,7 @@ TTeamMenuItem::Draw()
 	menu->PopState();
 }
 
+
 void
 TTeamMenuItem::DrawContent()
 {
@@ -267,7 +283,7 @@ TTeamMenuItem::DrawContent()
 	if (fIcon) {
 		menu->SetDrawingMode(B_OP_OVER);
 		BRect frame(Frame());
-	
+
 		if (!fVertical)
 			frame.top += 1;
 
@@ -287,7 +303,7 @@ TTeamMenuItem::DrawContent()
 		drawLoc.y = frame.top + ((frame.Height() - labelHeight) / 2) + 1.0f;
 		menu->MovePenTo(drawLoc);
 	}
-	
+
 	//	set the pen to black so that either method will draw in the same color
 	//	low color is set in inherited::DrawContent, override makes sure its what we want
 	if (fDrawLabel) {
@@ -298,7 +314,60 @@ TTeamMenuItem::DrawContent()
 		//	text color does not change
 		DrawContentLabel();			
 	}
+
+	// Draw the expandable icon.
+	TBarView *barView = (static_cast<TBarApp *>(be_app))->BarView();
+	if (fVertical && static_cast<TBarApp *>(be_app)->Settings()->superExpando
+		&& barView->Expando()) {
+		BRect frame(Frame());
+		BRect rect(0, 0, kSwitchWidth, 10);
+		rect.OffsetTo(BPoint(frame.right - rect.Width(),
+			ContentLocation().y + ((frame.Height() - rect.Height()) / 2)));
+
+		rgb_color outlineColor = {80, 80, 80, 255};
+		rgb_color middleColor = {200, 200, 200, 255};
+
+		menu->SetDrawingMode(B_OP_COPY);
+
+		if (!fExpanded) {
+			menu->BeginLineArray(6);
+
+			menu->AddLine(BPoint(rect.left + 3, rect.top + 1), 
+				BPoint(rect.left + 3, rect.bottom - 1), outlineColor);
+			menu->AddLine(BPoint(rect.left + 3, rect.top + 1), 
+				BPoint(rect.left + 7, rect.top + 5), outlineColor);
+			menu->AddLine(BPoint(rect.left + 7, rect.top + 5), 
+				BPoint(rect.left + 3, rect.bottom - 1), outlineColor);
+
+			menu->AddLine(BPoint(rect.left + 4, rect.top + 3), 
+				BPoint(rect.left + 4, rect.bottom - 3), middleColor);
+			menu->AddLine(BPoint(rect.left + 5, rect.top + 4), 
+				BPoint(rect.left + 5, rect.bottom - 4), middleColor);
+			menu->AddLine(BPoint(rect.left + 5, rect.top + 5), 
+				BPoint(rect.left + 6, rect.top + 5), middleColor);
+			menu->EndLineArray();
+		} else {
+			// expanded state
+
+			menu->BeginLineArray(6);
+			menu->AddLine(BPoint(rect.left + 1, rect.top + 3), 
+				BPoint(rect.right - 3, rect.top + 3), outlineColor);
+			menu->AddLine(BPoint(rect.left + 1, rect.top + 3), 
+				BPoint(rect.left + 5, rect.top + 7), outlineColor);
+			menu->AddLine(BPoint(rect.left + 5, rect.top + 7), 
+				BPoint(rect.right - 3, rect.top + 3), outlineColor);
+
+			menu->AddLine(BPoint(rect.left + 3, rect.top + 4), 
+				BPoint(rect.right - 5, rect.top + 4), middleColor);
+			menu->AddLine(BPoint(rect.left + 4, rect.top + 5), 
+				BPoint(rect.right - 6, rect.top + 5), middleColor);
+			menu->AddLine(BPoint(rect.left + 5, rect.top + 5), 
+				BPoint(rect.left + 5, rect.top + 6), middleColor);
+			menu->EndLineArray();
+		}
+	}
 }
+
 
 void
 TTeamMenuItem::DrawContentLabel()
@@ -311,10 +380,14 @@ TTeamMenuItem::DrawContentLabel()
 	if (Submenu() && fVertical)
 		cachedWidth += 18;
 
-
 	const char *label = Label();
 	char *truncLabel = NULL;
-	float max = menu->MaxContentWidth();
+	float max = 0;
+	if (static_cast<TBarApp *>(be_app)->Settings()->superExpando && fVertical)
+		max = menu->MaxContentWidth() - kSwitchWidth;
+	else
+		max = menu->MaxContentWidth();
+
 	if (max > 0) {
  		BPoint penloc = menu->PenLocation();
 		BRect frame = Frame();
@@ -327,7 +400,7 @@ TTeamMenuItem::DrawContentLabel()
 			label = truncLabel;
 		}
 	}
-	
+
 	if (!label)
 		label = Label();
 
@@ -344,3 +417,94 @@ TTeamMenuItem::DrawContentLabel()
 	if (truncLabel)
 		free(truncLabel);
 }
+
+
+bool
+TTeamMenuItem::IsExpanded()
+{
+	return fExpanded;
+}
+
+
+void
+TTeamMenuItem::ToggleExpandState(bool resizeWindow)
+{
+	fExpanded = !fExpanded;
+	
+	if (fExpanded) {
+		// Populate Menu() with the stuff from SubMenu().
+		TWindowMenu *sub = (static_cast<TWindowMenu *>(Submenu()));
+		if (sub) {
+			// force the menu to update it's contents.
+			Submenu()->AttachedToWindow();
+			if (sub->CountItems() > 1){
+				TExpandoMenuBar *parent = static_cast<TExpandoMenuBar *>(Menu());
+				int myindex = parent->IndexOf(this) + 1;
+
+				TWindowMenuItem *windowItem = NULL;
+				int childIndex = 0;
+				int totalChildren = sub->CountItems() - 4; // hide, show, close, separator.
+				for (; childIndex < totalChildren; childIndex++) {
+					windowItem = static_cast<TWindowMenuItem *>(sub->RemoveItem((int32)0));
+					parent->AddItem(windowItem, myindex + childIndex);
+					windowItem->ExpandedItem(true);
+				}
+				sub->SetExpanded(true, myindex + childIndex);
+
+				if (resizeWindow)
+					parent->SizeWindow();
+			} else
+				fExpanded = fExpanded;
+		}
+	} else {
+		// Remove the goodies from the Menu() that should be in the SubMenu();
+		TWindowMenu *sub = static_cast<TWindowMenu *>(Submenu());
+
+		if (sub) {
+			TExpandoMenuBar *parent = static_cast<TExpandoMenuBar *>(Menu());
+
+			TWindowMenuItem *windowItem = NULL;
+			int childIndex = parent->IndexOf(this) + 1;
+			while (!parent->SubmenuAt(childIndex) && childIndex < parent->CountItems()) {
+				windowItem = static_cast<TWindowMenuItem *>(parent->RemoveItem(childIndex));
+				sub->AddItem(windowItem, 0);
+				windowItem->ExpandedItem(false);
+			}
+			sub->SetExpanded(false, 0);
+
+			if (resizeWindow)
+				parent->SizeWindow();
+		} else
+			fExpanded = fExpanded;
+	}
+}
+
+
+TWindowMenuItem*
+TTeamMenuItem::ExpandedWindowItem(int32 id)
+{
+	if (!fExpanded)	// Paranoia
+		return NULL;
+
+	TExpandoMenuBar *parent = static_cast<TExpandoMenuBar *>(Menu());
+	int childIndex = parent->IndexOf(this) + 1;
+
+	while (!parent->SubmenuAt(childIndex) && childIndex < parent->CountItems()) {
+		TWindowMenuItem *item = static_cast<TWindowMenuItem *>(parent->ItemAt(childIndex));
+		if (item->ID() == id)
+			return item;
+
+		childIndex++;
+	}
+	return NULL;
+}
+
+
+BRect
+TTeamMenuItem::ExpanderBounds() const
+{
+	BRect bounds(Frame());
+	bounds.left = bounds.right - kSwitchWidth;
+	return bounds;
+}
+

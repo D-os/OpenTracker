@@ -56,53 +56,59 @@ enum drag_and_drop_selection {
 };
 
 class TExpandoMenuBar : public BMenuBar {
-public:
-	TExpandoMenuBar(TBarView *bar, BRect frame, const char *name, bool vertical,
-		bool drawLabel = true);
-	
-	virtual void AttachedToWindow();
-	virtual void DetachedFromWindow();
-	virtual void MessageReceived(BMessage *message);
-	virtual void MouseDown(BPoint where);
-	virtual void MouseMoved(BPoint where, uint32 code, const BMessage *);
-	
-	virtual void Draw(BRect update);
-	void DrawBackground(BRect update);
-	
-	bool InBeMenu(BPoint) const;
-	TTeamMenuItem *ItemAtPoint(BPoint loc);
-	
-	void CheckItemSizes(int32 delta);
-	
-	menu_layout MenuLayout() const;
-	
-	void CheckForSizeOverrun();
-	
-private:
-	static int CompareByName( const void *first, const void *second);
+	public:
+		TExpandoMenuBar(TBarView *bar, BRect frame, const char *name, bool vertical,
+			bool drawLabel = true);
 
-	void AddTeam(BList *team, BBitmap *icon, char *name, char *signature);
-	void AddTeam(team_id team, const char *signature);
-	void RemoveTeam(team_id team, bool partial);
-	
-	void Hilite(drag_and_drop_selection which);
-	
-	bool fVertical;
-	bool fOverflow;
-	bool fDrawLabel;
-	bool fIsScrolling;
-	
-	TBarView *fBarView;
-	int32 fFirstApp;
-	
-	TBarMenuTitle *fBeMenuItem;
-	TTeamMenuItem *fSeparatorItem;
-	
+		virtual void AttachedToWindow();
+		virtual void DetachedFromWindow();
+		virtual void MessageReceived(BMessage *message);
+		virtual void MouseDown(BPoint where);
+		virtual void MouseMoved(BPoint where, uint32 code, const BMessage *);
+
+		virtual void Draw(BRect update);
+		virtual void DrawBackground(BRect update);
+
+		bool InBeMenu(BPoint) const;
+		TTeamMenuItem *ItemAtPoint(BPoint loc);
+
+		void CheckItemSizes(int32 delta);
+
+		menu_layout MenuLayout() const;
+
+		void SizeWindow();
+		void CheckForSizeOverrun();
+
+	private:
+		static int CompareByName( const void *first, const void *second);
+		static int32 monitor_team_windows(void *arg);
+
+		void AddTeam(BList *team, BBitmap *icon, char *name, char *signature);
+		void AddTeam(team_id team, const char *signature);
+		void RemoveTeam(team_id team, bool partial);
+
+		void Hilite(drag_and_drop_selection which);
+
+		bool fVertical;
+		bool fOverflow;
+		bool fDrawLabel;
+		bool fIsScrolling;
+		bool fShowTeamExpander;
+		bool fExpandNewTeams;
+
+		TBarView *fBarView;
+		int32 fFirstApp;
+
+		TBarMenuTitle *fBeMenuItem;
+		TTeamMenuItem *fSeparatorItem;
+
 #ifdef DOUBLECLICKBRINGSTOFRONT
-	int32 fLastClickItem;
-	bigtime_t fLastClickTime;
+		int32 fLastClickItem;
+		bigtime_t fLastClickTime;
 #endif
+
+		static bool			sDoMonitor;
+		static thread_id	sMonThread;
 };
 
 #endif /* EXPANDOMENUBAR_H */
-
