@@ -322,7 +322,7 @@ void
 DraggableContainerIcon::AttachedToWindow()
 {
 	//SetViewColor(B_TRANSPARENT_COLOR);
-	SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
+	SetViewColor(ui_color(B_MENU_BACKGROUND_COLOR));
 }
 
 
@@ -1972,10 +1972,10 @@ BContainerWindow::SetupNavigationMenu(const entry_ref *ref, BMenu *parent)
 		ref = &resolvedRef;
 	}
 
-	if (!fNavigationItem) 
-		// icon menuitem adopts model
-		fNavigationItem = new ModelMenuItem(new Model(model),
+	if (!fNavigationItem) {
+		fNavigationItem = new ModelMenuItem(&model,
 			new BNavMenu(model.Name(), B_REFS_RECEIVED, be_app, this));
+	}
 
 	// setup a navigation menu item which will dynamically load items
 	// as menu items are traversed
