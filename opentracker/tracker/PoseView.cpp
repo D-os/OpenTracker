@@ -206,8 +206,9 @@ BPoseView::BPoseView(Model *model, BRect bounds, uint32 viewMode, uint32 resizeM
 {
 	
 	fViewState->SetViewMode(viewMode);
-	fShowSelectionWhenInactive = TTrackerState().ShowSelectionWhenInactive();
+	fShowSelectionWhenInactive = TrackerSettings().ShowSelectionWhenInactive();
 }
+
 
 BPoseView::~BPoseView()
 {
@@ -995,17 +996,18 @@ BPoseView::AddPoses(Model *model)
 	// if model is zero, PoseView has other means of iterating through all
 	// the entries that it adds
 	if (model) {
+		TrackerSettings settings;
 		if (model->IsRoot()) {
-			AddRootPoses(true, TTracker::MountSharedVolumesOntoDesktop());
+			AddRootPoses(true, settings.MountSharedVolumesOntoDesktop());
 			return;
 		} else if (IsDesktopView()
-			&& (TTracker::MountVolumesOntoDesktop()
-				|| (IsFilePanel() && TTracker::DesktopFilePanelRoot())))
-			AddRootPoses(true, TTracker::MountSharedVolumesOntoDesktop());
+			&& (settings.MountVolumesOntoDesktop()
+				|| (IsFilePanel() && settings.DesktopFilePanelRoot())))
+			AddRootPoses(true, settings.MountSharedVolumesOntoDesktop());
 	}
 
 	ShowBarberPole();
-	
+
 	AddPosesParams *params = new AddPosesParams();
 	BMessenger tmp(this);
 	params->target = tmp;
@@ -1014,7 +1016,7 @@ BPoseView::AddPoses(Model *model)
 		params->ref = *model->EntryRef();
 
 	thread_id addPosesThread = spawn_thread(&BPoseView::AddPosesTask, "add poses",
-		B_DISPLAY_PRIORITY, params);
+			B_DISPLAY_PRIORITY, params);
 
 	if (addPosesThread >= B_OK) {
 		fAddPosesThreads.insert(addPosesThread); 
@@ -1297,6 +1299,7 @@ BPoseView::AddPosesTask(void *castToParams)
 	return B_OK;
 }
 
+
 void
 BPoseView::AddRootPoses(bool watchIndividually, bool mountShared)
 {
@@ -1304,7 +1307,7 @@ BPoseView::AddRootPoses(bool watchIndividually, bool mountShared)
 	roster.Rewind();
 	BVolume volume;
 	
-	if (TTracker::ShowDisksIcon() && !TargetModel()->IsRoot()) {
+	if (TrackerSettings().ShowDisksIcon() && !TargetModel()->IsRoot()) {
 		BEntry entry("/");
 		Model model(&entry);
 		if (model.InitCheck() == B_OK) {
@@ -1336,6 +1339,7 @@ BPoseView::AddRootPoses(bool watchIndividually, bool mountShared)
 	UpdateCount();
 	Invalidate();
 }
+
 
 void
 BPoseView::RemoveRootPoses()
@@ -1915,16 +1919,10 @@ BPoseView::MessageReceived(BMessage *message)
 
 		case kMoveToTrash:
 		{
-			bool dontMoveToTrash = false;
-			bool askBeforeDelete = true;
+			TrackerSettings settings;
 
-			if (TTracker *tracker = dynamic_cast<TTracker *>(be_app)) {
-				dontMoveToTrash = tracker->DontMoveFilesToTrash();
-				askBeforeDelete = tracker->AskBeforeDeleteFile();
-			}
-			
-			if ((modifiers() & B_SHIFT_KEY) != 0 || dontMoveToTrash)
-				DeleteSelection(true, askBeforeDelete);
+			if ((modifiers() & B_SHIFT_KEY) != 0 || settings.DontMoveFilesToTrash())
+				DeleteSelection(true, settings.AskBeforeDeleteFile());
 			else
 				MoveSelectionToTrash();
 			break;
@@ -2047,28 +2045,28 @@ BPoseView::MessageReceived(BMessage *message)
 						case kDateFormatChanged:
 							UpdateDateColumns(message);
 							break;
-						
+
 						case kVolumesOnDesktopChanged:
 							AdaptToVolumeChange(message);
 							break;
-						
+
 						case kDesktopIntegrationChanged:
 							AdaptToDesktopIntegrationChange(message);
 							break;
-						
+
 						case kShowSelectionWhenInactiveChanged:
-							{
-								message->FindBool("ShowSelectionWhenInactive", &fShowSelectionWhenInactive);
-								TTracker::SetShowSelectionWhenInactive(fShowSelectionWhenInactive);
-								Invalidate();
-							}
+						{
+							message->FindBool("ShowSelectionWhenInactive", &fShowSelectionWhenInactive);
+							TrackerSettings().SetShowSelectionWhenInactive(fShowSelectionWhenInactive);
+							Invalidate();
 							break;
-						
+						}
+
 						case kSortFolderNamesFirstChanged:
 							if (ViewMode() == kListMode) {
 								bool sortFolderNamesFirst;
 								message->FindBool("SortFolderNamesFirst", &sortFolderNamesFirst);
-								TTracker::SetSortFolderNamesFirst(sortFolderNamesFirst);
+								TrackerSettings().SetSortFolderNamesFirst(sortFolderNamesFirst);
 								NameAttributeText::SetSortFolderNamesFirst(sortFolderNamesFirst);
 								SortPoses();
 								Invalidate();
@@ -2078,7 +2076,7 @@ BPoseView::MessageReceived(BMessage *message)
 						case kShowVolumeSpaceBar:
 							bool enabled;
 							message->FindBool("ShowVolumeSpaceBar", &enabled);
-							TTracker::SetShowVolumeSpaceBar(enabled);
+							TrackerSettings().SetShowVolumeSpaceBar(enabled);
 							// supposed to fall through
 						case kSpaceBarColorChanged:
 							UpdateVolumeIcons();
@@ -2098,6 +2096,7 @@ BPoseView::MessageReceived(BMessage *message)
 			break;
 	}
 }
+
 
 bool
 BPoseView::RemoveColumn(BColumn *columnToRemove, bool runAlert)
@@ -4404,11 +4403,12 @@ BPoseView::FSNotification(const BMessage *message)
 				// Query windows can get notices on different dirNodes
 				// The Disks window can too
 				// So can the Desktop, as long as the integrate flag is on
+				TrackerSettings settings;
 				if (dirNode != *TargetModel()->NodeRef()
 					&& !TargetModel()->IsQuery()
 					&& !TargetModel()->IsRoot()
-					&& ((!TTracker::IntegrateNonBootBeOSDesktops()
-						&& !TTracker::ShowDisksIcon()) || !IsDesktopView()))
+					&& ((!settings.IntegrateNonBootBeOSDesktops()
+						&& !settings.ShowDisksIcon()) || !IsDesktopView()))
 					// stray notification
 					break;
 
@@ -4696,7 +4696,7 @@ BPoseView::EntryMoved(const BMessage *message)
 		return DeletePose(&itemNode);
 	else if (dirNode.node == thisDirNode.node)
 		EntryCreated(&dirNode, &itemNode, name);
-	else if (TTracker::IntegrateNonBootBeOSDesktops() && IsDesktopView()) {
+	else if (TrackerSettings().IntegrateNonBootBeOSDesktops() && IsDesktopView()) {
 		// node entered/exited desktop view, we have more work to do
 
 		// if old dir node is a desktop folder, delete pose
@@ -4807,7 +4807,7 @@ BPoseView::UpdateVolumeIcon(dev_t device, bool forceUpdate)
 	if (pose == NULL)
 		return;
 
-	if (pose->UpdateVolumeSpaceBar(TTracker::ShowVolumeSpaceBar()) || forceUpdate) {
+	if (pose->UpdateVolumeSpaceBar(TrackerSettings().ShowVolumeSpaceBar()) || forceUpdate) {
 		BPoint loc(0, index * fListElemHeight);
 		pose->UpdateIcon(loc, this);
 	}
@@ -5378,15 +5378,10 @@ BPoseView::KeyDown(const char *bytes, int32 count)
 				// Delete without asking from the trash
 				DeleteSelection(true, false);
 			} else {
-				bool dontMoveToTrash = false;
-				bool askBeforeDelete = true;
+				TrackerSettings settings;
 
-				if (TTracker *tracker = dynamic_cast<TTracker *>(be_app)) {
-					dontMoveToTrash = tracker->DontMoveFilesToTrash();
-					askBeforeDelete = tracker->AskBeforeDeleteFile();
-				}
-				if ((modifiers() & B_SHIFT_KEY) != 0 || dontMoveToTrash)
-					DeleteSelection(true, askBeforeDelete);
+				if ((modifiers() & B_SHIFT_KEY) != 0 || settings.DontMoveFilesToTrash())
+					DeleteSelection(true, settings.AskBeforeDeleteFile());
 				else
 					MoveSelectionToTrash();
 			}
@@ -6597,20 +6592,22 @@ BPoseView::FindPose(BPoint point, int32 *poseIndex) const
 	return NULL;
 }
 
+
 void
 BPoseView::OpenSelection(BPose *clickedPose, int32 *index)
 {
 	BPose *singleWindowBrowsePose = clickedPose;
+	TrackerSettings settings;
 
 	// Get first selected pose in selection if none was clicked
-	if (TTracker::SingleWindowBrowse() 
+	if (settings.SingleWindowBrowse() 
 		&& !singleWindowBrowsePose 
 		&& fSelectionList->CountItems() == 1 
 		&& !IsFilePanel()) 
 		singleWindowBrowsePose = fSelectionList->ItemAt(0);
 
 	// check if we can use the single window mode
-	if (TTracker::SingleWindowBrowse()
+	if (settings.SingleWindowBrowse()
 		&& !IsDesktopWindow() 
 		&& !IsFilePanel()
 		&& !(modifiers() & B_OPTION_KEY)
@@ -6628,11 +6625,13 @@ BPoseView::OpenSelection(BPose *clickedPose, int32 *index)
 	
 }
 
+
 void
 BPoseView::OpenSelectionUsing(BPose *clickedPose, int32 *index)
 {
 	OpenSelectionCommon(clickedPose, index, true);
 }
+
 
 void
 BPoseView::OpenSelectionCommon(BPose *clickedPose, int32 *poseIndex,
@@ -6657,7 +6656,7 @@ BPoseView::OpenSelectionCommon(BPose *clickedPose, int32 *poseIndex,
 			|| (modifiers() & B_OPTION_KEY) == 0
 			|| IsFilePanel()
 			|| IsDesktopWindow()
-			|| TTracker::SingleWindowBrowse())
+			|| TrackerSettings().SingleWindowBrowse())
 			continue;
 
 		ASSERT(TargetModel());
@@ -6683,6 +6682,7 @@ BPoseView::OpenSelectionCommon(BPose *clickedPose, int32 *poseIndex,
 			DrawOpenAnimation(clickedPose->CalcRect(this));
 	}
 }
+
 
 void
 BPoseView::DrawOpenAnimation(BRect rect)
@@ -6710,6 +6710,7 @@ BPoseView::DrawOpenAnimation(BRect rect)
 	SetDrawingMode(B_OP_OVER);
 }
 
+
 void
 BPoseView::UnmountSelectedVolumes()
 {
@@ -6731,6 +6732,7 @@ BPoseView::UnmountSelectedVolumes()
 		}
 	}
 }
+
 
 void
 BPoseView::ClearPoses()
@@ -6759,6 +6761,7 @@ BPoseView::ClearPoses()
 	if (fSelectionChangedHook)
 		ContainerWindow()->SelectionChanged();
 }
+
 
 void
 BPoseView::SwitchDir(const entry_ref *newDirRef, AttributeStreamNode *node)
@@ -6864,6 +6867,7 @@ BPoseView::SwitchDir(const entry_ref *newDirRef, AttributeStreamNode *node)
 	fLastKeyTime = 0;
 }
 
+
 void
 BPoseView::Refresh()
 {
@@ -6887,6 +6891,7 @@ BPoseView::Refresh()
 	ResetPosePlacementHint();
 }
 
+
 void
 BPoseView::ResetOrigin()
 {
@@ -6897,12 +6902,14 @@ BPoseView::ResetOrigin()
 	EnableScrollBars();
 }
 
+
 void 
 BPoseView::EditQueries()
 {
 	// edit selected queries
 	SendSelectionAsRefs(kEditQuery, true);
 }
+
 
 void
 BPoseView::SendSelectionAsRefs(uint32 what, bool onlyQueries)
@@ -6941,6 +6948,7 @@ BPoseView::SendSelectionAsRefs(uint32 what, bool onlyQueries)
 
 	BMessenger(kTrackerSignature).SendMessage(&message);
 }
+
 
 void
 BPoseView::OpenInfoWindows()
@@ -6983,7 +6991,7 @@ BPoseView::OpenParent()
 		return;
 
 	BEntry root("/");
-	if (!TTracker::ShowDisksIcon() && entry == root
+	if (!TrackerSettings().ShowDisksIcon() && entry == root
 		&& (modifiers() & B_CONTROL_KEY) == 0)
 		return;
 
@@ -7321,6 +7329,7 @@ BPoseView::UpdateScrollRange()
 	}
 }
 
+
 void
 BPoseView::DrawPose(BPose *pose, int32 index, bool fullDraw)
 {
@@ -7330,11 +7339,12 @@ BPoseView::DrawPose(BPose *pose, int32 index, bool fullDraw)
 	else
 		rect = pose->CalcRect(this);
 
-	if (TTracker::ShowVolumeSpaceBar() && pose->TargetModel()->IsVolume())
+	if (TrackerSettings().ShowVolumeSpaceBar() && pose->TargetModel()->IsVolume())
 		Invalidate(rect);
 	else
 		pose->Draw(rect, this, fullDraw);
 }
+
 
 rgb_color
 BPoseView::DeskTextColor() const
@@ -8408,11 +8418,12 @@ BPoseView::UpdateDateColumns(BMessage *message)
 		message->FindInt32("DateOrderFormat", (int32*)&format);
 		message->FindBool("24HrClock", &clock);
 
-		TTracker::SetTimeFormatSeparator(separator);
-		TTracker::SetDateOrderFormat(format);
-		TTracker::SetClockTo24Hr(clock);
+		TrackerSettings settings;
+		settings.SetTimeFormatSeparator(separator);
+		settings.SetDateOrderFormat(format);
+		settings.SetClockTo24Hr(clock);
 	}
-	
+
 	for (int32 i = 0; i < columnCount; i++) {
 		BColumn *col = ColumnAt(i);
 		if (col && col->AttrType() == B_TIME_TYPE) {
@@ -8423,8 +8434,18 @@ BPoseView::UpdateDateColumns(BMessage *message)
 	}
 }
 
-void BPoseView::AdaptToVolumeChange(BMessage *) {}
-void BPoseView::AdaptToDesktopIntegrationChange(BMessage *) {}
+
+void
+BPoseView::AdaptToVolumeChange(BMessage *)
+{
+}
+
+
+void
+BPoseView::AdaptToDesktopIntegrationChange(BMessage *)
+{
+}
+
 
 bool 
 BPoseView::EraseWidgetTextBackground() const
@@ -8432,32 +8453,40 @@ BPoseView::EraseWidgetTextBackground() const
 	return fEraseWidgetBackground;
 }
 
+
 void 
 BPoseView::SetEraseWidgetTextBackground(bool on)
 {
 	fEraseWidgetBackground = on;
 }
 
+
 bool 
 BPoseView::ShouldIntegrateVolume(const BVolume *volume)
 {
 	if (!volume->IsPersistent())
 		return false;
-			
-	if (TTracker::IntegrateAllNonBootDesktops())
+
+	TrackerSettings settings;
+	if (settings.IntegrateAllNonBootDesktops())
 		return true;
-	
-	if (!TTracker::IntegrateNonBootBeOSDesktops())
+
+	if (!settings.IntegrateNonBootBeOSDesktops())
 		return false;
 
 	return volume->KnowsQuery() && volume->KnowsAttr() && volume->KnowsMime();
 }
+
+
+//	#pragma mark -
+
 
 BHScrollBar::BHScrollBar(BRect bounds, const char *name, BView *target)
 	:	BScrollBar(bounds, name, target, 0, 1, B_HORIZONTAL),
 		fTitleView(0)
 {
 }
+
 
 void
 BHScrollBar::ValueChanged(float value)
@@ -8476,9 +8505,11 @@ TPoseViewFilter::TPoseViewFilter(BPoseView *pose)
 {
 }
 
+
 TPoseViewFilter::~TPoseViewFilter()
 {
 }
+
 
 filter_result
 TPoseViewFilter::Filter(BMessage *message, BHandler **)
@@ -8497,8 +8528,6 @@ TPoseViewFilter::Filter(BMessage *message, BHandler **)
 }
 
 
-
-
 // static member initializations
 
 float BPoseView::fFontHeight = -1;
@@ -8508,3 +8537,4 @@ _BWidthBuffer_* BPoseView::fWidthBuf = new _BWidthBuffer_;
 BFont BPoseView::fCurrentFont;
 OffscreenBitmap *BPoseView::fOffscreen = new OffscreenBitmap;
 char BPoseView::fMatchString[] = "";
+

@@ -111,6 +111,7 @@ RecentItemsMenu::StartBuildingItemList()
 	return true;
 }
 
+
 void 
 RecentItemsMenu::ClearMenuBuildingState()
 {
@@ -119,14 +120,16 @@ RecentItemsMenu::ClearMenuBuildingState()
 	fTterator->Rewind();
 }
 
+
 BRecentItemsList::BRecentItemsList(int32 maxItems, bool navMenuFolders)
 	:	fMaxItems(maxItems),
 		fNavMenuFolders(navMenuFolders)
 {
-	TTrackerState::InitIfNeeded();
+	InitIconPreloader();
 		// need the icon cache
 	Rewind();
 }
+
 
 void
 BRecentItemsList::Rewind()
@@ -134,6 +137,7 @@ BRecentItemsList::Rewind()
 	fIndex = 0;
 	fItems.MakeEmpty();
 }
+
 
 BMenuItem *
 BRecentItemsList::GetNextMenuItem(const BMessage *fileOpenInvokeMessage,

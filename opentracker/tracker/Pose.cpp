@@ -95,16 +95,18 @@ BPose::BPose(Model *model, BPoseView *view, bool selected)
 {
 	CreateWidgets(view);
 
-	if (model->IsVolume() && TTracker::ShowVolumeSpaceBar()) {
+	if (model->IsVolume() && TrackerSettings().ShowVolumeSpaceBar()) {
 		dev_t device = model->NodeRef()->device;
 		fPercent = CalcFreeSpace(device);
 	}
 }
 
+
 BPose::~BPose()
 {
 	delete fModel;
 }
+
 
 void
 BPose::CreateWidgets(BPoseView *poseView)
@@ -116,6 +118,7 @@ BPose::CreateWidgets(BPoseView *poseView)
 		fWidgetList.AddItem(new BTextWidget(fModel, column, poseView));
 	}
 }
+
 
 BTextWidget *
 BPose::AddWidget(BPoseView *poseView, BColumn *column)
@@ -129,6 +132,7 @@ BPose::AddWidget(BPoseView *poseView, BColumn *column)
 	return widget;
 }
 
+
 BTextWidget *
 BPose::AddWidget(BPoseView *poseView, BColumn *column, ModelNodeLazyOpener &opener)
 {
@@ -141,6 +145,7 @@ BPose::AddWidget(BPoseView *poseView, BColumn *column, ModelNodeLazyOpener &open
 	return widget;
 }
 
+
 void
 BPose::RemoveWidget(BPoseView *, BColumn *column)
 {
@@ -149,6 +154,7 @@ BPose::RemoveWidget(BPoseView *, BColumn *column)
 	if (widget) 
 		delete fWidgetList.RemoveItemAt(index);
 }
+
 
 void
 BPose::Commit(bool saveChanges, BPoint loc, BPoseView *poseView, int32 poseIndex)
@@ -162,6 +168,7 @@ BPose::Commit(bool saveChanges, BPoint loc, BPoseView *poseView, int32 poseIndex
 		}
 	}
 }
+
 
 inline bool
 OneMouseUp(BTextWidget *widget, BPose *pose, BPoseView *poseView, BColumn *column,
@@ -180,11 +187,13 @@ OneMouseUp(BTextWidget *widget, BPose *pose, BPoseView *poseView, BColumn *colum
 	return false;
 }
 
+
 void
 BPose::MouseUp(BPoint poseLoc, BPoseView *poseView, BPoint where, int32)
 {
 	WhileEachTextWidget(this, poseView, OneMouseUp, poseLoc, where);
 }
+
 
 inline void
 OneCheckAndUpdate(BTextWidget *widget, BPose *, BPoseView *poseView,
@@ -192,6 +201,7 @@ OneCheckAndUpdate(BTextWidget *widget, BPose *, BPoseView *poseView,
 {
 	widget->CheckAndUpdate(poseLoc, column, poseView);
 }
+
 
 void
 BPose::UpdateAllWidgets(int32, BPoint poseLoc, BPoseView *poseView)
@@ -732,7 +742,8 @@ BPose::DrawBar(BPoint where,BView *view,icon_size kind)
 		barPos = barHeight;
 
 	// the free space bar
-	view->SetHighColor(TTracker::FreeSpaceColor());
+	TrackerSettings settings;
+	view->SetHighColor(settings.FreeSpaceColor());
 
 	rect.InsetBy(1,1);
 	BRect bar(rect);
@@ -743,17 +754,19 @@ BPose::DrawBar(BPoint where,BView *view,icon_size kind)
 	// the used space bar
 	bar.top = bar.bottom + 1;
 	bar.bottom = rect.bottom;
-	view->SetHighColor(fPercent < -1 ? TTracker::WarningSpaceColor() : TTracker::UsedSpaceColor());
+	view->SetHighColor(fPercent < -1 ? settings.WarningSpaceColor() : settings.UsedSpaceColor());
 	view->FillRect(bar);
 
 	view->PopState();
 }
+
 
 void
 BPose::DrawToggleSwitch(BRect, BPoseView *)
 {
 	return;
 }
+
 
 BRect
 BPose::CalcRect(BPoint loc, const BPoseView *poseView, bool minimalRect)
