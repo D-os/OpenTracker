@@ -13,6 +13,8 @@ rule UserObject
 }
 
 # Overridden to allow for spaces in file names and to support resources.
+# Also set the on target LINKFLAGS variable to prevent later changes to
+# the global variable from having an effect on the setting for the target.
 rule Link
 {
 	# Note: RESFILES must be set before invocation.
@@ -20,6 +22,7 @@ rule Link
 	on $(1) XRes $(1) : $(RESFILES) ;
 	Chmod $(1) ;
 	MimeSet $(1) ;
+	LINKFLAGS on $(1) = [ on $(1) return $(LINKFLAGS) ] ;
 }
 
 actions Link bind NEEDLIBS
