@@ -5102,11 +5102,6 @@ BPoseView::EntryMoved(const BMessage *message)
 bool
 BPoseView::AttributeChanged(const BMessage *message)
 {
-	// ToDo:
-	// add support for attribute removal
-
-	// message->PrintToStream();
-
 	node_ref itemNode;
 	message->FindInt32("device", &itemNode.device);
 	message->FindInt64("node", (int64 *)&itemNode.node);
@@ -5140,6 +5135,8 @@ BPoseView::AttributeChanged(const BMessage *message)
 
 		if (result == B_OK) {
 			if (attrName && model->Node()) {
+				info.type = 0;
+					// the call below might fail if the attribute has been removed
 				model->Node()->GetAttrInfo(attrName, &info);
 				pose->UpdateWidgetAndModel(model, attrName, info.type, index, loc, this);
 			} else 

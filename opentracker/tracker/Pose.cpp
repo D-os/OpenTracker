@@ -244,6 +244,18 @@ BPose::UpdateWidgetAndModel(Model *resolvedModel, const char *attrName,
 			BColumn *column = poseView->ColumnFor(attrHash);
 			if (column) 
 				widget->CheckAndUpdate(poseLoc, column, poseView);
+		} else if (attrType == 0) {
+			// attribute got likely removed, so let's search the
+			// column for the matching attribute name
+			int32 count = fWidgetList.CountItems();
+			for (int32 i = 0; i < count; i++) {
+				BTextWidget *widget = fWidgetList.ItemAt(i);
+				BColumn *column = poseView->ColumnFor(widget->AttrHash());
+				if (column != NULL && !strcmp(column->AttrName(), attrName)) {
+					widget->CheckAndUpdate(poseLoc, column, poseView);
+					break;
+				}
+			}
 		}
 	} else {
 		// no attr name means check all widgets for stat info changes
