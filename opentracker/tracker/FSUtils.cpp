@@ -2820,12 +2820,13 @@ LoaderErrorDetails(const entry_ref *app, BString &details)
 	return B_OK;
 }
 
+
 static void
 _TrackerLaunchDocuments(const entry_ref */*doNotUse*/, const BMessage *refs,
 	bool openWithOK)
 {
 	BMessage copyOfRefs(*refs);
-	
+
 	entry_ref documentRef;
 	if (copyOfRefs.FindRef("refs", &documentRef) != B_OK)
 		// nothing to launch, we are done
@@ -2840,13 +2841,12 @@ _TrackerLaunchDocuments(const entry_ref */*doNotUse*/, const BMessage *refs,
 	for (int32 mimesetIt = 0; ; mimesetIt++) {
 		alertString = "";
 		error = be_roster->FindApp(&documentRef, &app);
-			
+
 		if (error != B_OK && mimesetIt == 0) {
 			SniffIfGeneric(&copyOfRefs);
 			continue;
 		}
-	
-		
+
 		if (error != B_OK) {
 			alertString << "Could not find an application to open \"" << documentRef.name
 				<< "\" (" << strerror(error) << "). ";
@@ -2855,7 +2855,6 @@ _TrackerLaunchDocuments(const entry_ref */*doNotUse*/, const BMessage *refs,
 
 			break;
 		} else {
-	
 			BEntry appEntry(&app, true);
 			for (int32 index = 0;;) {
 				// remove the app itself from the refs received so we don't try
@@ -2863,7 +2862,7 @@ _TrackerLaunchDocuments(const entry_ref */*doNotUse*/, const BMessage *refs,
 				entry_ref ref;
 				if (copyOfRefs.FindRef("refs", index, &ref) != B_OK)
 					break;
-				
+
 				// deal with symlinks properly
 				BEntry documentEntry(&ref, true);
 				if (appEntry == documentEntry) {
@@ -2874,7 +2873,7 @@ _TrackerLaunchDocuments(const entry_ref */*doNotUse*/, const BMessage *refs,
 					index++;
 				}
 			}
-	
+
 			refsToPass = CountRefs(&copyOfRefs) > 0 ? &copyOfRefs: 0;
 			team_id team;
 			error = be_roster->Launch(&app, refsToPass, &team);
@@ -2883,15 +2882,15 @@ _TrackerLaunchDocuments(const entry_ref */*doNotUse*/, const BMessage *refs,
 				error = B_OK;
 			if (error == B_OK || mimesetIt != 0)
 				break;
-			
+
 			SniffIfGeneric(&copyOfRefs);
 		}
 	}
-	
+
 	if (error != B_OK && alertString.Length() == 0) {
 		BString loaderErrorString;
 		bool openedDocuments = true;
-	
+
 		if (!refsToPass) {
 			// we just double clicked the app itself, do not offer to
 			// find a handling app
@@ -2902,6 +2901,31 @@ _TrackerLaunchDocuments(const entry_ref */*doNotUse*/, const BMessage *refs,
 		if (error == B_LAUNCH_FAILED_EXECUTABLE && !refsToPass) {
 			alertString << "Could not open \"" << app.name
 				<< "\". The file is mistakenly marked as executable. ";
+
+			if (!openWithOK) {
+				// offer the possibility to change the permissions
+				
+				alertString << "\nShould this be fixed?";
+				if ((new BAlert("", alertString.String(), "Cancel", "Proceed", 0,
+						B_WIDTH_AS_USUAL, B_WARNING_ALERT))->Go() == 1) {
+					BEntry entry(&documentRef);
+					mode_t permissions;
+					
+					error = entry.GetPermissions(&permissions);
+					if (error == B_OK)
+						error = entry.SetPermissions(permissions & ~(S_IXUSR | S_IXGRP | S_IXOTH));
+					if (error == B_OK) {
+						// we updated the permissions, so let's try again
+						_TrackerLaunchDocuments(NULL, refs, false);
+						return;
+					} else {
+						alertString = "Could not update permissions of file \"";
+						alertString << app.name << "\". " << strerror(error);
+					}
+				} else
+					return;
+			}
+
 			alternative = kFindApplicationStr;
 		} else if (error == B_LAUNCH_FAILED_APP_IN_TRASH) {
 			alertString << "Could not open \"" << documentRef.name
