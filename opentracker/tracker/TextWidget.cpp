@@ -53,21 +53,28 @@ All rights reserved.
 #include "Utilities.h"
 #include "WidgetAttributeText.h"
 
+
+const float kWidthMargin = 20;
+
+
 BTextWidget::BTextWidget(Model *model, BColumn *column, BPoseView *view)
-	:	fText(WidgetAttributeText::NewWidgetText(model, column, view)),
-		fAttrHash(column->AttrHash()),
-		fAlignment(column->Alignment()),
-		fEditable(column->Editable()),
-		fVisible(true),
-		fActive(false),
-		fSymLink(model->IsSymLink())
+	:
+	fText(WidgetAttributeText::NewWidgetText(model, column, view)),
+	fAttrHash(column->AttrHash()),
+	fAlignment(column->Alignment()),
+	fEditable(column->Editable()),
+	fVisible(true),
+	fActive(false),
+	fSymLink(model->IsSymLink())
 {
 }
+
 
 BTextWidget::~BTextWidget()
 {
 	delete fText;
 }
+
 
 int
 BTextWidget::Compare(const BTextWidget &with, BPoseView *view) const
@@ -75,12 +82,14 @@ BTextWidget::Compare(const BTextWidget &with, BPoseView *view) const
 	return fText->Compare(*with.fText, view);
 }
 
+
 void
 BTextWidget::RecalculateText(const BPoseView *view)
 {
 	fText->SetDirty(true);
 	fText->CheckViewChanged(view);	
 }
+
 
 const char *
 BTextWidget::Text() const
@@ -94,11 +103,13 @@ BTextWidget::Text() const
 	return textAttribute->Value();
 }
 
+
 float
 BTextWidget::TextWidth(const BPoseView *pose) const
 {
 	return fText->Width(pose);
 }
+
 
 float
 BTextWidget::PreferredWidth(const BPoseView *pose) const
@@ -106,15 +117,16 @@ BTextWidget::PreferredWidth(const BPoseView *pose) const
 	return fText->PreferredWidth(pose) + 1;
 }
 
+
 BRect
 BTextWidget::ColumnRect(BPoint poseLoc, const BColumn *column,
 	const BPoseView *view)
 {
-	if (view->ViewMode() != kListMode)
+	if (view->ViewMode() != kListMode) {
 		// ColumnRect only makes sense in list view, return
 		// CalcRect otherwise
 		return CalcRect(poseLoc, column, view);
-	
+	}
 	BRect result;
 	result.left = column->Offset() + poseLoc.x;
 	result.right = result.left + column->Width();
@@ -122,6 +134,7 @@ BTextWidget::ColumnRect(BPoint poseLoc, const BColumn *column,
 	result.top = result.bottom - view->FontHeight();
 	return result;
 }
+
 
 BRect 
 BTextWidget::CalcRectCommon(BPoint poseLoc, const BColumn *column,
@@ -156,7 +169,6 @@ BTextWidget::CalcRectCommon(BPoint poseLoc, const BColumn *column,
 
 		result.bottom = poseLoc.y + (view->ListElemHeight() - 1);
 	} else {
-
 		if (view->ViewMode() == kIconMode)
 			result.left = poseLoc.x + (B_LARGE_ICON - textWidth) / 2;
 		else 
@@ -180,6 +192,7 @@ BTextWidget::CalcRect(BPoint poseLoc, const BColumn *column,
 	return CalcRectCommon(poseLoc, column, view, fText->Width(view));
 }
 
+
 BRect
 BTextWidget::CalcOldRect(BPoint poseLoc, const BColumn *column,
 	const BPoseView *view)
@@ -187,7 +200,6 @@ BTextWidget::CalcOldRect(BPoint poseLoc, const BColumn *column,
 	return CalcRectCommon(poseLoc, column, view, fText->CurrentWidth());
 }
 
-const float kWidthMargin = 20;
 
 BRect
 BTextWidget::CalcClickRect(BPoint poseLoc, const BColumn *column,
@@ -204,6 +216,7 @@ BTextWidget::CalcClickRect(BPoint poseLoc, const BColumn *column,
 	}
 	return result;
 }
+
 
 void
 BTextWidget::MouseUp(BRect bounds, BPoseView *view, BPose *pose, BPoint,
@@ -246,6 +259,7 @@ BTextWidget::MouseUp(BRect bounds, BPoseView *view, BPose *pose, BPoint,
 
 	StartEdit(bounds, view, pose);
 }
+
 
 static filter_result
 TextViewFilter(BMessage *message, BHandler **, BMessageFilter *filter)
@@ -291,6 +305,7 @@ TextViewFilter(BMessage *message, BHandler **, BMessageFilter *filter)
 
 	return B_DISPATCH_MESSAGE;
 }
+
 
 void
 BTextWidget::StartEdit(BRect bounds, BPoseView *view, BPose *pose)
@@ -348,7 +363,7 @@ BTextWidget::StartEdit(BRect bounds, BPoseView *view, BPose *pose)
 
 	textView->MoveTo(rect.LeftTop());
 	textView->ResizeTo(rect.Width(), rect.Height());
-	
+
 	BScrollView *scrollView = new BScrollView("BorderView", textView, 0, 0, false,
 		false, B_PLAIN_BORDER);
 	view->AddChild(scrollView);	 
@@ -385,6 +400,7 @@ BTextWidget::StartEdit(BRect bounds, BPoseView *view, BPose *pose)
 		view->Window()->UpdateIfNeeded();
 }
 
+
 void
 BTextWidget::StopEdit(bool saveChanges, BPoint poseLoc, BPoseView *view,
 	BPose *pose, int32 poseIndex)
@@ -404,10 +420,11 @@ BTextWidget::StopEdit(bool saveChanges, BPoint poseLoc, BPoseView *view,
 	ASSERT(column);
 	if (!column)
 		return;
-	
-	if (saveChanges && fText->CommitEditedText(textView))
+
+	if (saveChanges && fText->CommitEditedText(textView)) {
 		// we have an actual change, re-sort
 		view->CheckPoseSortOrder(pose, poseIndex);
+	}
 
 	// make text widget visible again
 	SetVisible(true);
@@ -416,7 +433,7 @@ BTextWidget::StopEdit(bool saveChanges, BPoint poseLoc, BPoseView *view,
 	// force immediate redraw so TEView disappears
 	scrollView->RemoveSelf();
 	delete scrollView;
-	
+
 	ASSERT(view->Window());
 	view->Window()->UpdateIfNeeded();
 	view->MakeFocus();
@@ -424,12 +441,14 @@ BTextWidget::StopEdit(bool saveChanges, BPoint poseLoc, BPoseView *view,
 	SetActive(false);
 }
 
+
 void
 BTextWidget::CheckAndUpdate(BPoint loc, const BColumn *column, BPoseView *view)
 {
 	BRect oldRect;
 	if (view->ViewMode() != kListMode)
 		oldRect = CalcOldRect(loc, column, view);
+
 	if (fText->CheckAttributeChanged() && fText->CheckViewChanged(view)) {
 		BRect invalRect(ColumnRect(loc, column, view));
 		if (view->ViewMode() != kListMode)
@@ -438,6 +457,7 @@ BTextWidget::CheckAndUpdate(BPoint loc, const BColumn *column, BPoseView *view)
 	}
 }
 
+
 void
 BTextWidget::SelectAll(BPoseView *view)
 {
@@ -445,6 +465,7 @@ BTextWidget::SelectAll(BPoseView *view)
 	if (text)
 		text->SelectAll();
 }
+
 
 void
 BTextWidget::Draw(BRect eraseRect, BRect textRect, float, BPoseView *view,
@@ -458,7 +479,7 @@ BTextWidget::Draw(BRect eraseRect, BRect textRect, float, BPoseView *view,
 			drawView->FillRect(eraseRect, B_SOLID_LOW);
 		} else
 			drawView->SetDrawingMode(B_OP_OVER);	
-	
+
 		// set high color
 		rgb_color highColor;
 		if (view->IsDesktopWindow()) {
@@ -481,7 +502,7 @@ BTextWidget::Draw(BRect eraseRect, BRect textRect, float, BPoseView *view,
 
 	BPoint loc;
 	textRect.OffsetBy(offset);
-	
+
 	loc.y = textRect.bottom - view->FontInfo().descent;
 	loc.x = textRect.left + 1;
 
