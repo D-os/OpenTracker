@@ -50,7 +50,7 @@ class BLocale {
 
 // global objects
 extern BLocale *be_locale;
-
+extern BLocaleRoster *be_locale_roster;
 
 //----------------------------------------------------------------------
 //--- country short-hands inlines ---
