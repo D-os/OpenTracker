@@ -3,12 +3,14 @@
 
 
 #include <SupportDefs.h>
+#include <List.h>
 
 class BLanguage;
 class BLocale;
 class BCollator;
 class BCountry;
 class BCatalog;
+class BCatalogAddOn;
 
 enum {
 	B_LOCALE_CHANGED	= '_LCC',
@@ -29,14 +31,26 @@ class BLocaleRoster {
 		status_t GetDefaultCollator(BCollator **);
 		status_t GetDefaultLanguage(BLanguage **);
 		status_t GetDefaultCountry(BCountry **);
-
-//		status_t GetPreferredLanguages(BList *);
+		
+		status_t GetPreferredLanguages(BList *);
 //		status_t SetPreferredLanguages(BList *);
 
 //		status_t GetDefaultLanguage(BLanguage *);
 //		status_t SetDefaultLanguage(BLanguage *);
 
+		BCatalogAddOn* LoadCatalog(const char* signature, 
+											const char* language = NULL);
+		status_t UnloadCatalog(BCatalogAddOn* addOn);
+
+		static const char *kPriorityAttr;
+
+
 	private:
+		void InitializeCatalogAddOns();
+		void CleanupCatalogAddOns();
+
+		BList fCatalogAddOnInfos;
+		BList fPreferredLanguages;
 };
 
 #endif	/* _LOCALE_ROSTER_H_ */
