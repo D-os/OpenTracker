@@ -2962,7 +2962,7 @@ MostUsedNames::~MostUsedNames()
 
 	path.Append(fDirectory);
 	path.Append(fFileName);
-	BFile file(path.Path(), B_WRITE_ONLY | B_CREATE_FILE);
+	BFile file(path.Path(), B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE);
 	if (file.InitCheck() == B_OK) {
 		for (int32 i = 0; i < fList.CountItems(); i++) {
 			list_entry *entry = static_cast<list_entry *>(fList.ItemAt(i));
