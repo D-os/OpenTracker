@@ -1239,14 +1239,13 @@ MoveItem(BEntry *entry, BDirectory *destDir, BPoint *loc, uint32 moveMode,
 
 					while (*src && *dest && *src == *dest) {
 						++src;
-						++dest;
 						if (*dest++ == '/') {
 							lastFolderSrc = src;
 							lastFolderDest = dest;
 						}
-						src = lastFolderSrc;
-						dest = lastFolderDest;
 					}
+					src = lastFolderSrc;
+					dest = lastFolderDest;
 					
 					BString source;
 					if (*dest == '\0' && *src != '\0') {
