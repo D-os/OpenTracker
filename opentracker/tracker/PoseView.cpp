@@ -968,6 +968,9 @@ BPoseView::CommitActivePose(bool saveChanges)
 	if (ActivePose()) {
 		int32 index = fPoseList->IndexOf(ActivePose());
 		BPoint loc(0, index * fListElemHeight);
+		if (ViewMode() != kListMode)
+			loc = ActivePose()->Location();
+
 		ActivePose()->Commit(saveChanges, loc, this, index);
 		fActivePose = NULL;
 	}
@@ -2097,13 +2100,12 @@ BPoseView::MessageReceived(BMessage *message)
 			{
 				if (ActivePose())
 					break;
-					
+
 				BPose *pose = fSelectionList->FirstItem();
 				if (pose) { 
 					pose->EditFirstWidget(BPoint(0,
 							fPoseList->IndexOf(pose) * fListElemHeight), this);
 				}
-	
 				break;
 			}
 
