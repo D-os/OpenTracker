@@ -380,8 +380,27 @@ TExpandoMenuBar::MouseDown(BPoint where)
 		if (item->Submenu()){
 			BRect expanderRect = item->ExpanderBounds();
 			if (expanderRect.Contains(where)) {
+				// Stop the update thread...
+				// ToDo: solve this using a semaphore or just suspend the thread for a while
+				if (sMonThread != B_ERROR) {
+					status_t err = B_OK;
+					sDoMonitor = false;
+					wait_for_thread(sMonThread, &err);
+					sMonThread = B_ERROR;
+				}
+				
+				// Toggle the item
 				item->ToggleExpandState(true);
 				item->Draw();
+				
+				// Start the thread again.
+				if (sMonThread == B_ERROR) {
+					sDoMonitor = true;
+					sMonThread = spawn_thread(monitor_team_windows,
+							"Expando Window Watcher", B_LOW_PRIORITY, this);
+					resume_thread(sMonThread);
+				}
+				
 				// Absorb the message.
 				return; 
 			}
