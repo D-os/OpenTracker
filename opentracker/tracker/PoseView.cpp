@@ -90,6 +90,7 @@ All rights reserved.
 #include "TrackerString.h"
 #include "WidgetAttributeText.h"
 
+
 const float kDoubleClickTresh = 6;
 const float kCountViewWidth = 62;
 
@@ -122,7 +123,7 @@ enum {
 	kInsertAfter
 };
 
-const BPoint kTransparentDragTreshold(256, 128);
+const BPoint kTransparentDragThreshold(256, 192);
 	// maximum size of the transparent drag bitmap, use a drag rect
 	// if larger in any direction
 
@@ -6266,12 +6267,12 @@ BPoseView::DragSelectedPoses(const BPose *clicked_pose, BPoint clickPt)
 	BMessage message(B_SIMPLE_DATA);
 	message.AddPointer("src_window", Window());
 	message.AddPoint("click_pt", clickPt);
-	
+
 	// add Tracker token so that refs received recipients can script us
 	message.AddMessenger("TrackerViewToken", BMessenger(this));
 
 	EachPoseAndModel(fSelectionList, &AddPoseRefToMessage, &message);
-	
+
 	// do any special drag&drop handling
 	if (fSelectionList->CountItems() == 1) {
 		// for now just recognize text clipping files
@@ -6283,7 +6284,7 @@ BPoseView::DragSelectedPoses(const BPose *clicked_pose, BPoint clickPt)
 			type[0] = '\0';
 
 			info.GetType(type);
-			
+
 			int32 tmp;
 			if (strcasecmp(type, kPlainTextMimeType) == 0
 				// got a text file
@@ -6345,12 +6346,14 @@ BPoseView::DragSelectedPoses(const BPose *clicked_pose, BPoint clickPt)
 		int32 index = fPoseList->IndexOf(clicked_pose);
 		message.AddInt32("buttons", (int32)button);
 		BRect dragRect(GetDragRect(index));
-		BBitmap *dragBitmap = 0;
+		BBitmap *dragBitmap = NULL;
 
-		if (dragRect.Width() < kTransparentDragTreshold.x
-			&& dragRect.Height() < kTransparentDragTreshold.y) 
+		// The bitmap is now always created - ToDo: find a better
+		// location for the handle of the dragged bitmap
+
+//		if (dragRect.Width() < kTransparentDragThreshold.x
+//			&& dragRect.Height() < kTransparentDragThreshold.y) 
 			dragBitmap = MakeDragBitmap(dragRect, index);
-
 
 		if (dragBitmap)
 			DragMessage(&message, dragBitmap, B_OP_ALPHA,
@@ -6371,6 +6374,20 @@ BPoseView::MakeDragBitmap(BRect dragRect, int32 clickedPoseIndex)
 {
 	BRect rect(dragRect);
 	rect.OffsetTo(B_ORIGIN);
+
+	// If the selection is bigger than the specified limit, the
+	// contents will fade out when they come near the right or
+	// bottom border
+	bool fadeVertical = false, fadeHorizontal = false;
+	if (rect.Width() > kTransparentDragThreshold.x) {
+		rect.right = min(rect.right, kTransparentDragThreshold.x + 32);
+		fadeHorizontal = true;
+	}
+	if (rect.Height() > kTransparentDragThreshold.y) {
+		rect.bottom = min(rect.bottom, kTransparentDragThreshold.y + 32);
+		fadeVertical = true;
+	}
+
 	BBitmap *bitmap = new BBitmap(rect, B_RGBA32, true);
 	bitmap->Lock();
 	BView *view = new BView(bitmap->Bounds(), "", B_FOLLOW_NONE, 0);
@@ -6382,15 +6399,33 @@ BPoseView::MakeDragBitmap(BRect dragRect, int32 clickedPoseIndex)
 	BRegion newClip;
 	newClip.Set(clipRect);
 	view->ConstrainClippingRegion(&newClip);
-	
+
 	// Transparent draw magic
-	view->SetHighColor(0, 0, 0, 0);
+	view->SetHighColor(0, 0, 0, (fadeHorizontal || fadeVertical) ? 10 : 0);
 	view->FillRect(view->Bounds());
+	view->Sync();
+
+	if (fadeHorizontal || fadeVertical) {
+		// If we fade out the right or bottom of the selection, the
+		// background is slightly darker, but we let also fade out
+		// the edges so that everything looks smooth
+		uint32 *bits = (uint32 *)bitmap->Bits();
+		int32 width = bitmap->BytesPerRow() / 4;
+
+		FadeRGBA32Horizontal(bits, width, int32(rect.bottom),
+			int32(rect.right), int32(rect.right) - 16);
+		FadeRGBA32Horizontal(bits, width, int32(rect.bottom), 0, 16);
+
+		FadeRGBA32Vertical(bits, width, int32(rect.bottom),
+			int32(rect.bottom), int32(rect.bottom) - 16);
+		FadeRGBA32Vertical(bits, width, int32(rect.bottom), 0, 16);
+	}
+
 	view->SetDrawingMode(B_OP_ALPHA);
-	view->SetHighColor(0, 0, 0, 128);	// set the level of transparency by
-										// value
+	view->SetHighColor(0, 0, 0, (fadeHorizontal || fadeVertical) ? 164 : 128);
+		// set the level of transparency by value
 	view->SetBlendingMode(B_CONSTANT_ALPHA, B_ALPHA_COMPOSITE);
-	
+
 	BRect bounds(Bounds());
 
 	BPose *pose = fPoseList->ItemAt(clickedPoseIndex);
@@ -6427,6 +6462,23 @@ BPoseView::MakeDragBitmap(BRect dragRect, int32 clickedPoseIndex)
 	}
 
 	view->Sync();
+
+	// Fade out the contents if necessary
+	if (fadeHorizontal) {
+		uint32 *bits = (uint32 *)bitmap->Bits();
+		int32 width = bitmap->BytesPerRow() / 4;
+		
+		FadeRGBA32Horizontal(bits, width, int32(rect.bottom),
+			int32(rect.right), int32(rect.right) - 64);
+	}
+	if (fadeVertical) {
+		uint32 *bits = (uint32 *)bitmap->Bits();
+		int32 width = bitmap->BytesPerRow() / 4;
+		
+		FadeRGBA32Vertical(bits, width, int32(rect.bottom),
+			int32(rect.bottom), int32(rect.bottom) - 64);
+	}
+
 	bitmap->Unlock();
 	return bitmap;
 }

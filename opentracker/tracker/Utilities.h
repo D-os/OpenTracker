@@ -82,55 +82,55 @@ const color_space kDefaultIconDepth = B_COLOR_8_BIT;
 // PoseInfo is the structure that gets saved as attributes for every node on
 // disk, defining the node's position and visibility
 class PoseInfo {
-public:
-	static void EndianSwap(void *castToThis);
-	void PrintToStream();
-	
-	bool fInvisible;
-	ino_t fInitedDirectory;
-		// for a location to be valid, fInitedDirectory has to contain the inode
-		// of the items parent directory
-		// This makes it impossible to for instance zip up files and extract
-		// them in the same location. This should probably be reworked -- Tracker
-		// could say strip the file location attributes when dropping files into
-		// a closed folder
-	BPoint fLocation;	
+	public:
+		static void EndianSwap(void *castToThis);
+		void PrintToStream();
+
+		bool fInvisible;
+		ino_t fInitedDirectory;
+			// for a location to be valid, fInitedDirectory has to contain the inode
+			// of the items parent directory
+			// This makes it impossible to for instance zip up files and extract
+			// them in the same location. This should probably be reworked -- Tracker
+			// could say strip the file location attributes when dropping files into
+			// a closed folder
+		BPoint fLocation;	
 };
 
 // extends PoseInfo adding workspace support; used for desktop
 // poses only
 class ExtendedPoseInfo {
-public:
-	size_t Size() const;
-	static size_t Size(int32);
-	size_t SizeWithHeadroom() const;
-	static size_t SizeWithHeadroom(size_t);
-	bool HasLocationForFrame(BRect) const;
-	BPoint LocationForFrame(BRect) const;
-	bool SetLocationForFrame(BPoint, BRect);
-	
-	static void EndianSwap(void *castToThis);
-	void PrintToStream();
+	public:
+		size_t Size() const;
+		static size_t Size(int32);
+		size_t SizeWithHeadroom() const;
+		static size_t SizeWithHeadroom(size_t);
+		bool HasLocationForFrame(BRect) const;
+		BPoint LocationForFrame(BRect) const;
+		bool SetLocationForFrame(BPoint, BRect);
 
-	uint32 fWorkspaces;
-	bool fInvisible;
-	bool fShowFromBootOnly;
-	bool fReservedBool1;
-	bool fReservedBool2;
-	int32 fReservedInt1;
-	int32 fReservedInt2;
-	int32 fReservedInt3;
-	int32 fReservedInt4;
-	int32 fReservedInt5;
-	
-	int32 fNumFrames;
-	struct FrameLocation {
-		BPoint fLocation;	
-		BRect fFrame;
+		static void EndianSwap(void *castToThis);
+		void PrintToStream();
+
 		uint32 fWorkspaces;
-	};
+		bool fInvisible;
+		bool fShowFromBootOnly;
+		bool fReservedBool1;
+		bool fReservedBool2;
+		int32 fReservedInt1;
+		int32 fReservedInt2;
+		int32 fReservedInt3;
+		int32 fReservedInt4;
+		int32 fReservedInt5;
 
-	FrameLocation fLocations[0];
+		int32 fNumFrames;
+		struct FrameLocation {
+			BPoint fLocation;	
+			BRect fFrame;
+			uint32 fWorkspaces;
+		};
+
+		FrameLocation fLocations[0];
 };
 
 // misc functions
@@ -145,188 +145,214 @@ uint32 AttrHashString(const char *string, uint32 type);
 
 class OffscreenBitmap {
 	// a utility class for setting up offscreen bitmaps
-public:
-	OffscreenBitmap(BRect bounds);
-	OffscreenBitmap();
-	~OffscreenBitmap();
+	public:
+		OffscreenBitmap(BRect bounds);
+		OffscreenBitmap();
+		~OffscreenBitmap();
 
-	BView *BeginUsing(BRect bounds);
-	void DoneUsing();
-	BBitmap *Bitmap() const;
-		// blit this to your view when you are done rendering
-	BView *View() const;
-		// use this to render your image
+		BView *BeginUsing(BRect bounds);
+		void DoneUsing();
+		BBitmap *Bitmap() const;
+			// blit this to your view when you are done rendering
+		BView *View() const;
+			// use this to render your image
 
-private:
-	void NewBitmap(BRect frame);
-	BBitmap *fBitmap;
+	private:
+		void NewBitmap(BRect frame);
+		BBitmap *fBitmap;
 };
+
+
+// bitmap functions
+extern void FadeRGBA32Horizontal(uint32 *bits, int32 width, int32 height, int32 from, int32 to);
+extern void FadeRGBA32Vertical(uint32 *bits, int32 width, int32 height, int32 from, int32 to);
+
 
 class FlickerFreeStringView : public BStringView {
 	// Adds support for offscreen bitmap drawing for string views that update often
 	// this would be better implemented as an option of BStringView	
-public:
-	FlickerFreeStringView(BRect bounds, const char *name, 
-		const char *text, uint32 resizeFlags = B_FOLLOW_LEFT | B_FOLLOW_TOP,
-		uint32 flags = B_WILL_DRAW);
-	FlickerFreeStringView(BRect bounds, const char *name, 
-		const char *text, BBitmap *existingOffscreen,
-		uint32 resizeFlags = B_FOLLOW_LEFT | B_FOLLOW_TOP,
-		uint32 flags = B_WILL_DRAW);
-	virtual ~FlickerFreeStringView();
-	virtual void Draw(BRect);
-	virtual void AttachedToWindow();
-	virtual void SetViewColor(rgb_color);
-	virtual void SetLowColor(rgb_color);
-	
-private:
-	OffscreenBitmap *fBitmap;
-	rgb_color fViewColor;
-	rgb_color fLowColor;
-	BBitmap *fOrigBitmap;
+	public:
+		FlickerFreeStringView(BRect bounds, const char *name, 
+			const char *text, uint32 resizeFlags = B_FOLLOW_LEFT | B_FOLLOW_TOP,
+			uint32 flags = B_WILL_DRAW);
+		FlickerFreeStringView(BRect bounds, const char *name, 
+			const char *text, BBitmap *existingOffscreen,
+			uint32 resizeFlags = B_FOLLOW_LEFT | B_FOLLOW_TOP,
+			uint32 flags = B_WILL_DRAW);
+		virtual ~FlickerFreeStringView();
+		virtual void Draw(BRect);
+		virtual void AttachedToWindow();
+		virtual void SetViewColor(rgb_color);
+		virtual void SetLowColor(rgb_color);
 
-	typedef BStringView _inherited;
+	private:
+		OffscreenBitmap *fBitmap;
+		rgb_color fViewColor;
+		rgb_color fLowColor;
+		BBitmap *fOrigBitmap;
+
+		typedef BStringView _inherited;
 };
+
 
 class DraggableIcon : public BView {
 	// used to determine a save location for a file
-public:
-	DraggableIcon(BRect, const char *, const char *mimeType, icon_size,
-		const BMessage *, BMessenger,
-		uint32 resizeFlags = B_FOLLOW_LEFT | B_FOLLOW_TOP,
-		uint32 flags = B_WILL_DRAW);
-	virtual ~DraggableIcon();
+	public:
+		DraggableIcon(BRect, const char *, const char *mimeType, icon_size,
+			const BMessage *, BMessenger,
+			uint32 resizeFlags = B_FOLLOW_LEFT | B_FOLLOW_TOP,
+			uint32 flags = B_WILL_DRAW);
+		virtual ~DraggableIcon();
 
-	static BRect PreferredRect(BPoint offset, icon_size);
-	void SetTarget(BMessenger);
+		static BRect PreferredRect(BPoint offset, icon_size);
+		void SetTarget(BMessenger);
 
-protected:
-	virtual void AttachedToWindow();
-	virtual void MouseDown(BPoint);
-	virtual void Draw(BRect);
+	protected:
+		virtual void AttachedToWindow();
+		virtual void MouseDown(BPoint);
+		virtual void Draw(BRect);
 
-	virtual bool DragStarted(BMessage *dragMessage);
-protected:
-	BBitmap *fBitmap;
-	BMessage fMessage;
-	BMessenger fTarget;
+		virtual bool DragStarted(BMessage *dragMessage);
+
+	protected:
+		BBitmap *fBitmap;
+		BMessage fMessage;
+		BMessenger fTarget;
 };
+
 
 class PositionPassingMenuItem : public BMenuItem {
-public:
-	PositionPassingMenuItem(const char *title, BMessage *, char shortcut = 0,
-		uint32 modifiers = 0);
+	public:
+		PositionPassingMenuItem(const char *title, BMessage *, char shortcut = 0,
+			uint32 modifiers = 0);
 
-	PositionPassingMenuItem(BMenu *, BMessage *);
+		PositionPassingMenuItem(BMenu *, BMessage *);
 
-protected:
-	virtual status_t Invoke(BMessage * = 0);
-		// appends the invoke location for NewFolder, etc. to use
+	protected:
+		virtual status_t Invoke(BMessage * = 0);
+			// appends the invoke location for NewFolder, etc. to use
 	
-private:
-	typedef BMenuItem _inherited;
+	private:
+		typedef BMenuItem _inherited;
 };
+
 
 class Benaphore {
 	// aka benaphore
-public:
-	Benaphore(const char *name = "Light Lock")
+	public:
+		Benaphore(const char *name = "Light Lock")
 		:	fSemaphore(create_sem(0, name)),
 			fCount(1)
-		{ }
-	
-	~Benaphore()
-		{ delete_sem(fSemaphore); }
-	
-	bool Lock()
+		{
+		}
+
+		~Benaphore()
+		{
+			delete_sem(fSemaphore);
+		}
+
+		bool Lock()
 		{
 			if (atomic_add(&fCount, -1) <= 0)
 				return acquire_sem(fSemaphore) == B_OK;
 
 			return true;
 		}
-		
-	void Unlock()
+
+		void Unlock()
 		{
 			if (atomic_add(&fCount, 1) < 0)
 				release_sem(fSemaphore);
 		}
 
-	bool IsLocked() const
-		{ return fCount <= 0; }
+		bool IsLocked() const
+		{
+			return fCount <= 0;
+		}
 
-private:
-	sem_id fSemaphore;
-	int32 fCount;
+	private:
+		sem_id fSemaphore;
+		int32 fCount;
 };
+
 
 class SeparatorLine : public BView {
-public:
-	SeparatorLine(BPoint , float , bool vertical, const char *name = "");
-	virtual	void Draw(BRect bounds);
+	public:
+		SeparatorLine(BPoint , float , bool vertical, const char *name = "");
+		virtual	void Draw(BRect bounds);
 };
 
+
 class TitledSeparatorItem : public BMenuItem {
-public:
-	TitledSeparatorItem(const char *);
-	virtual ~TitledSeparatorItem();
-	
-	virtual void SetEnabled(bool state);
+	public:
+		TitledSeparatorItem(const char *);
+		virtual ~TitledSeparatorItem();
 
-protected:
-	virtual	void GetContentSize(float *width, float *height);
-	virtual	void Draw();
+		virtual void SetEnabled(bool state);
 
-private:
-	typedef BMenuItem _inherited;
+	protected:
+		virtual	void GetContentSize(float *width, float *height);
+		virtual	void Draw();
+
+	private:
+		typedef BMenuItem _inherited;
 };
 
 
 class LooperAutoLocker {
-public:
-	LooperAutoLocker(BHandler *handler)
+	public:
+		LooperAutoLocker(BHandler *handler)
 		:	fHandler(handler),
 			fHasLock(handler->LockLooper())
 		{
 		}
-	
-	~LooperAutoLocker()
+
+		~LooperAutoLocker()
 		{
 			if (fHasLock)
 				fHandler->UnlockLooper();
 		}
-		
-	bool operator!() const
-		{ return !fHasLock; }
 
-	bool IsLocked() const
-		{ return fHasLock; }
+		bool operator!() const
+		{
+			return !fHasLock;
+		}
 
-private:
-	BHandler *fHandler;
-	bool fHasLock;
+		bool IsLocked() const
+		{
+			return fHasLock;
+		}
+
+	private:
+		BHandler *fHandler;
+		bool fHasLock;
 };
 
+
 class MessengerAutoLocker {
-// move this into AutoLock.h
-public:
-	MessengerAutoLocker(BMessenger *messenger)
-		:	fMessenger(messenger),
-			fHasLock(messenger->LockTarget())
+	// move this into AutoLock.h
+	public:
+		MessengerAutoLocker(BMessenger *messenger)
+			:	fMessenger(messenger),
+				fHasLock(messenger->LockTarget())
 		{ }
-	
-	~MessengerAutoLocker()
+
+		~MessengerAutoLocker()
 		{
 			Unlock();
 		}
-		
-	bool operator!() const
-		{ return !fHasLock; }
 
-	bool IsLocked() const
-		{ return fHasLock; }
+		bool operator!() const
+		{
+			return !fHasLock;
+		}
 
-	void Unlock()
+		bool IsLocked() const
+		{
+			return fHasLock;
+		}
+
+		void Unlock()
 		{
 			if (fHasLock) {
 				BLooper *looper;
@@ -336,25 +362,26 @@ public:
 				fHasLock = false;
 			}
 		}
-		
-private:
-	BMessenger *fMessenger;
-	bool fHasLock;
+
+	private:
+		BMessenger *fMessenger;
+		bool fHasLock;
 };
 
+
 class ShortcutFilter : public BMessageFilter {
-public:
-	ShortcutFilter(uint32 shortcutKey, uint32 shortcutModifier,
-		uint32 shortcutWhat, BHandler *target);
+	public:
+		ShortcutFilter(uint32 shortcutKey, uint32 shortcutModifier,
+			uint32 shortcutWhat, BHandler *target);
 
-protected:
-	filter_result Filter(BMessage *, BHandler **);
+	protected:
+		filter_result Filter(BMessage *, BHandler **);
 
-private:
-	uint32 fShortcutKey;
-	uint32 fShortcutModifier;
-	uint32 fShortcutWhat;
-	BHandler *fTarget;
+	private:
+		uint32 fShortcutKey;
+		uint32 fShortcutModifier;
+		uint32 fShortcutWhat;
+		BHandler *fTarget;
 };
 
 // iterates over all the refs in a message

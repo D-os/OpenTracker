@@ -349,7 +349,79 @@ OffscreenBitmap::View() const
 	return fBitmap->ChildAt(0);
 }
 
+
 // #pragma mark -
+
+
+namespace BPrivate {
+
+/** Changes the alpha value of the given bitmap to create a nice
+ *	horizontal fade out in the specified region.
+ *	"from" is always transparent, "to" opaque.
+ */
+
+void 
+FadeRGBA32Horizontal(uint32 *bits, int32 width, int32 height, int32 from, int32 to)
+{
+	float change = 1.f / (to - from);
+	if (from > to) {
+		int32 temp = from;
+		from = to;
+		to = temp;
+	}
+
+	for (int32 y = 0; y < height; y++) {
+		float alpha = change > 0 ? 0.0f : 1.0f;
+
+		for (int32 x = from; x <= to; x++) {
+			if (bits[x] & 0xff000000) {
+				uint32 a = uint32((bits[x] >> 24) * alpha);
+				bits[x] = (bits[x] & 0x00ffffff) | (a << 24);
+			}
+			alpha += change;
+		}
+		bits += width;
+	}
+}
+
+
+/** Changes the alpha value of the given bitmap to create a nice
+ *	vertical fade out in the specified region.
+ *	"from" is always transparent, "to" opaque.
+ */
+
+void 
+FadeRGBA32Vertical(uint32 *bits, int32 width, int32 height, int32 from, int32 to)
+{
+	if (from > to)
+		bits += width * (height - (from - to));
+
+	float change = 1.f / (to - from);
+	if (from > to) {
+		int32 temp = from;
+		from = to;
+		to = temp;
+	}
+
+	float alpha = change > 0 ? 0.0f : 1.0f;
+
+	for (int32 y = from; y <= to; y++) {
+		for (int32 x = 0; x < width; x++) {
+			if (bits[x] & 0xff000000) {
+				uint32 a = uint32((bits[x] >> 24) * alpha);
+				bits[x] = (bits[x] & 0x00ffffff) | (a << 24);
+			}
+		}
+		alpha += change;
+		bits += width;
+	}
+}
+
+}	// namespace BPrivate
+
+
+// #pragma mark -
+
 
 DraggableIcon::DraggableIcon(BRect rect, const char *name, const char *mimeType,
 	icon_size size, const BMessage *message, BMessenger target, uint32 resizeMask,
