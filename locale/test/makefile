@@ -2,7 +2,8 @@
 
 LIBS = -lbe -llocale
 LIBPATHS = -L../lib
-CFLAGS = -I../include
+INCPATHS = -I../include
+CFLAGS = # -fcheck-memory-usage -D_NO_INLINE_ASM
 
 
 all:	localeTest collatorTest
@@ -11,8 +12,8 @@ clean:
 	rm -rf localeTest collatorTest
 
 localeTest:	localeTest.cpp
-	gcc localeTest.cpp $(CFLAGS) $(LIBPATHS) $(LIBS)
+	gcc localeTest.cpp $(CFLAGS) $(INCPATHS) $(LIBPATHS) $(LIBS)
 
 collatorTest:	collatorTest.cpp
-	gcc collatorTest.cpp $(CFLAGS) $(LIBPATHS) $(LIBS)
+	gcc collatorTest.cpp $(CFLAGS) $(INCPATHS) $(LIBPATHS) $(LIBS)
 
