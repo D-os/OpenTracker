@@ -43,5 +43,6 @@ BIntegerFormatParameters::operator=(const BIntegerFormatParameters &other)
 {
 	BNumberFormatParameters::operator=(other);
 	fParent = other.fParent;
+	return *this;
 }
 

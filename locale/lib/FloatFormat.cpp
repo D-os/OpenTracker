@@ -40,6 +40,7 @@ BFloatFormat::operator=(const BFloatFormat &other)
 {
 	BNumberFormat::operator=(other);
 	BFloatFormatParameters::operator=(other);
+	return *this;
 }
 
 // constructor

@@ -193,5 +193,6 @@ BFloatFormatParameters::operator=(const BFloatFormatParameters &other)
 	fAlwaysUseFractionSeparator = other.fAlwaysUseFractionSeparator;
 	fKeepTrailingFractionZeros = other.fKeepTrailingFractionZeros;
 	fFlags = other.fFlags;
+	return *this;
 }
 
