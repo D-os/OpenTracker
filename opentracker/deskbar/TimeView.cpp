@@ -43,18 +43,20 @@ All rights reserved.
 #include "TimeView.h"
 #include "StatusView.h"
 
-const char* const kMinString = "99:99 AM";
+
+const char * const kMinString = "99:99 AM";
+
 
 static float
-FontHeight(BView* target, bool full)
+FontHeight(BView *target, bool full)
 {
-	font_height finfo;		
-	target->GetFontHeight(&finfo);
-	float h = finfo.ascent + finfo.descent;
+	font_height fontInfo;		
+	target->GetFontHeight(&fontInfo);
+	float h = fontInfo.ascent + fontInfo.descent;
 
 	if (full)
-		h += finfo.leading;
-	
+		h += fontInfo.leading;
+
 	return h;
 }
 
@@ -68,15 +70,15 @@ enum {
 
 TTimeView::TTimeView(bool showSeconds, bool milTime, bool fullDate, bool euroDate, bool)
 	: 	BView(BRect(-100,-100,-90,-90), "_deskbar_tv_",
-			B_FOLLOW_RIGHT | B_FOLLOW_TOP,
-			B_WILL_DRAW | B_PULSE_NEEDED | B_FRAME_EVENTS),
-			fParent(NULL),
-			fShowInterval(true), // defaulting this to true until UI is in place
-			fShowSeconds(showSeconds),
-			fMilTime(milTime),
-			fFullDate(fullDate),
-			fEuroDate(euroDate),
-			fOrientation(false)
+	B_FOLLOW_RIGHT | B_FOLLOW_TOP,
+	B_WILL_DRAW | B_PULSE_NEEDED | B_FRAME_EVENTS),
+	fParent(NULL),
+	fShowInterval(true), // defaulting this to true until UI is in place
+	fShowSeconds(showSeconds),
+	fMilTime(milTime),
+	fFullDate(fullDate),
+	fEuroDate(euroDate),
+	fOrientation(false)
 {
 	fShowingDate = false;
 	fTime = fLastTime = time(NULL);
@@ -113,6 +115,7 @@ TTimeView::Instantiate(BMessage *data)
 {
 	if (!validate_instantiation(data, "TTimeView"))
 		return NULL;
+
 	return new TTimeView(data);
 }
 
@@ -127,6 +130,7 @@ TTimeView::Archive(BMessage *data, bool deep) const
 	data->AddBool("eurodate", fEuroDate);
 	data->AddBool("interval", fInterval);
 	data->AddInt32("deskbar:private_align", B_ALIGN_RIGHT);
+
 	return B_OK;
 }
 #endif
@@ -136,15 +140,14 @@ void
 TTimeView::AttachedToWindow()
 {
 	fTime = time(NULL);
-	
+
 	SetFont(be_plain_font);
 	if (Parent()) {
 		fParent = Parent();
 		SetViewColor(Parent()->ViewColor());
-	}
-	else
-		SetViewColor(216,216,216);
-	
+	} else
+		SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
+
 	fFontHeight = FontHeight(this, true);		
 	ResizeToPreferred();
 	CalculateTextPlacement();
@@ -158,7 +161,7 @@ TTimeView::GetPreferredSize(float *width, float *height)
 
 	GetCurrentTime();
 	GetCurrentDate();
-	
+
 	if (ShowingDate())
 		*width = 6 + StringWidth(fDateStr);
 	else {
@@ -172,13 +175,13 @@ TTimeView::GetPreferredSize(float *width, float *height)
 void
 TTimeView::ResizeToPreferred()
 {
-	float w, h;
-	float oldw = Bounds().Width(), oldh = Bounds().Height();
-	
-	GetPreferredSize(&w, &h);
-	if (h != oldh || w != oldw) {
-		ResizeTo(w, h);
-		MoveBy (oldw - w, 0);
+	float width, height;
+	float oldWidth = Bounds().Width(), oldHeight = Bounds().Height();
+
+	GetPreferredSize(&width, &height);
+	if (height != oldHeight || width != oldWidth) {
+		ResizeTo(width, height);
+		MoveBy(oldWidth - width, 0);
 		fNeedToUpdate = true;
 	}
 }
@@ -194,20 +197,20 @@ TTimeView::FrameMoved(BPoint)
 void
 TTimeView::MessageReceived(BMessage* message)
 {
-	switch(message->what) {
+	switch (message->what) {
 		case msg_fulldate:
 			ShowFullDate(!ShowingFullDate());
 			break;
-			
+
 		case msg_changeclock:
 			// launch the time prefs app
 			be_roster->Launch("application/x-vnd.Be-TIME");
 			break;
-			
+
 		case 'time':
 			Window()->PostMessage(message, Parent());
 			break;
-			
+
 		default:
 			BView::MessageReceived(message);
 	}
@@ -219,35 +222,23 @@ TTimeView::GetCurrentTime()
 {
 	char tmp[64];
 	tm time = *localtime(&fTime);
-	
+
 	if (fMilTime) {
-		if (fShowSeconds)
-			strftime(tmp, 64, "%H:%M:%S", &time);
-		else	
-			strftime(tmp, 64, "%H:%M", &time);
+		strftime(tmp, 64, fShowSeconds ? "%H:%M:%S" : "%H:%M", &time);
 	} else {
-		if (fShowInterval) {
-			if (fShowSeconds)
-				strftime(tmp, 64, "%I:%M:%S %p", &time);
-			else {
-				strftime(tmp, 64, "%I:%M %p", &time);
-			}
-		} else {
-			if (fShowSeconds)
-				strftime(tmp, 64, "%I:%M:%S", &time);
-			else {	
-				strftime(tmp, 64, "%I:%M", &time);
-			}
-		}
+		if (fShowInterval)
+			strftime(tmp, 64, fShowSeconds ? "%I:%M:%S %p" : "%I:%M %p", &time);
+		else
+			strftime(tmp, 64, fShowSeconds ? "%I:%M:%S" : "%I:%M", &time);
 	}
-	
+
 	//	remove leading 0 from time when hour is less than 10
-	const char* str = tmp;
+	const char *str = tmp;
 	if (str[0] == '0')
 		str++;
-		
+
 	strcpy(fTimeStr, str);
-	
+
 	fSeconds = time.tm_sec;
 	fMinute = time.tm_min;
 	fHour = time.tm_hour;
@@ -276,22 +267,21 @@ TTimeView::GetCurrentDate()
 	const char* str = tmp;
 	if (str[0] == '0')
 		str++;
-		
+
 	strcpy(fDateStr, str);
 }
 
 
 void
-TTimeView::Draw(BRect )
+TTimeView::Draw(BRect /*updateRect*/)
 {
 	PushState();
 
 	SetHighColor(ViewColor());
 	SetLowColor(ViewColor());
-	FillRect(Bounds());			
-	SetHighColor(0,0,0,255);		
+	FillRect(Bounds());
+	SetHighColor(0, 0, 0, 255);
 
-	
 	if (fShowingDate) {
 		MovePenTo(fDateLocation);
 		DrawString(fDateStr);
@@ -299,7 +289,7 @@ TTimeView::Draw(BRect )
 		MovePenTo(fTimeLocation);
 		DrawString(fTimeStr);
 	}
-	
+
 	PopState();
 }
 
@@ -307,7 +297,7 @@ TTimeView::Draw(BRect )
 void
 TTimeView::MouseDown(BPoint point)
 {
-	uint32	buttons;
+	uint32 buttons;
 
 	Window()->CurrentMessage()->FindInt32("buttons", (long*) &buttons);
 	if (buttons == B_SECONDARY_MOUSE_BUTTON) {
@@ -319,7 +309,7 @@ TTimeView::MouseDown(BPoint point)
 	fShowingDate = !fShowingDate;
 	if (fShowingDate)
 		fLastTime = time(NULL);
-		
+
 	Update();
 }
 
@@ -330,7 +320,7 @@ TTimeView::Pulse()
 	time_t curTime = time(NULL);
 	tm	ct = *localtime(&curTime);
 	fTime = curTime;
-	
+
 	GetCurrentTime();
 	GetCurrentDate();
 	if (	(!fShowingDate && strcmp(fTimeStr, fLastTimeStr) != 0)
@@ -347,18 +337,18 @@ TTimeView::Pulse()
 		strcpy(fLastDateStr, fDateStr);
 		fNeedToUpdate = true;
 	}
-	
+
 	if (fShowingDate && (fLastTime + 5 <= time(NULL))) {
 		fShowingDate = false;
 		Update();	// Needs to happen since size can change here
 	}
-	
+
 	if (fNeedToUpdate) {
 		fSeconds = ct.tm_sec;
 		fMinute = ct.tm_min;
 		fHour = ct.tm_hour;
 		fInterval = ct.tm_hour >= 12;
-		
+
 		Draw(Bounds());
 		fNeedToUpdate = false;
 	}	
@@ -409,11 +399,12 @@ bool
 TTimeView::CanShowFullDate() const
 {
 	bool showFullDate = true;
-	TReplicantTray *rt = dynamic_cast <TReplicantTray *> (fParent);
-	if (rt && rt->IsMultiRow())
+	TReplicantTray *tray = dynamic_cast<TReplicantTray *>(fParent);
+	if (tray != NULL && tray->IsMultiRow())
 		showFullDate = false;	// This won't fit when the Deskbar isn't horizontally expanded.
+
 	return showFullDate;
-}	
+}
 
 
 void
@@ -421,10 +412,13 @@ TTimeView::Update()
 {
 	GetCurrentTime();
 	GetCurrentDate();
+
 	ResizeToPreferred();
 	CalculateTextPlacement();
+
 	if (fParent) {
-		fParent->MessageReceived (new BMessage ('trfm'));
+		fParent->MessageReceived(new BMessage('trfm'));
+			// time string format realign
 		fParent->Invalidate();
 	}
 }
@@ -443,7 +437,7 @@ void
 TTimeView::CalculateTextPlacement()
 {
 	BRect bounds(Bounds());
-	
+
 	if (fOrientation) {		// vertical mode
 		fDateLocation.x = bounds.Width()/2 - StringWidth(fDateStr)/2;
 		fTimeLocation.x = bounds.Width()/2 - StringWidth(fTimeStr)/2;
