@@ -44,6 +44,7 @@ All rights reserved.
 #include <PopUpMenu.h>
 #include <Roster.h>
 #include <Window.h>
+#include <Screen.h>
 
 #include <string.h>
 
@@ -316,7 +317,7 @@ TTimeView::MouseDown(BPoint point)
 {
 	uint32 buttons;
 
-	Window()->CurrentMessage()->FindInt32("buttons", (long*) &buttons);
+	Window()->CurrentMessage()->FindInt32("buttons", (int32 *)&buttons);
 	if (buttons == B_SECONDARY_MOUSE_BUTTON) {
 		ShowClockOptions(ConvertToScreen(point));
 		return;
@@ -332,6 +333,48 @@ TTimeView::MouseDown(BPoint point)
 	fLastDateStr[0] = '\0';
 	fLastTimeStr[0] = '\0';
 	Pulse();
+
+#ifdef _SHOW_CALENDAR_MENU_ITEM
+	if (!fShowingDate)
+		return;
+
+	// see if the user holds down the button long enough to show him the calendar
+
+	bigtime_t startTime = system_time();
+
+	// use the doubleClickSpeed as a treshold
+	bigtime_t doubleClickSpeed;
+	get_click_speed(&doubleClickSpeed);
+
+	while (buttons) {
+		BPoint where;
+		GetMouse(&where, &buttons, false);
+
+		if ((system_time() - startTime) > doubleClickSpeed) {
+			BPopUpMenu *menu = new BPopUpMenu("", false, false);
+			menu->SetFont(be_plain_font);
+
+			menu->AddItem(new CalendarMenuItem());
+			menu->ResizeToPreferred();
+
+			point = where;
+			BScreen screen;
+			where.y = Bounds().bottom + 4;
+
+			// make sure the menu is visible at doesn't hide the date
+			ConvertToScreen(&where);
+			if (where.y + menu->Bounds().Height() > screen.Frame().bottom)
+				where.y -= menu->Bounds().Height() + 2 * Bounds().Height();
+
+			ConvertToScreen(&point);
+			menu->Go(where, true, true, BRect(point.x - 4, point.y - 4,
+				point.x + 4, point.y + 4), true);
+			return;
+		}
+
+		snooze(15000);
+	}
+#endif
 }
 
 
@@ -344,7 +387,7 @@ TTimeView::Pulse()
 
 	GetCurrentTime();
 	GetCurrentDate();
-	if (	(!fShowingDate && strcmp(fTimeStr, fLastTimeStr) != 0)
+	if ((!fShowingDate && strcmp(fTimeStr, fLastTimeStr) != 0)
 		|| 	(fShowingDate && strcmp(fDateStr, fLastDateStr) != 0)) {
 		// Update bounds when the size of the strings has changed
 		// For dates, Update() could be called two times in a row,
@@ -476,11 +519,6 @@ TTimeView::ShowClockOptions(BPoint point)
 	BPopUpMenu *menu = new BPopUpMenu("", false, false);
 	menu->SetFont(be_plain_font);
 	BMenuItem *item;
-
-#ifdef _SHOW_CALENDAR_MENU_ITEM
-	menu->AddItem(new CalendarMenuItem());
-	menu->AddSeparatorItem();
-#endif
 
 	item = new BMenuItem("Change Time" B_UTF8_ELLIPSIS, new BMessage(kMsgChangeClock));
 	menu->AddItem(item);
