@@ -50,18 +50,22 @@ PropertyFile::WritePadding(size_t length)
 		0xaa, 0xaa, 0xaa, 0xaa,
 		0xaa, 0xaa, 0xaa, 0xaa
 	};
-	
-	ssize_t len = (ssize_t)length;
+
+	ssize_t bytesWritten = (ssize_t)length;
 
 	while (length >= 16) {
-		Write(padding, 16);
+		ssize_t written = Write(padding, 16);
+		if (written < B_OK)
+			return written;
+
 		length -= 16;
 	}
-	if (length > 0)
-		Write(padding, length);
+	if (length > 0) {
+		ssize_t written = Write(padding, length);
+		if (written < B_OK)
+			return written;
+	}
 
-	return len;
-		// ToDo: Axel, please check this:
-		// [zooey]: I assume we return the number of written chars...
+	return bytesWritten;
 }
 
