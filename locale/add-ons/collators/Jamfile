@@ -10,6 +10,6 @@ rule Collator
 	AddOn $(name) : $(sources) : be liblocale.so ;
 }
 
-Collator DeutschDIN-2.cpp ;
-Collator Français.cpp ;
+Collator GermanDIN-2.cpp ;
+Collator French.cpp ;
 
