@@ -191,7 +191,7 @@ Model::~Model()
 	if (IconCache::NeedsDeletionNotification((IconSource)fIconFrom))
 		// this check allows us to use temporary Model in the IconCache
 		// without the danger of a deadlock
-		IconCache::iconCache->Deleting(this);
+		IconCache::sIconCache->Deleting(this);
 #if xDEBUG
 	if (fNode)
 		PRINT(("destructor closing node for %s\n", Name()));

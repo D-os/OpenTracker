@@ -1147,7 +1147,7 @@ AttributeView::MouseDown(BPoint point)
 			BPoint offsetPoint;
 			offsetPoint.x = point.x - fIconRect.left;
 			offsetPoint.y = point.y - fIconRect.top;
-			if (IconCache::iconCache->IconHitTest(offsetPoint, fIconModel, kNormalIcon, B_LARGE_ICON)) {
+			if (IconCache::sIconCache->IconHitTest(offsetPoint, fIconModel, kNormalIcon, B_LARGE_ICON)) {
 				// Can't drag the trash anywhere..
 				fTrackingState = FSIsTrashDir(&entry) ? open_only_track : icon_track;
 
@@ -1161,7 +1161,7 @@ AttributeView::MouseDown(BPoint point)
 					if (clickCount == 2) {
 						offsetPoint.x = fClickPoint.x - fIconRect.left;
 						offsetPoint.y = fClickPoint.y - fIconRect.top;
-						fDoubleClick = IconCache::iconCache->IconHitTest(offsetPoint,
+						fDoubleClick = IconCache::sIconCache->IconHitTest(offsetPoint,
 							fIconModel, kNormalIcon, B_LARGE_ICON);
 					}
 				}
@@ -1184,7 +1184,7 @@ AttributeView::MouseMoved(BPoint point, uint32, const BMessage *message)
 		bool overTarget = fIconRect.Contains(point);
 		SetDrawingMode(B_OP_OVER);
 		if (overTarget != fIsDropTarget) {
-			IconCache::iconCache->Draw(fIconModel, this, fIconRect.LeftTop(),
+			IconCache::sIconCache->Draw(fIconModel, this, fIconRect.LeftTop(),
 				overTarget ? kSelectedIcon : kNormalIcon, B_LARGE_ICON, true);
 			fIsDropTarget = overTarget;
 		}
@@ -1242,7 +1242,7 @@ AttributeView::MouseMoved(BPoint point, uint32, const BMessage *message)
 
 				// Draw the icon
 				float hIconOffset = (rect.Width() - fIconRect.Width()) / 2;
-				IconCache::iconCache->Draw(fIconModel, view, BPoint(hIconOffset, 0),
+				IconCache::sIconCache->Draw(fIconModel, view, BPoint(hIconOffset, 0),
 					kNormalIcon, B_LARGE_ICON, true);
 
 				// See if we need to truncate the string
@@ -1536,7 +1536,7 @@ AttributeView::Draw(BRect)
 
 	// Draw the icon, straddling the border
 	SetDrawingMode(B_OP_OVER);
-	IconCache::iconCache->Draw(fIconModel, this, fIconRect.LeftTop(),
+	IconCache::sIconCache->Draw(fIconModel, this, fIconRect.LeftTop(),
 		kNormalIcon, B_LARGE_ICON, true);
 
 	// Font information

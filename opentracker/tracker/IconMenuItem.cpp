@@ -145,12 +145,12 @@ ModelMenuItem::DrawIcon()
 	
 	// draw small icon, synchronously
 	if (IsEnabled())
-		IconCache::iconCache->Draw(fModel.ResolveIfLink(), Menu(), where,
+		IconCache::sIconCache->Draw(fModel.ResolveIfLink(), Menu(), where,
 			kNormalIcon, B_MINI_ICON);
 	else {
 		// dimmed, for now use a special blitter; icon cache should
 		// know how to blit one eventually
-		IconCache::iconCache->SyncDraw(fModel.ResolveIfLink(), Menu(), where,
+		IconCache::sIconCache->SyncDraw(fModel.ResolveIfLink(), Menu(), where,
 			kNormalIcon, B_MINI_ICON, DimmedIconBlitter);
 	}
 	

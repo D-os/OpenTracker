@@ -1368,7 +1368,7 @@ TContentsMenu::Draw(BRect updateRect)
 			resolvedItem.SetTo(&entry);
 			if (entry.Exists()) {
 				//	draw the real item icon
-				IconCache::iconCache->Draw(&resolvedItem, this, iconFrame.LeftTop(),
+				IconCache::sIconCache->Draw(&resolvedItem, this, iconFrame.LeftTop(),
 					kNormalIcon, B_MINI_ICON);
 			} else if (fSymlinkIcon){
 
@@ -1389,7 +1389,7 @@ TContentsMenu::Draw(BRect updateRect)
 				SetDrawingMode(B_OP_OVER);
 				DrawBitmapAsync(fSmallGroupIcon, iconFrame);
 			} else
-				IconCache::iconCache->Draw(item, this, iconFrame.LeftTop(),
+				IconCache::sIconCache->Draw(item, this, iconFrame.LeftTop(),
 					kNormalIcon, B_MINI_ICON);
 					
 			resolvedItem.SetTo(item->EntryRef());

@@ -232,7 +232,7 @@ IconCacheEntry::ConstructBitmap(BBitmap *constructFrom, IconDrawMode requestedMo
 	ASSERT(requestedMode == kSelected && constructFromMode == kNormalIcon);
 		// for now
 	if (requestedMode == kSelected && constructFromMode == kNormalIcon)
-		return IconCache::iconCache->MakeSelectedIcon(constructFrom, size, lazyBitmap);
+		return IconCache::sIconCache->MakeSelectedIcon(constructFrom, size, lazyBitmap);
 	
 	return NULL;
 }
@@ -1851,4 +1851,4 @@ LazyBitmapAllocator::Adopt()
 }
 
 
-IconCache *IconCache::iconCache;
+IconCache *IconCache::sIconCache;

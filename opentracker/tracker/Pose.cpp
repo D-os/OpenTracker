@@ -309,7 +309,7 @@ BPose::UpdateVolumeSpaceBar(bool enabled)
 void
 BPose::UpdateIcon(BPoint poseLoc, BPoseView *poseView)
 {
-	IconCache::iconCache->IconChanged(ResolvedModel());
+	IconCache::sIconCache->IconChanged(ResolvedModel());
 
 	BRect rect;
 	if (poseView->ViewMode() == kListMode) {
@@ -733,7 +733,7 @@ BPose::WidgetFor(BColumn *column, BPoseView *poseView, ModelNodeLazyOpener &open
 bool
 BPose::TestLargeIconPixel(BPoint point) const
 {
-	return IconCache::iconCache->IconHitTest(point, ResolvedModel(),
+	return IconCache::sIconCache->IconHitTest(point, ResolvedModel(),
 		kNormalIcon, B_LARGE_ICON);
 }
 
@@ -748,7 +748,7 @@ BPose::DrawIcon(BPoint where, BView *view, icon_size kind, bool direct, bool dra
 	} else if (direct)
 		view->SetDrawingMode(B_OP_OVER);
 
-	IconCache::iconCache->Draw(ResolvedModel(), view, where,
+	IconCache::sIconCache->Draw(ResolvedModel(), view, where,
 		fIsSelected && !drawUnselected ? kSelectedIcon : kNormalIcon, kind, true);
 
 	if (fPercent != -1)

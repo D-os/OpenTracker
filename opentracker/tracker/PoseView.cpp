@@ -234,7 +234,7 @@ BPoseView::~BPoseView()
 	delete fModel;
 	delete fKeyRunner;
 	
-	IconCache::iconCache->Deleting(this);
+	IconCache::sIconCache->Deleting(this);
 }
 
 
@@ -4586,7 +4586,7 @@ OneMetaMimeChanged(BPose *pose, Model *model, int32 index,
 void
 BPoseView::MetaMimeChanged(const char *type, const char *preferredApp)
 {	
-	IconCache::iconCache->IconChanged(type, preferredApp);
+	IconCache::sIconCache->IconChanged(type, preferredApp);
 	// wait for other windows to do the same before we start
 	// updating poses which causes icon recaching
 	snooze(200000);

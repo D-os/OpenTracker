@@ -376,8 +376,8 @@ public:
 	
 	
 	static bool NeedsDeletionNotification(IconSource);
-	
-	static IconCache *iconCache;
+
+	static IconCache *sIconCache;
 
 private:
 	

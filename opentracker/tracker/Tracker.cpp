@@ -117,20 +117,34 @@ InitIconPreloader()
 {
 	static int32 lock = 0;
 
-	if (atomic_add(&lock,1) != 0) {
+	if (atomic_add(&lock, 1) != 0) {
+		// Just wait for the icon cache to be instantiated
 		int32 tries = 20;	
-		while (gPreloader == NULL && tries-- > 0)
+		while (IconCache::sIconCache == NULL && tries-- > 0)
 			snooze(10000);
 		return;
 	}
 
-	if (gPreloader != NULL)
+	if (IconCache::sIconCache != NULL)
 		return;
 
-	IconCache::iconCache = new IconCache();
-	gPreloader = NodePreloader::InstallNodePreloader("NodePreloader", be_app);
+	// only start the node preloader if its Tracker or the Deskbar itself - don't
+	// start it for file panels
 
-	atomic_add(&lock,-1);
+	bool preload = dynamic_cast<TTracker *>(be_app) != NULL;
+	if (!preload) {
+		// check for deskbar
+		app_info info;
+		if (be_app->GetAppInfo(&info) == B_OK
+			&& !strcmp(info.signature, kDeskbarSignature))
+			preload = true;
+	}
+	if (preload)
+		gPreloader = NodePreloader::InstallNodePreloader("NodePreloader", be_app);
+
+	IconCache::sIconCache = new IconCache();
+
+	atomic_add(&lock, -1);
 }
 
 }	// namespace BPrivate
@@ -332,7 +346,7 @@ TTracker::Quit()
 	
 	delete gPreloader;
 	delete fTaskLoop;
-	delete IconCache::iconCache;
+	delete IconCache::sIconCache;
 
 	_inherited::Quit();
 }

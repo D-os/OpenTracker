@@ -193,7 +193,7 @@ IconSpewer::DrawSomeNew()
 			if (model.IsDirectory()) 
 				entry.GetPath(&currentPath);
 
-			IconCache::iconCache->Draw(&model, view, BPoint(column * (kIconSize + 2),
+			IconCache::sIconCache->Draw(&model, view, BPoint(column * (kIconSize + 2),
 				row * (kIconSize + 2)), kNormalIcon, kIconSize, true);
 			target->Unlock();
 			numDrawn++;
