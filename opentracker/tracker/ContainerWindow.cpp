@@ -104,7 +104,7 @@ const int32 kContainerWindowHeightLimit = 85;
 
 const int32 kWindowStaggerBy = 17;
 
-BRect BContainerWindow::fNewWindRect(85, 50, 415, 280);
+BRect BContainerWindow::sNewWindRect(85, 50, 415, 280);
 
 
 namespace BPrivate {
@@ -331,10 +331,10 @@ BRect
 BContainerWindow::InitialWindowRect(window_feel feel)
 {
 	if (feel != kPrivateDesktopWindowFeel)
-		return fNewWindRect;
-	
+		return sNewWindRect;
+
 	// do not offset desktop window
-	BRect result = fNewWindRect;
+	BRect result = sNewWindRect;
 	result.OffsetTo(0, 0);
 	return result;
 }
@@ -825,14 +825,14 @@ BContainerWindow::CheckScreenIntersect()
 	BRect screenFrame(screen.Frame());
 	BRect frame(Frame());
 
-	if (fNewWindRect.top + 20 > screenFrame.bottom)
-		fNewWindRect.OffsetTo(85, 50);
+	if (sNewWindRect.bottom > screenFrame.bottom)
+		sNewWindRect.OffsetTo(85, 50);
 
-	if (fNewWindRect.left + 20 > screenFrame.right)
-		fNewWindRect.OffsetTo(85, 50);
+	if (sNewWindRect.right > screenFrame.right)
+		sNewWindRect.OffsetTo(85, 50);
 
 	if (!frame.Intersects(screenFrame))
-		MoveTo(fNewWindRect.LeftTop());
+		MoveTo(sNewWindRect.LeftTop());
 }
 
 
@@ -840,7 +840,6 @@ void
 BContainerWindow::SaveState(bool hide)
 {
 	if (SaveStateIsEnabled()) {
-		
 		WindowStateNodeOpener opener(this, true);
 		if (opener.StreamNode())
 			SaveWindowState(opener.StreamNode());
@@ -848,7 +847,7 @@ BContainerWindow::SaveState(bool hide)
 			Hide();
 		if (opener.StreamNode())
 			fPoseView->SaveState(opener.StreamNode());
-	
+
 		fStateNeedsSaving = false;
 	}
 }
@@ -879,13 +878,13 @@ BContainerWindow::GetLayoutState(BNode *node, BMessage *message)
 	status_t result = node->InitCheck();
 	if (result != B_OK)
 		return result;
-	
+
 	node->RewindAttrs();
 	char attrName[256];
 	while (node->GetNextAttrName(attrName) == B_OK) {
 		attr_info info;
 		node->GetAttrInfo(attrName, &info);
-		
+
 		// filter out attributes that are not related to window position
 		// and column resizing
 		// more can be added as needed
@@ -897,8 +896,7 @@ BContainerWindow::GetLayoutState(BNode *node, BMessage *message)
 			continue;
 
 		char *buffer = new char[info.size];
-		if (node->ReadAttr(attrName, info.type, 0, buffer, (size_t)info.size)
-			== info.size)
+		if (node->ReadAttr(attrName, info.type, 0, buffer, (size_t)info.size) == info.size)
 			message->AddData(attrName, info.type, buffer, (ssize_t)info.size);
 		delete [] buffer;
 	}
@@ -912,7 +910,7 @@ BContainerWindow::SetLayoutState(BNode *node, const BMessage *message)
 	status_t result = node->InitCheck();
 	if (result != B_OK)
 		return result;
-	
+
 	for (int32 globalIndex = 0; ;) {
 #if B_BEOS_VERSION_DANO
  		const char *name;
@@ -925,7 +923,7 @@ BContainerWindow::SetLayoutState(BNode *node, const BMessage *message)
 			&type, &count);
 		if (result != B_OK)
 			break;
-		
+
 		for (int32 index = 0; index < count; index++) {
 			const void *buffer;
 			int32 size;
@@ -934,7 +932,7 @@ BContainerWindow::SetLayoutState(BNode *node, const BMessage *message)
 				PRINT(("error reading %s \n", name));
 				return result;
 			}
-			
+
 			if (node->WriteAttr(name, type, 0, buffer, (size_t)size) != size) {
 				PRINT(("error writing %s \n", name));
 				return result;
@@ -2961,19 +2959,17 @@ BContainerWindow::RestoreWindowState(AttributeStreamNode *node)
 	}
 	
 	BRect frame(Frame());
-	if (node->Read(rectAttributeName, 0, B_RECT_TYPE, sizeof(BRect), &frame)
-		== sizeof(BRect)) {	
+	if (node->Read(rectAttributeName, 0, B_RECT_TYPE, sizeof(BRect), &frame) == sizeof(BRect)) {	
 		MoveTo(frame.LeftTop());
 		ResizeTo(frame.Width(), frame.Height());
 	} else
-		fNewWindRect.OffsetBy(kWindowStaggerBy, kWindowStaggerBy);
+		sNewWindRect.OffsetBy(kWindowStaggerBy, kWindowStaggerBy);
 
 	uint32 workspace;
-	off_t size = node->Read(workspaceAttributeName, 0, B_INT32_TYPE, sizeof(uint32),
-		&workspace);
-
-	if (size == sizeof(uint32) && (fContainerWindowFlags & kRestoreWorkspace)) 
+	if (node->Read(workspaceAttributeName, 0, B_INT32_TYPE, sizeof(uint32), &workspace) == sizeof(uint32)
+		&& (fContainerWindowFlags & kRestoreWorkspace))
 		SetWorkspaces(workspace);
+
 	if (fContainerWindowFlags & kIsHidden)
 		Minimize(true);
 }
@@ -3001,7 +2997,7 @@ BContainerWindow::RestoreWindowState(const BMessage &message)
 		MoveTo(frame.LeftTop());
 		ResizeTo(frame.Width(), frame.Height());
 	} else
-		fNewWindRect.OffsetBy(kWindowStaggerBy, kWindowStaggerBy);
+		sNewWindRect.OffsetBy(kWindowStaggerBy, kWindowStaggerBy);
 
 	uint32 workspace;
 	
