@@ -132,10 +132,9 @@ BRect
 BCountView::TextInvalRect() const
 {
 	BRect result = Bounds();
-	result.InsetBy(4, 1);
-	result.top += 1;
-	
+	result.InsetBy(4, 2);
 	result.right -= 10;
+
 	return result;
 }
 
@@ -150,9 +149,6 @@ BCountView::CheckCount()
 	// invalidate barber pole area if necessary
 	TrySpinningBarberPole();
 }
-
-const rgb_color kLightGray = {150, 150, 150, 255};
-const rgb_color kGray = {100, 100, 100, 255};
 
 void
 BCountView::Draw(BRect)
@@ -189,23 +185,28 @@ BCountView::Draw(BRect)
 
 	bounds.top++;
 
-	BeginLineArray(fShowingBarberPole && !fStartSpinningAfter ? 8 : 4);
-	AddLine(bounds.LeftTop(), bounds.RightTop(), kWhite);
-	AddLine(bounds.LeftTop(), bounds.LeftBottom(), kWhite);
+	rgb_color light = tint_color(ViewColor(), B_LIGHTEN_MAX_TINT);
+	rgb_color shadow = tint_color(ViewColor(), B_DARKEN_2_TINT);
+	rgb_color lightShadow = tint_color(ViewColor(), B_DARKEN_1_TINT);
+
+	BeginLineArray(fShowingBarberPole && !fStartSpinningAfter ? 9 : 5);
+	AddLine(bounds.LeftTop(), bounds.RightTop(), light);
+	AddLine(bounds.LeftTop(), bounds.LeftBottom(), light);
 	bounds.top--;
 
-	AddLine(bounds.LeftTop(), bounds.RightTop(), kLightGray);
-	AddLine(bounds.RightTop(), bounds.RightBottom(), kLightGray);
+	AddLine(bounds.LeftTop(), bounds.RightTop(), shadow);
+	AddLine(BPoint(bounds.right, bounds.top + 2), bounds.RightBottom(), lightShadow);
+	AddLine(bounds.LeftBottom(), bounds.RightBottom(), lightShadow);
 
 	if (!fShowingBarberPole || fStartSpinningAfter) {
 		EndLineArray();
 		return;
 	}
 
-	AddLine(barberPoleRect.LeftTop(), barberPoleRect.RightTop(), kLightGray);
-	AddLine(barberPoleRect.LeftTop(), barberPoleRect.LeftBottom(), kLightGray);
-	AddLine(barberPoleRect.LeftBottom(), barberPoleRect.RightBottom(), kWhite);
-	AddLine(barberPoleRect.RightBottom(), barberPoleRect.RightTop(), kWhite);
+	AddLine(barberPoleRect.LeftTop(), barberPoleRect.RightTop(), shadow);
+	AddLine(barberPoleRect.LeftTop(), barberPoleRect.LeftBottom(), shadow);
+	AddLine(barberPoleRect.LeftBottom(), barberPoleRect.RightBottom(), light);
+	AddLine(barberPoleRect.RightBottom(), barberPoleRect.RightTop(), light);
 	EndLineArray();
 
 	barberPoleRect.InsetBy(1, 1);
@@ -238,9 +239,9 @@ BCountView::MouseDown(BPoint)
 		BDirMenu *menu = new BDirMenu(NULL, B_REFS_RECEIVED);
 		BEntry entry;
 		if (entry.SetTo(window->TargetModel()->EntryRef()) == B_OK)
-			menu->Populate(&entry, Window(), false, false, true);
+			menu->Populate(&entry, Window(), false, false, true, false, true);
 		else
-			menu->Populate(NULL, Window(), false, false, true);
+			menu->Populate(NULL, Window(), false, false, true, false, true);
 
 		menu->SetTargetForItems(be_app);
 		BPoint pop_pt = Bounds().LeftBottom();
@@ -259,8 +260,8 @@ BCountView::AttachedToWindow()
 	SetFont(be_plain_font);
 	SetFontSize(9);
 
-	SetViewColor(219, 219, 219);
-	SetLowColor(219, 219, 219);
+	SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
+	SetLowColor(ViewColor());
 
 	CheckCount();
 }
