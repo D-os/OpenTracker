@@ -319,10 +319,10 @@ TTimeView::Pulse()
 	if (	(!fShowingDate && strcmp(fTimeStr, fLastTimeStr) != 0)
 		|| 	(fShowingDate && strcmp(fDateStr, fLastDateStr) != 0)) {
 		// Update bounds when the size of the strings has changed
-		// For dates Update() could be calles two times in a row,
+		// For dates, Update() could be called two times in a row,
 		// but that should only happen very rarely
 		if (	(!fShowingDate && fLastTimeStr[1] != fTimeStr[1]
-				&&	(fLastTimeStr[1] == ':' || fTimeStr[1] == ':')
+				&&	(fLastTimeStr[1] == ':' || fTimeStr[1] == ':'))
 			||	(fShowingDate && strlen(fDateStr) != strlen(fLastDateStr)))
 			Update();
 
