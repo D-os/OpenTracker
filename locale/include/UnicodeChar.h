@@ -4,6 +4,11 @@
 #include <SupportDefs.h>
 
 
+#ifndef B_BEOS_VERSION_DANO
+// B_BAD_DATA was introduced with DANO, so we define it for R5:
+#define B_BAD_DATA -2147483632L
+#endif
+
 enum unicode_char_category
 {
 	// Non-category for unassigned and non-character code points.
