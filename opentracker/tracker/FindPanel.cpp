@@ -3101,24 +3101,22 @@ MostUsedNames::LoadList()
 	path.Append(fDirectory);
 	path.Append(fFileName);
 	
-	FILE *file = fopen(path.Path(),"r");
+	FILE *file = fopen(path.Path(), "r");
 	if (file == NULL)
 		return;
 
 	char line[B_FILE_NAME_LENGTH + 5];
-	while (fgets(line,sizeof(line),file) != NULL) {
+	while (fgets(line, sizeof(line), file) != NULL) {
 		int32 length = (int32)strlen(line) - 1;
 		if (length >= 0 && line[length] == '\n')
 			line[length] = '\0';
 
 		int32 count = atoi(line);
-		if (count < 1)
-			continue;
-		
-		char *name = strchr(line,' ');
+
+		char *name = strchr(line, ' ');
 		if (name == NULL || *(++name) == '\0')
 			continue;
-		
+
 		list_entry *entry = new list_entry;
 		entry->name = strdup(name);
 		entry->count = count;
