@@ -62,8 +62,10 @@ class CollatorDeutsch : public BCollatorAddOn {
 		CollatorDeutsch();
 		~CollatorDeutsch();
 		
-		virtual void GetSortKey(const char *string, BString *key, int8 strength);
-		virtual int Compare(const char *a, const char *b, int32 length, int8 strength);
+		virtual void GetSortKey(const char *string, BString *key, int8 strength,
+							bool ignorePunctuation);
+		virtual int Compare(const char *a, const char *b, int32 length, int8 strength,
+							bool ignorePunctuation);
 };
 
 
@@ -78,10 +80,11 @@ CollatorDeutsch::~CollatorDeutsch()
 
 
 void 
-CollatorDeutsch::GetSortKey(const char *string, BString *key, int8 strength)
+CollatorDeutsch::GetSortKey(const char *string, BString *key, int8 strength,
+	bool ignorePunctuation)
 {
 	if (strength != B_COLLATE_PRIMARY) {
-		BCollatorAddOn::GetSortKey(string, key, strength);
+		BCollatorAddOn::GetSortKey(string, key, strength, ignorePunctuation);
 		return;
 	}
 
@@ -114,17 +117,18 @@ CollatorDeutsch::GetSortKey(const char *string, BString *key, int8 strength)
 
 
 int 
-CollatorDeutsch::Compare(const char *a, const char *b, int32 length, int8 strength)
+CollatorDeutsch::Compare(const char *a, const char *b, int32 length, int8 strength,
+	bool ignorePunctuation)
 {
 	if (strength != B_COLLATE_PRIMARY)
-		return BCollatorAddOn::Compare(a, b, length, strength);
+		return BCollatorAddOn::Compare(a, b, length, strength, ignorePunctuation);
 
 	// ToDo: this is actually a very slow implementation, and should be
 	// realized without calling the GetSortKey() method at all...
 
 	BString keyA, keyB;
-	GetSortKey(a, &keyA, B_COLLATE_PRIMARY);
-	GetSortKey(b, &keyB, B_COLLATE_PRIMARY);
+	GetSortKey(a, &keyA, B_COLLATE_PRIMARY, ignorePunctuation);
+	GetSortKey(b, &keyB, B_COLLATE_PRIMARY, ignorePunctuation);
 
 	a = keyA.String();
 	b = keyB.String();
