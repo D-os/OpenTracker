@@ -900,13 +900,14 @@ OpenWithMenu::OpenWithMenu(const char *label, const BMessage *entriesToOpen,
 		fSupportingAppList(NULL),
 		fParentWindow(parentWindow)
 {
-	TTrackerState::InitIfNeeded();
+	InitIconPreloader();
 
 	SetFont(be_plain_font);
 
 	// too long to have triggers
 	SetTriggersEnabled(false);
 }
+
 
 OpenWithMenu::OpenWithMenu(const char *label, const BMessage *entriesToOpen,
 	BWindow *parentWindow, const BMessenger &messenger)
@@ -918,7 +919,7 @@ OpenWithMenu::OpenWithMenu(const char *label, const BMessage *entriesToOpen,
 		fSupportingAppList(NULL),
 		fParentWindow(parentWindow)
 {
-	TTrackerState::InitIfNeeded();
+	InitIconPreloader();
 
 	SetFont(be_plain_font);
 
