@@ -30,7 +30,7 @@ class CatalogTest {
 void 
 CatalogTest::Run() 
 {
-	printf("app...", be_locale);
+	printf("app...");
 	status_t res;
 	BString s;
 	s << "string" << "\x01" << TR_CONTEXT << "\x01";
