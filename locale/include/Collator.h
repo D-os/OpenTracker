@@ -25,6 +25,7 @@ enum collator_strengths {
 class BCollator : public BArchivable {
 	public:
 		BCollator();
+		BCollator(BCollatorAddOn *collator, int8 strength, bool ignorePunctuation);
 		BCollator(BMessage *archive);
 		~BCollator();
 
@@ -91,5 +92,10 @@ class BCollatorAddOn : public BArchivable {
 		virtual status_t Archive(BMessage *archive, bool deep);
 		static BArchivable *Instantiate(BMessage *archive);
 };
+
+// If your add-on should work with the standard tool to create a language, it
+// should export that function. However, once the language file has been written
+// only the archived collator is used, and that function won't be called anymore.
+extern "C" BCollatorAddOn *instantiate_collator(void);
 
 #endif	/* _COLLATOR_H_ */
