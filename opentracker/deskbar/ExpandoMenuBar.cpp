@@ -64,6 +64,7 @@ const uint32 M_BRING_TEAM_TO_FRONT = 'bftm';
 bool TExpandoMenuBar::sDoMonitor = false;
 thread_id TExpandoMenuBar::sMonThread = B_ERROR;
 
+
 TExpandoMenuBar::TExpandoMenuBar(TBarView *bar, BRect frame, const char *name,
 	bool vertical, bool drawLabel)
 	:	BMenuBar(frame, name, B_FOLLOW_NONE,
@@ -250,8 +251,10 @@ TExpandoMenuBar::MessageReceived(BMessage *message)
 		case M_MINIMIZE_TEAM:
 		{
 			index = message->FindInt32("itemIndex");
-			item = (TTeamMenuItem *)ItemAt(index);
-			ASSERT(item);
+			item = dynamic_cast<TTeamMenuItem *>(ItemAt(index));
+			if (item == NULL)
+				break;
+
 			TShowHideMenuItem::TeamShowHideCommon(B_MINIMIZE_WINDOW,
 				item->Teams(), 
 				item->Menu()->ConvertToScreen(item->Frame()), 
@@ -262,8 +265,10 @@ TExpandoMenuBar::MessageReceived(BMessage *message)
 		case M_BRING_TEAM_TO_FRONT:
 		{
 			index = message->FindInt32("itemIndex");
-			item = (TTeamMenuItem *)ItemAt(index);
-			ASSERT(item);
+			item = dynamic_cast<TTeamMenuItem *>(ItemAt(index));
+			if (item == NULL)
+				break;
+
 			TShowHideMenuItem::TeamShowHideCommon(B_BRING_TO_FRONT,
 				item->Teams(), 
 				item->Menu()->ConvertToScreen(item->Frame()),
@@ -282,7 +287,7 @@ void
 TExpandoMenuBar::MouseDown(BPoint where)
 {
 	BMessage *message = Window()->CurrentMessage();
-	
+
 	// check for three finger salute, a.k.a. Vulcan Death Grip
 	if (message != NULL) {
 		int32 modifiers = 0;
@@ -345,14 +350,23 @@ TExpandoMenuBar::MouseDown(BPoint where)
 		message->FindInt32("modifiers", &modifiers);
 		if ((modifiers & B_CONTROL_KEY) != 0
 			&& ! fBarView->Dragging()) {
+			int32 lastApp = -1;
+
 			// find the clicked item
 			for (int32 i = fFirstApp; i < count; i++) {
 				const TTeamMenuItem *item = (TTeamMenuItem *)ItemAt(i);
+
+				// check if this item is really a team item	(what a cruel way...)
+				// "lastApp" will always point to the last application in
+				// the list - the other entries might be windows (due to the team expander)
+				if (item->Submenu())
+					 lastApp = i;
+
 				if (item->Frame().Contains(where)) {
 					// show/hide item's teams
 					BMessage showMessage((modifiers & B_SHIFT_KEY) != 0
 						? M_MINIMIZE_TEAM : M_BRING_TEAM_TO_FRONT);
-					showMessage.AddInt32("itemIndex", i);
+					showMessage.AddInt32("itemIndex", lastApp);
 					Window()->PostMessage(&showMessage, this);
 					return;
 				}
