@@ -64,6 +64,28 @@ getPrimaryChar(uint32 c)
 }
 
 
+/** Fills the specified buffer with the primary sort key. The buffer
+ *	has to be long enough to hold the key.
+ *	It returns the position in the buffer immediately after the key;
+ *	it does not add a terminating null byte!
+ */
+
+static char *
+putPrimarySortKey(const char *string, char *buffer, int32 length)
+{
+	// ToDo: what about "sz" and punctuation??
+	uint32 c;
+	for (int32 i = 0; (c = BUnicodeChar::FromUTF8(&string)) != 0 && i < length; i++) {
+		if (c < 0x80)
+			*buffer++ = tolower(c);
+		else
+			BUnicodeChar::ToUTF8(getPrimaryChar(c), &buffer);
+	}
+
+	return buffer;
+}
+
+
 static inline uint32
 getNextChar(const char **string, input_context &context)
 {
@@ -174,30 +196,30 @@ BCollatorAddOn::GetSortKey(const char *string, BString *key, int8 strength,
 {
 	int32 length = strlen(string);
 
-	// ToDo: this function is currently broken, and doesn't take ignorePunctuation into account
+	// ToDo: this function is currently broken (ß), and doesn't take
+	//	ignorePunctuation into account
 
 	switch (strength) {
 		case B_COLLATE_PRIMARY:
 		{
-			char *buffer = key->LockBuffer(length);
-				// the key can't be longer than the original
-			uint32 c;
-			for (int32 i = 0; (c = BUnicodeChar::FromUTF8(&string)) && i < length; i++) {
-				if (c < 0x80)
-					*buffer++ = tolower(c);
-				else
-					BUnicodeChar::ToUTF8(getPrimaryChar(c), &buffer);
-			}
-			*buffer = '\0';
-			key->UnlockBuffer();
+			char *begin = key->LockBuffer(length);
+
+			char *end = putPrimarySortKey(string, begin, length);
+			*end = '\0';
+
+			key->UnlockBuffer(end - begin);
 			break;
 		}
 
 		case B_COLLATE_SECONDARY:
 		{
-			// ToDo: this is broken, have a look at Compare()
-			char *buffer = key->LockBuffer(length * 2);
-				// the buffer can't be longer than this
+			char *begin = key->LockBuffer(length * 2 + 1);
+				// the primary key + the secondary key + separator char
+
+			char *buffer = putPrimarySortKey(string, begin, length);
+			*buffer++ = '\01';
+				// separator
+
 			uint32 c;
 			for (int32 i = 0; (c = BUnicodeChar::FromUTF8(&string)) && i < length; i++) {
 				if (c < 0x80)
@@ -206,13 +228,29 @@ BCollatorAddOn::GetSortKey(const char *string, BString *key, int8 strength,
 					BUnicodeChar::ToUTF8(BUnicodeChar::ToLower(c), &buffer);
 			}
 			*buffer = '\0';
-			key->UnlockBuffer();
+
+			key->UnlockBuffer(buffer - begin);
 			break;
 		}
 
 		case B_COLLATE_TERTIARY:
 		case B_COLLATE_QUATERNARY:
-			// ToDo: this is broken, have a look at Compare()
+		{
+			char *begin = key->LockBuffer(length * 2 + 1);
+				// the primary key + the tertiary key + separator char
+
+			char *buffer = putPrimarySortKey(string, begin, length);
+			*buffer++ = '\01';
+				// separator
+
+			// ToDo: that will have to be more complicated (in order to
+			//	support punctuation etc.)
+			strcpy(buffer, string);
+
+			key->UnlockBuffer(buffer + length - begin);
+			break;
+		}
+
 		case B_COLLATE_IDENTICAL:
 		default:
 			key->SetTo(string, length);
