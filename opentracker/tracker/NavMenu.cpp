@@ -68,6 +68,7 @@ namespace BPrivate {
 
 const int32 kMinMenuWidth = 150;
 
+
 bool
 SpringLoadedFolderCompareMessages(const BMessage *incoming, const BMessage *dragmessage)
 {
@@ -114,6 +115,7 @@ SpringLoadedFolderCompareMessages(const BMessage *incoming, const BMessage *drag
 
 	return retvalue;
 }
+
 
 void
 SpringLoadedFolderSetMenuStates(const BMenu* menu, const BObjectList<BString> *typeslist)
@@ -162,6 +164,7 @@ SpringLoadedFolderSetMenuStates(const BMenu* menu, const BObjectList<BString> *t
 	}			
 }
 
+
 void
 SpringLoadedFolderAddUniqueTypeToList(entry_ref *ref, BObjectList<BString> *typeslist)
 {
@@ -205,6 +208,7 @@ SpringLoadedFolderAddUniqueTypeToList(entry_ref *ref, BObjectList<BString> *type
 	}
 }
 
+
 void
 SpringLoadedFolderCacheDragData(const BMessage *incoming, BMessage **message, BObjectList<BString> **typeslist)
 {
@@ -231,6 +235,10 @@ SpringLoadedFolderCacheDragData(const BMessage *incoming, BMessage **message, BO
 
 }
 
+
+//	#pragma mark -
+
+
 BNavMenu::BNavMenu(const char* title, uint32 message, const BHandler *target,
 	BWindow *parentWindow, const BObjectList<BString> *list)
 	:	BSlowMenu(title),
@@ -255,6 +263,7 @@ BNavMenu::BNavMenu(const char* title, uint32 message, const BHandler *target,
 	// too long to have triggers
 	SetTriggersEnabled(false);
 }
+
 
 BNavMenu::BNavMenu(const char *title, uint32 message, const BMessenger &messenger,
 	BWindow *parentWindow, const BObjectList<BString> *list)
@@ -281,9 +290,11 @@ BNavMenu::BNavMenu(const char *title, uint32 message, const BMessenger &messenge
 	SetTriggersEnabled(false);
 }
 
+
 BNavMenu::~BNavMenu()
 {
 }
+
 
 void
 BNavMenu::AttachedToWindow()
@@ -299,6 +310,7 @@ BNavMenu::AttachedToWindow()
 		//	allow an opportunity to reset the target for each of the items
 }
 
+
 void
 BNavMenu::DetachedFromWindow()
 {
@@ -311,11 +323,13 @@ BNavMenu::DetachedFromWindow()
 	fTypesList = NULL;
 }
 
+
 void
 BNavMenu::ResetTargets()
 {
 	SetTargetForItems(Target());
 }
+
 
 void 
 BNavMenu::ForceRebuild()
@@ -323,6 +337,7 @@ BNavMenu::ForceRebuild()
 	ClearMenuBuildingState();
 	fMenuBuilt = false;
 }
+
 
 bool 
 BNavMenu::NeedsToRebuild() const
@@ -340,6 +355,7 @@ BNavMenu::SetNavDir(const entry_ref *ref)
 	fNavDir = *ref;
 }
 
+
 void
 BNavMenu::ClearMenuBuildingState()
 {
@@ -356,6 +372,7 @@ BNavMenu::ClearMenuBuildingState()
 		fItemList = NULL;
 	}
 }
+
 
 bool
 BNavMenu::StartBuildingItemList()
@@ -410,13 +427,14 @@ BNavMenu::StartBuildingItemList()
 		fContainer = new DirectoryEntryList(*dynamic_cast<BDirectory *>
 			(startModel.Node()));
 	
-	if (fContainer->InitCheck() != B_OK)
+	if (fContainer == NULL || fContainer->InitCheck() != B_OK)
 		return false;
 
 	fContainer->Rewind();
 
 	return true;
 }
+
 
 void
 BNavMenu::AddRootItemsIfNeeded()
@@ -437,6 +455,7 @@ BNavMenu::AddRootItemsIfNeeded()
 		AddOneItem(&model);
 	}
 }
+
 
 bool
 BNavMenu::AddNextItem()
@@ -486,6 +505,7 @@ BNavMenu::AddNextItem()
 	return true;
 }
 
+
 void 
 BNavMenu::AddOneItem(Model *model)
 {
@@ -496,6 +516,7 @@ BNavMenu::AddOneItem(Model *model)
 	if (item)
 		fItemList->AddItem(item);
 }
+
 
 ModelMenuItem * 
 BNavMenu::NewModelItem(Model *model, const BMessage *invokeMessage,
@@ -627,6 +648,7 @@ BNavMenu::BuildVolumeMenu()
 	}
 }
 
+
 int
 BNavMenu::CompareFolderNamesFirstOne(const BMenuItem *i1, const BMenuItem *i2)
 {
@@ -706,11 +728,13 @@ BNavMenu::SetTypesList(const BObjectList<BString> *list)
 	fTypesList = list;
 }
 
+
 const BObjectList<BString> *
 BNavMenu::TypesList() const
 {
 	return fTypesList;
 }
+
 
 void
 BNavMenu::SetTarget(const BMessenger &msngr)
@@ -718,11 +742,13 @@ BNavMenu::SetTarget(const BMessenger &msngr)
 	fMessenger = msngr;
 }
 
+
 BMessenger
 BNavMenu::Target()
 {
 	return fMessenger;
 }
+
 
 TrackingHookData *
 BNavMenu::InitTrackingHook(bool (*hook)(BMenu *, void *), const BMessenger *target,
@@ -735,6 +761,7 @@ BNavMenu::InitTrackingHook(bool (*hook)(BMenu *, void *), const BMessenger *targ
 	SetTrackingHookDeep(this, hook, &fTrackingHook);
 	return &fTrackingHook;
 }
+
 
 void 
 BNavMenu::SetTrackingHookDeep(BMenu *menu, bool (*func)(BMenu *, void *), void *state)
@@ -751,3 +778,4 @@ BNavMenu::SetTrackingHookDeep(BMenu *menu, bool (*func)(BMenu *, void *), void *
 			SetTrackingHookDeep(submenu, func, state);
 	}
 }
+
