@@ -46,6 +46,7 @@ All rights reserved.
 #include "MountMenu.h"
 #include "IconMenuItem.h"
 #include "Tracker.h"
+#include "Bitmaps.h"
 
 #if OPEN_TRACKER
 #include "DeviceMap.h"
@@ -166,8 +167,10 @@ MountMenu::AddDynamicItem(add_state)
 				delete icon;
 				continue;
 			}
+			// Use the shared icon instead of the device icon
+			if (get_device_icon(info.device_name, icon->Bits(), B_MINI_ICON) != B_OK)
+				GetTrackerResources()->GetIconResource(kResShareIcon, B_MINI_ICON, icon);
 			
-			get_device_icon(info.device_name, icon->Bits(), B_MINI_ICON);	
 			BMessage *message = new BMessage(kUnmountVolume);
 			message->AddInt32("device_id", volume.Device());
 			char volumeName[B_FILE_NAME_LENGTH];
