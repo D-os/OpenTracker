@@ -1,0 +1,103 @@
+# FinalRules
+#
+# Rules providing deferred rule invocation.
+
+rule AddFinalRule
+{
+	# AddFinalRule <rule> [ ... : ... ] ;
+	#
+	# Adds a final rule, i.e. a rule that is invoked after all Jamfiles have
+	# been processed. The parameters should look exactly as if the rule
+	# would be invoked directly. E.g. a rule that is normally invoke like
+	#
+	#   MyRule param1 : param2 : param3 ;
+	#
+	# should be added in this manner:
+	#
+	#   AddFinalRule MyRule param1 : param2 : param3 ;
+	#
+	# NOTE: The context (i.e. SUBDIR, SEARCH_SOURCE,...) when the rule is
+	# finally invoked will probably differ from the context when AddFinalRule
+	# is invoked. That is you need to pass what you need of the context by
+	# parameters.
+	#
+
+	if ! $(1[1]) {
+		Exit "AddFinalRule: No rule given!" ;
+	}
+
+	# trim empty trailing parameters
+	local parameters = [ FReverse 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 ] ;
+	while $(parameters) && ! $($(parameters[1])) {
+		parameters = $(parameters[2-]) ;
+	}
+	parameters = [ FReverse $(parameters) ] ;
+
+	# flatten rule
+	local flattenedRule = $(1) ;
+	while $(parameters) {
+		flattenedRule += ":" $($(parameters[1]) ;
+		parameters = $(parameters[2-]) ;
+	}
+	FINAL_RULES += $(flattenedRule) ";" ;
+}
+
+rule InvokeFinalRules
+{
+	# InvokeFinalRules ;
+	#
+	# Invokes all rules that have been added to the final rules via
+	# AddFinalRule. The list of final rules is empty afterwards.
+	#
+
+	while $(FINAL_RULES) {
+		local end ;
+		local flattenedRule ;
+		while $(FINAL_RULES) {
+			local component = $(FINAL_RULES[1]) ;
+			FINAL_RULES = $(FINAL_RULES[2-]) ;
+			if $(component) = ";" {
+				break ;
+			}
+			flattenedRule += $(component) ;
+		}
+		InvokeFlattenedRule $(flattenedRule) ;
+	}
+}
+
+rule InvokeFlattenedRule
+{
+	# InvokeFlattenedRule <flattenedRule> ;
+	#
+	# Invokes a flattened rule, i.e. a rule as stored by AddFinalRule.
+	# The rule name and its parameters are stored in one list. The parameters
+	# are separated by `":"' elements. At maximum 16 parameters are allowed.
+	#
+	# <flattenedRule>: The flattened rule.
+	#
+	local flattenedRule = $(1) ;
+
+	local ruleName = $(flattenedRule[1]) ;
+	local parameters = $(flattenedRule[2-]) ;
+
+	# unflatten the parameters
+	local paramVars = p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 ;
+	local $(paramVars) ;
+	while $(parameters) {
+		local param = $(parameters[1]) ;
+		parameters = $(parameters[2-]) ;
+		if $(param) = ":" {
+			paramVars = $(paramVars[2-]) ;
+			if ! $(paramVars) {
+				Exit "InvokeFlattenedRule: Too many parameters: "
+					$(flattenedRule) ;
+			}
+		} else {
+			$(paramVars[1]) += $(param) ;
+		}
+	}
+
+	# invoke the rule
+	$(ruleName) $(p1) : $(p2) : $(p3) : $(p4) : $(p5) : $(p6) : $(p7) : $(p8)
+		: $(p9) : $(p10) : $(p11) : $(p12) : $(13) : $(14) : $(15) : $(16) ;
+}
