@@ -679,6 +679,7 @@ OpenWithPoseView::Pulse()
 	Model *firstSelected = fSelectionList->FirstItem()->TargetModel();
 	if (OpenWithRelation(firstSelected) == kNoRelation) {
 		window->SetCanSetAppAsDefault(false);
+		window->SetCanOpen(true);
 		_inherited::Pulse();
 		return;
 	}
