@@ -1,8 +1,7 @@
-# makefile for the Locale Kit add-ons
+# makefile for the Locale Kit Collator add-ons
 
 SUBDIRS = \
-	catalogs \
-	collators \
+	zeta \
 
 default .DEFAULT :
 	-@for f in $(SUBDIRS) ; do \
