@@ -410,6 +410,24 @@ BUnicodeChar::IsControl(uint32 c)
 }
 
 
+/** Returns true if the specified unicode character is a
+ *	punctuation character.
+ */
+
+bool
+BUnicodeChar::IsPunctuation(uint32 c)
+{
+	BUnicodeChar();
+	return (FLAG(getCategory(getProperties(c)))
+			& (FLAG(B_UNICODE_DASH_PUNCTUATION)
+				| FLAG(B_UNICODE_START_PUNCTUATION)
+				| FLAG(B_UNICODE_END_PUNCTUATION)
+				| FLAG(B_UNICODE_CONNECTOR_PUNCTUATION)
+				| FLAG(B_UNICODE_OTHER_PUNCTUATION))
+			) != 0;
+}
+
+
 /** Returns true if the specified unicode character is some
  *	kind of a space character.
  */
