@@ -89,7 +89,7 @@ ArgvParser::MakeArgvEmpty()
 {
 	// done with current argv, free it up
 	for (int32 index = 0; index < fArgc; index++)
-		delete fCurrentArgv[index];
+		delete[] fCurrentArgv[index];
 	
 	fArgc = 0;
 }
