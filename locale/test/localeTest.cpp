@@ -39,7 +39,8 @@ main()
 	// Test BCollator class
 
 	BCollator *collator = be_locale->Collator();
-	char *strings[] = {"gehen", "géhen", "aus", "äUß", "WO", "wÖ", "SO", "so", "açñ", "acn", NULL};
+	char *strings[] = {"gehen", "géhen", "aus", "äUß", "auss", "äUß", "WO",
+		"wÖ", "SO", "so", "açñ", "acn", NULL};
 	char *strengths[] = {"primary:  ", "secondary:", "tertiary: "};
 	for (int32 i = 0; strings[i]; i += 2) {
 		for (int32 strength = B_COLLATE_PRIMARY; strength < 4; strength++) {
