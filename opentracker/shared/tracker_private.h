@@ -39,6 +39,7 @@ All rights reserved.
 
 #define kTrackerSignature "application/x-vnd.Be-TRAK"
 #define kTrackerSuites "suite/x-vnd.Be-TRAK"
+#define kDeskbarSignature "application/x-vnd.Be-TSKB"
 
 namespace BPrivate {
 
