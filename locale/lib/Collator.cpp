@@ -7,6 +7,7 @@
 #include <Collator.h>
 #include <UnicodeChar.h>
 #include <String.h>
+#include <Message.h>
 
 #include <stdio.h>	// <- for debugging only
 #include <ctype.h>
@@ -94,7 +95,6 @@ putPrimarySortKey(const char *string, char *buffer, int32 length, bool ignorePun
 {
 	input_context context(ignorePunctuation);
 
-	// ToDo: what about "sz" and punctuation??
 	uint32 c;
 	for (int32 i = 0; (c = getNextChar(&string, context)) != 0 && i < length; i++) {
 		if (c < 0x80)
@@ -112,17 +112,55 @@ putPrimarySortKey(const char *string, char *buffer, int32 length, bool ignorePun
 
 BCollator::BCollator()
 	:
-	fStrength(B_COLLATE_PRIMARY)
+	fCollatorImage(B_ERROR),
+	fStrength(B_COLLATE_PRIMARY),
+	fIgnorePunctuation(true)
 {
-	// ToDo: the collator construction will have to change...
+	// ToDo: the collator construction will have to change; the default
+	//	collator should be constructed by the Locale/LocaleRoster, so we
+	//	only need a constructor where you specify all details
 
 	fCollator = new BCollatorAddOn();
+}
+
+
+BCollator::BCollator(BMessage *archive)
+	: BArchivable(archive),
+	fCollator(NULL),
+	fCollatorImage(B_ERROR)
+{
+	int32 data;
+	if (archive->FindInt32("loc:strength", &data) == B_OK)
+		fStrength = (uint8)data;
+	else
+		fStrength = B_COLLATE_PRIMARY;
+
+	if (archive->FindBool("loc:punctuation", &fIgnorePunctuation) != B_OK)
+		fIgnorePunctuation = true;
+
+	BMessage collatorArchive;
+	if (archive->FindMessage("loc:collator", &collatorArchive) == B_OK) {
+		BArchivable *unarchived = instantiate_object(&collatorArchive, &fCollatorImage);
+
+		// do we really have a BCollatorAddOn here?
+		fCollator = dynamic_cast<BCollatorAddOn *>(unarchived);
+		if (fCollator == NULL)
+			delete unarchived;
+	}
+
+	if (fCollator == NULL) {
+		fCollator = new BCollatorAddOn();
+		fCollatorImage = B_ERROR;
+	}
 }
 
 
 BCollator::~BCollator()
 {
 	delete fCollator;
+
+	if (fCollatorImage >= B_OK)
+		unload_add_on(fCollatorImage);
 }
 
 
@@ -175,10 +213,50 @@ BCollator::Compare(const char *a, const char *b, int32 length, int8 strength)
 }
 
 
+status_t 
+BCollator::Archive(BMessage *archive, bool deep)
+{
+	status_t status = BArchivable::Archive(archive, deep);
+	if (status < B_OK)
+		return status;
+
+	if (status == B_OK)
+		status = archive->AddInt32("loc:strength", fStrength);
+	if (status == B_OK)
+		status = archive->AddBool("loc:punctuation", fIgnorePunctuation);
+
+	// ToDo: the following code makes the assumption that only loaded
+	//	add-ons would have to be archived - a BRuleBasedCollator would
+	//	have to be archived as well, though
+	BMessage collatorArchive;
+	if (status == B_OK && deep && fCollatorImage >= B_OK
+		&& (status = fCollator->Archive(&collatorArchive, true)) == B_OK)
+		status = archive->AddMessage("loc:collator", &collatorArchive);
+
+	return status;
+}
+
+
+BArchivable *
+BCollator::Instantiate(BMessage *archive)
+{
+	if (validate_instantiation(archive, "BCollator"))
+		return new BCollator(archive);
+
+	return NULL;
+}
+
+
 //	#pragma mark -
 
 
 BCollatorAddOn::BCollatorAddOn()
+{
+}
+
+
+BCollatorAddOn::BCollatorAddOn(BMessage *archive)
+	: BArchivable(archive)
 {
 }
 
@@ -345,5 +423,22 @@ BCollatorAddOn::Compare(const char *a, const char *b, int32 length, int8 strengt
 		default:
 			return strncmp(a, b, length);
 	}
+}
+
+
+status_t 
+BCollatorAddOn::Archive(BMessage *archive, bool deep)
+{
+	return BArchivable::Archive(archive, deep);
+}
+
+
+BArchivable *
+BCollatorAddOn::Instantiate(BMessage *archive)
+{
+	if (validate_instantiation(archive, "BCollatorAddOn"))
+		return new BCollator(archive);
+
+	return NULL;
 }
 
