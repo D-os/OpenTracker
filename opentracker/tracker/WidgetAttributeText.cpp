@@ -62,6 +62,7 @@ All rights reserved.
 #include "WidgetAttributeText.h"
 #include "Tracker.h"
 
+
 template <class View>
 float
 TruncStringBase(BString *result, const char *str, int32 length,
@@ -89,7 +90,6 @@ TruncStringBase(BString *result, const char *str, int32 length,
 	}
 	return view->StringWidth(result->String(), result->Length());
 }
-
 
 
 WidgetAttributeText *
@@ -369,7 +369,6 @@ TruncTimeBase(BString *result, int64 value, const View *view, float width)
 
 	BString timeFormat;
 
-
 	for (int32 index = 0; ; index++) {
 		if (TimeFormat(timeFormat, index, separator, order, clockIs24hr) != B_OK)
 			break;
@@ -497,6 +496,10 @@ WidgetAttributeText::SetDirty(bool value)
 	fDirty = value;	
 }
 
+
+//	#pragma mark -
+
+
 StringAttributeText::StringAttributeText(const Model *model,
 	const BColumn *column)
 	:	WidgetAttributeText(model, column),
@@ -572,16 +575,21 @@ StringAttributeText::CommitEditedText(BTextView *textView)
 		// cannot do an empty name
 		return false;
 
+	// cause re-truncation
+	fDirty = true;
+
 	if (!CommitEditedTextFlavor(textView))
 		return false;
 
 	// update text and width in this widget
 	fFullValueText = text;
-	// cause re-truncation
-	fDirty = true;
-	
+
 	return true;
 }
+
+
+//	#pragma mark -
+
 
 ScalarAttributeText::ScalarAttributeText(const Model *model,
 	const BColumn *column)
@@ -632,6 +640,10 @@ ScalarAttributeText::Compare(WidgetAttributeText &attr, BPoseView *)
 	return fValue > compareTo->Value() ? (fValue == compareTo->Value() ? 0 : -1) : 1 ;
 }
 
+
+//	#pragma mark -
+
+
 PathAttributeText::PathAttributeText(const Model *model, const BColumn *column)
 	:	StringAttributeText(model, column)
 {
@@ -652,6 +664,10 @@ PathAttributeText::ReadValue(BString *result)
 	fValueDirty = false;
 }
 
+
+//	#pragma mark -
+
+
 OriginalPathAttributeText::OriginalPathAttributeText(const Model *model, const BColumn *column)
 	:	StringAttributeText(model, column)
 {
@@ -670,6 +686,10 @@ OriginalPathAttributeText::ReadValue(BString *result)
 		*result = "-";
 	fValueDirty = false;
 }
+
+
+//	#pragma mark -
+
 
 KindAttributeText::KindAttributeText(const Model *model, const BColumn *column)
 	:	StringAttributeText(model, column)
@@ -692,6 +712,10 @@ KindAttributeText::ReadValue(BString *result)
 		*result = fModel->MimeType();
 	fValueDirty = false;
 }
+
+
+//	#pragma mark -
+
 
 NameAttributeText::NameAttributeText(const Model *model, const BColumn *column)
 	:	StringAttributeText(model, column)
@@ -795,11 +819,18 @@ NameAttributeText::CommitEditedTextFlavor(BTextView *textView)
 	if (entry.GetParent(&parent) != B_OK)
 		return false;
 
+	bool removeExisting = false;
 	if (parent.Contains(text)) {
-		(new BAlert("", "That name is already taken. "
-			"Please type another one.", "OK", 0, 0,
-			B_WIDTH_AS_USUAL, B_WARNING_ALERT))->Go();
-		return false;
+		BAlert *alert = new BAlert("", "That name is already taken. "
+				"Please type another one.", "Replace other file", "OK", NULL,
+				B_WIDTH_AS_USUAL, B_WARNING_ALERT);
+
+		alert->SetShortcut(0, 'r');
+
+		if (alert->Go())
+			return false;
+
+		removeExisting = true;
 	}
 
 	// ToDo:
@@ -817,7 +848,7 @@ NameAttributeText::CommitEditedTextFlavor(BTextView *textView)
 			ASSERT(fModel->Node());
 			MoreOptionsStruct::SetQueryTemporary(fModel->Node(), false);
 		}
-		result = entry.Rename(text);
+		result = entry.Rename(text,removeExisting);
 	}
 
 	return result == B_OK;
@@ -831,6 +862,8 @@ NameAttributeText::SetSortFolderNamesFirst(bool enabled)
 	NameAttributeText::fSortFolderNamesFirst = enabled;	
 }
 
+
+//	#pragma mark -
 
 #ifdef OWNER_GROUP_ATTRIBUTES
 
@@ -918,6 +951,10 @@ ModeAttributeText::ReadValue(BString *result)
 	fValueDirty = false;
 }
 
+
+//	#pragma mark -
+
+
 SizeAttributeText::SizeAttributeText(const Model *model, const BColumn *column)
 	:	ScalarAttributeText(model, column)
 {
@@ -957,6 +994,10 @@ SizeAttributeText::PreferredWidth(const BPoseView *pose) const
 	}
 	return pose->StringWidth("-");
 }
+
+
+//	#pragma mark -
+
 
 TimeAttributeText::TimeAttributeText(const Model *model, const BColumn *column)
 	:	ScalarAttributeText(model, column)
@@ -1009,6 +1050,9 @@ ModificationTimeAttributeText::ReadValue()
 	fValueIsDefined = true;
 	return fModel->StatBuf()->st_mtime;
 }
+
+
+//	#pragma mark -
 
 const int32 kGenericReadBufferSize = 1024;
 
@@ -1570,6 +1614,9 @@ GenericAttributeText::CommitEditedTextFlavor(BTextView *textView)
 	fValueIsDefined = true;
 	return true;
 }
+
+
+//	#pragma mark -
 
 
 OpenWithRelationAttributeText::OpenWithRelationAttributeText(const Model *model,

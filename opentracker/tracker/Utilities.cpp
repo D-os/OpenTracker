@@ -146,7 +146,7 @@ DisallowMetaKeys(BTextView *textView)
 	textView->DisallowChar(B_FUNCTION_KEY);
 }
  
-}
+}	// namespace BPrivate
 
 void 
 PoseInfo::EndianSwap(void *castToThis)

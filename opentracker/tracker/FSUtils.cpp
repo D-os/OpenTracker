@@ -2321,20 +2321,40 @@ status_t
 _DeleteTask(BObjectList<entry_ref> *list, bool confirm)
 {
 	if (confirm) {
-		BAlert *alert = new BAlert("", kDeleteConfirmationStr,
-			"Cancel", "Delete", "Move to Trash", B_WIDTH_AS_USUAL, B_OFFSET_SPACING,
-			B_WARNING_ALERT);
+		bool dontMoveToTrash = false;
+
+		if (TTracker *tracker = dynamic_cast<TTracker *>(be_app))
+			dontMoveToTrash = tracker->DontMoveFilesToTrash();
+		
+		if (!dontMoveToTrash) {
+			BAlert *alert = new BAlert("", kDeleteConfirmationStr,
+				"Cancel", "Move to Trash", "Delete", B_WIDTH_AS_USUAL, B_OFFSET_SPACING,
+				B_WARNING_ALERT);
+				
+			alert->SetShortcut(0, B_ESCAPE);
+			alert->SetShortcut(1, 'm');
+			alert->SetShortcut(2, 'd');
+
+			switch (alert->Go()) {
+				case 0:
+					delete list;
+					return B_OK;
+				case 1:
+					FSMoveToTrash(list, NULL, false);
+					return B_OK;
+			}
+		} else {
+			BAlert *alert = new BAlert("", kDeleteConfirmationStr,
+				"Cancel", "Delete", NULL, B_WIDTH_AS_USUAL, B_OFFSET_SPACING,
+				B_WARNING_ALERT);
 			
-		alert->SetShortcut(0, B_ESCAPE);
-		alert->SetShortcut(1, 'd');
-		switch (alert->Go()) {
-			
-			case 0:
+			alert->SetShortcut(0, B_ESCAPE);
+			alert->SetShortcut(1, 'd');
+
+			if (!alert->Go()) {
 				delete list;
 				return B_OK;
-			case 2:
-				FSMoveToTrash(list, NULL, false);
-				return B_OK;
+			}
 		}
 	}
 

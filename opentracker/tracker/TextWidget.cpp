@@ -273,6 +273,22 @@ TextViewFilter(BMessage *message, BHandler **, BMessageFilter *filter)
 		return B_SKIP_MESSAGE;
 	}
 
+	// the BTextView doesn't respect window borders when resizing itself;
+	// we try to work-around this "bug" here.
+
+	// find the text editing view
+	BView *scrollView = poseView->FindView("BorderView");
+	if (scrollView != NULL) {
+		BTextView *textView = dynamic_cast<BTextView *>(scrollView->FindView("WidgetTextView"));
+		if (textView != NULL) {
+			BRect rect = scrollView->Frame();
+
+			if (rect.right + 3 > poseView->Bounds().right
+				|| rect.left - 3 < 0)
+				textView->MakeResizable(true, NULL);
+		}
+	}
+
 	return B_DISPATCH_MESSAGE;
 }
 
@@ -296,27 +312,43 @@ BTextWidget::StartEdit(BRect bounds, BPoseView *view, BPose *pose)
 
 	// get bounds with full text length
 	BRect rect(bounds);
-	BRect text_rect(bounds);
+	BRect textRect(bounds);
 	rect.OffsetBy(-2, -1);
+	rect.right += 1;
 
 	BFont font;
 	view->GetFont(&font);
-	BTextView *textView = new BTextView(rect, "WidgetTextView", text_rect, &font, 0,
+	BTextView *textView = new BTextView(rect, "WidgetTextView", textRect, &font, 0,
 		B_FOLLOW_ALL, B_WILL_DRAW);
+
 	textView->SetWordWrap(false);
 	DisallowMetaKeys(textView);
 	fText->SetUpEditing(textView);
 
 	textView->AddFilter(new BMessageFilter(B_KEY_DOWN, TextViewFilter));
-	
-	rect.right = rect.left + textView->LineWidth() + 3;
-	rect.bottom = rect.top + textView->LineHeight() + 1;
-	textView->ResizeTo(rect.Width(), rect.Height());
-	rect.OffsetTo(2, 1);
-	rect.right -= 3;
-	rect.bottom--;
-	textView->SetTextRect(rect);
 
+	rect.right = rect.left + textView->LineWidth() + 3;
+	// center new width, if necessary
+	if (view->ViewMode() == kIconMode
+		|| view->ViewMode() == kListMode && fAlignment == B_ALIGN_CENTER)
+		rect.OffsetBy(bounds.Width() / 2 - rect.Width() / 2, 0);
+
+	rect.bottom = rect.top + textView->LineHeight() + 1;
+	textRect = rect.OffsetToCopy(2, 1);
+	textRect.right -= 3;
+	textRect.bottom--;
+	textView->SetTextRect(textRect);
+
+	textRect = view->Bounds();
+	bool hitBorder = false;
+	if (rect.left < 1)
+		rect.left = 1, hitBorder = true;
+	if (rect.right > textRect.right)
+		rect.right = textRect.right - 2, hitBorder = true;
+
+	textView->MoveTo(rect.LeftTop());
+	textView->ResizeTo(rect.Width(), rect.Height());
+	
 	BScrollView *scrollView = new BScrollView("BorderView", textView, 0, 0, false,
 		false, B_PLAIN_BORDER);
 	view->AddChild(scrollView);	 
@@ -335,7 +367,7 @@ BTextWidget::StartEdit(BRect bounds, BPoseView *view, BPose *pose)
 			textView->SetAlignment(fAlignment);
 			break;
 	}
-	textView->MakeResizable(true, scrollView);
+	textView->MakeResizable(true, hitBorder ? NULL : scrollView);
 
 	view->SetActivePose(pose);		// tell view about pose
 	SetActive(true);				// for widget
