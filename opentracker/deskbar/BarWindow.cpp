@@ -236,8 +236,14 @@ TBarWindow::WorkspaceActivated(int32 workspace, bool active)
 {
 	BWindow::WorkspaceActivated(workspace, active);
 
-	if (active)
+	if (active && !(fBarView->Expando() && fBarView->Vertical()))
 		fBarView->UpdatePlacement();
+	else {
+		BRect screenFrame = (BScreen(fBarView->Window())).Frame();
+		fBarView->SizeWindow(screenFrame);
+		fBarView->PositionWindow(screenFrame);
+		fBarView->Invalidate();
+	}
 }
 
 

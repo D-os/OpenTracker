@@ -323,7 +323,20 @@ TBeMenu::AddStandardBeMenuItems()
 	item->SetEnabled(replicantTray->CanShowFullDate());
 	item->SetMarked(replicantTray->ShowingFullDate());
 	subMenu->AddItem(item);
- 	
+
+	subMenu->AddSeparatorItem();
+
+	item = new BMenuItem("Show Team Expander", new BMessage(msg_superExpando));
+	item->SetTarget(be_app);
+	item->SetMarked( static_cast<TBarApp *>(be_app)->Settings()->superExpando);
+	subMenu->AddItem(item);
+
+	item = new BMenuItem("Expand New Teams", new BMessage(msg_expandNewTeams));
+	item->SetTarget(be_app);
+	item->SetMarked( static_cast<TBarApp *>(be_app)->Settings()->expandNewTeams);
+	item->SetEnabled(static_cast<TBarApp *>(be_app)->Settings()->superExpando);
+	subMenu->AddItem(item);
+ 
  	subMenu->SetFont(be_plain_font);
   	AddItem(subMenu);
 

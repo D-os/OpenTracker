@@ -474,10 +474,57 @@ TBarView::ChangeState(int32 state, bool vertical, bool left, bool top)
 		PlaceClock();	// clock is dependent on tray location
 #endif
 	}
-	PlaceApplicationBar(screenFrame);
-	SizeWindow(screenFrame);
-	PositionWindow(screenFrame);
-	Window()->UpdateIfNeeded();
+
+	// We need to keep track of what apps are expanded.
+	BList *expandedItems = NULL;
+	BString *sig = NULL;
+	if (fVertical && Expando() && static_cast<TBarApp *>(be_app)->Settings()->superExpando) {
+		// Get a list of the Signatures of expanded apps - Can't use team_id.
+		// ToDo: why? Isn't there a better way to do this?
+		expandedItems = new BList();
+		if (fVertical && Expando() && vertical && fExpando) {
+			TTeamMenuItem *currentItem;
+			for (int teamCount = 0; teamCount < fExpando->CountItems(); teamCount++) {
+				if (fExpando->ItemAt(teamCount)->Submenu()){
+					currentItem = static_cast<TTeamMenuItem *>(fExpando->ItemAt(teamCount));
+					if (currentItem && currentItem->IsExpanded()) {
+						sig = new BString(currentItem->Signature());
+						expandedItems->AddItem((void *)sig);
+					}
+				}
+			}
+		}
+	}
+
+ 	PlaceApplicationBar(screenFrame);
+ 	SizeWindow(screenFrame);
+ 	PositionWindow(screenFrame);
+ 	Window()->UpdateIfNeeded();
+
+	// Re-expand those apps.
+	if (expandedItems && (expandedItems->CountItems() > 0)) {
+		for (int sigCount = 0; sigCount < expandedItems->CountItems(); sigCount++) {
+			TTeamMenuItem *currentItem;
+			// Start at the 'bottom' of the list working up.
+			// Prevents being thrown off by expanding items.
+			for (int teamCount = fExpando->CountItems() - 1; teamCount >= 0; teamCount--) {
+				currentItem = static_cast<TTeamMenuItem *>(fExpando->ItemAt(teamCount));
+				sig = static_cast<BString *>(expandedItems->ItemAt(sigCount));
+				if (sig->Compare(currentItem->Signature()) == 0) {
+					currentItem->ToggleExpandState(false);
+					break;
+				}
+			}
+		}
+
+		// Clean up expanded signature list.
+		while (!expandedItems->IsEmpty()) {
+			delete static_cast<BString *>(expandedItems->RemoveItem((int32)0));
+		}
+		delete expandedItems;
+
+		fExpando->SizeWindow();
+	}
 	
 	Invalidate();
 }
