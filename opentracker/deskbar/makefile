@@ -68,6 +68,7 @@ sources_src := \
 	BarView.cpp				\
 	BarWindow.cpp			\
 	BeMenu.cpp				\
+	CalendarMenuItem.cpp	\
 	DeskBarUtils.cpp		\
 	ExpandoMenuBar.cpp		\
 	ShowHideMenuItem.cpp	\
@@ -124,6 +125,7 @@ CFLAGS := $(DEBUG) $(OPTIMIZER) $(WARNINGS) \
 	-D_INCLUDES_CLASS_DEVICE_MAP=1 \
 	-D_SUPPORTS_RESOURCES=1 \
 	-D_SUPPORTS_FEATURE_SCRIPTING=1 \
+	-D_SHOW_CALENDAR_MENU_ITEM=1
 #
 
 LDFLAGS	:= $(DEBUG)

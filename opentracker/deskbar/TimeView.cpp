@@ -35,6 +35,10 @@ All rights reserved.
 
 #include "TimeView.h"
 
+#ifdef _SHOW_CALENDAR_MENU_ITEM
+#	include "CalendarMenuItem.h"
+#endif
+
 #include <Debug.h>
 #include <MenuItem.h>
 #include <PopUpMenu.h>
@@ -469,9 +473,14 @@ TTimeView::CalculateTextPlacement()
 void
 TTimeView::ShowClockOptions(BPoint point)
 {
-	BPopUpMenu	*menu = new BPopUpMenu("", false, false);
+	BPopUpMenu *menu = new BPopUpMenu("", false, false);
 	menu->SetFont(be_plain_font);
-	BMenuItem	*item;
+	BMenuItem *item;
+
+#ifdef _SHOW_CALENDAR_MENU_ITEM
+	menu->AddItem(new CalendarMenuItem());
+	menu->AddSeparatorItem();
+#endif
 
 	item = new BMenuItem("Change Time" B_UTF8_ELLIPSIS, new BMessage(kMsgChangeClock));
 	menu->AddItem(item);
