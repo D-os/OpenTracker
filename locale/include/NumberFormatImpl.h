@@ -2,22 +2,21 @@
 #define _B_NUMBER_FORMAT_IMPL_H_
 
 #include <FormatImpl.h>
-#include <NumberFormatParameters.h>
 
 struct format_field_position;
-class BNumberFormat;
+class BNumberFormatParameters;
 
 class BNumberFormatImpl : public BFormatImpl {
 	public:
 		BNumberFormatImpl();
 		virtual ~BNumberFormatImpl();
 
-		BNumberFormatParameters *DefaultNumberFormatParameters();
-		const BNumberFormatParameters *DefaultNumberFormatParameters() const;
+		virtual BFormatParameters *DefaultFormatParameters();
+		virtual const BFormatParameters *DefaultFormatParameters() const;
 
-	private:
-		BNumberFormatParameters	fParameters;
+		virtual BNumberFormatParameters *DefaultNumberFormatParameters() = 0;
+		virtual const BNumberFormatParameters *DefaultNumberFormatParameters()
+			const = 0;
 };
-
 
 #endif	// _B_NUMBER_FORMAT_IMPL_H_

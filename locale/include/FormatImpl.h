@@ -1,19 +1,18 @@
 #ifndef _B_FORMAT_IMPL_H_
 #define _B_FORMAT_IMPL_H_
 
-#include <FormatParameters.h>
 #include <SupportDefs.h>
+
+class BFormatParameters;
 
 class BFormatImpl {
 	public:
 		BFormatImpl();
 		virtual ~BFormatImpl();
 
-		BFormatParameters *DefaultFormatParameters();
-		const BFormatParameters *DefaultFormatParameters() const;
-
-	private:
-		BFormatParameters	fParameters;
+		virtual BFormatParameters *DefaultFormatParameters() = 0;
+		virtual const BFormatParameters *DefaultFormatParameters()
+			const = 0;
 };
 
 #endif	// _B_FORMAT_IMPL_H_

@@ -1,9 +1,9 @@
 #ifndef _B_INTEGER_FORMAT_PARAMETERS_H_
 #define _B_INTEGER_FORMAT_PARAMETERS_H_
 
-#include <SupportDefs.h>
+#include <NumberFormatParameters.h>
 
-class BIntegerFormatParameters {
+class BIntegerFormatParameters : public BNumberFormatParameters {
 	public:
 		BIntegerFormatParameters(const BIntegerFormatParameters *parent = NULL);
 		BIntegerFormatParameters(const BIntegerFormatParameters &other);

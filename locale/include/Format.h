@@ -32,14 +32,14 @@ struct format_field_position {
 
 class BFormatImpl;
 
-class BFormat : public BFormatParameters {
-	public:
+class BFormat {
+	protected:
 		BFormat(const BFormat &other);
 		~BFormat();
 
 		BFormat &operator=(const BFormat &other);
 
-		BFormat(BFormatImpl *impl);		// conceptually private
+		BFormat(BFormatImpl *impl);
 
 	protected:
 		BFormatImpl	*fImpl;

@@ -1,7 +1,7 @@
 #ifndef _B_FLOAT_FORMAT_PARAMETERS_H_
 #define _B_FLOAT_FORMAT_PARAMETERS_H_
 
-#include <SupportDefs.h>
+#include <NumberFormatParameters.h>
 
 enum float_format_type {
 	B_FIXED_POINT_FLOAT_FORMAT,
@@ -10,7 +10,7 @@ enum float_format_type {
 									// number to be formatted
 };
 
-class BFloatFormatParameters {
+class BFloatFormatParameters : public BNumberFormatParameters {
 	public:
 		BFloatFormatParameters(const BFloatFormatParameters *parent = NULL);
 		BFloatFormatParameters(const BFloatFormatParameters &other);

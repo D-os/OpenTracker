@@ -3,8 +3,7 @@
 
 // copy constructor
 BNumberFormat::BNumberFormat(const BNumberFormat &other)
-	: BFormat(other),
-	  BNumberFormatParameters(other)
+	: BFormat(other)
 {
 }
 
@@ -18,14 +17,11 @@ BNumberFormat &
 BNumberFormat::operator=(const BNumberFormat &other)
 {
 	BFormat::operator=(other);
-	BNumberFormatParameters::operator=(other);
 }
 
 // constructor
 BNumberFormat::BNumberFormat(BNumberFormatImpl *impl)
-	: BFormat(impl),
-	  BNumberFormatParameters(impl ? impl->DefaultNumberFormatParameters()
-	  							   : NULL)
+	: BFormat(impl)
 {
 }
 

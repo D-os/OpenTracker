@@ -1,9 +1,9 @@
 #include <FloatFormatImpl.h>
+#include <FloatFormatParameters.h>
 
 // constructor
 BFloatFormatImpl::BFloatFormatImpl()
-	: BNumberFormatImpl(),
-	  fParameters()
+	: BNumberFormatImpl()
 {
 }
 
@@ -12,17 +12,17 @@ BFloatFormatImpl::~BFloatFormatImpl()
 {
 }
 
-// DefaultFloatFormatParameters
-BFloatFormatParameters *
-BFloatFormatImpl::DefaultFloatFormatParameters()
+// DefaultNumberFormatParameters
+BNumberFormatParameters *
+BFloatFormatImpl::DefaultNumberFormatParameters()
 {
-	return &fParameters;
+	return DefaultFloatFormatParameters();
 }
 
-// DefaultFloatFormatParameters
-const BFloatFormatParameters *
-BFloatFormatImpl::DefaultFloatFormatParameters() const
+// DefaultNumberFormatParameters
+const BNumberFormatParameters *
+BFloatFormatImpl::DefaultNumberFormatParameters() const
 {
-	return &fParameters;
+	return DefaultFloatFormatParameters();
 }
 

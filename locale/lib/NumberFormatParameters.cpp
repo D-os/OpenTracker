@@ -12,10 +12,11 @@ enum {
 // constructor
 BNumberFormatParameters::BNumberFormatParameters(
 	const BNumberFormatParameters *parent)
-	: fParent(parent),
+	: BFormatParameters(parent),
+	  fParent(parent),
 	  fUseGrouping(false),
 	  fSignPolicy(B_USE_NEGATIVE_SIGN_ONLY),
-	  fBase(B_DECIMAL_BASE),
+	  fBase(B_DEFAULT_BASE),
 	  fUseBasePrefix(false),
 	  fMinimalIntegerDigits(1),
 	  fFlags(0)
@@ -25,7 +26,8 @@ BNumberFormatParameters::BNumberFormatParameters(
 // copy constructor
 BNumberFormatParameters::BNumberFormatParameters(
 	const BNumberFormatParameters &other)
-	: fParent(other.fParent),
+	: BFormatParameters(other),
+	  fParent(other.fParent),
 	  fUseGrouping(other.fUseGrouping),
 	  fSignPolicy(other.fSignPolicy),
 	  fBase(other.fBase),
@@ -154,6 +156,7 @@ BNumberFormatParameters::ParentNumberParameters() const
 BNumberFormatParameters &
 BNumberFormatParameters::operator=(const BNumberFormatParameters &other)
 {
+	BFormatParameters::operator=(other);
 	fParent = other.fParent;
 	fUseGrouping = other.fUseGrouping;
 	fSignPolicy = other.fSignPolicy;

@@ -1,9 +1,9 @@
 #include <NumberFormatImpl.h>
+#include <NumberFormatParameters.h>
 
 // constructor
 BNumberFormatImpl::BNumberFormatImpl()
-	: BFormatImpl(),
-	  fParameters()
+	: BFormatImpl()
 {
 }
 
@@ -12,17 +12,17 @@ BNumberFormatImpl::~BNumberFormatImpl()
 {
 }
 
-// DefaultNumberFormatParameters
-BNumberFormatParameters *
-BNumberFormatImpl::DefaultNumberFormatParameters()
+// DefaultFormatParameters
+BFormatParameters *
+BNumberFormatImpl::DefaultFormatParameters()
 {
-	return &fParameters;
+	return DefaultNumberFormatParameters();
 }
 
-// DefaultNumberFormatParameters
-const BNumberFormatParameters *
-BNumberFormatImpl::DefaultNumberFormatParameters() const
+// DefaultFormatParameters
+const BFormatParameters *
+BNumberFormatImpl::DefaultFormatParameters() const
 {
-	return &fParameters;
+	return DefaultNumberFormatParameters();
 }
 

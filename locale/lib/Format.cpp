@@ -3,8 +3,7 @@
 
 // copy constructor
 BFormat::BFormat(const BFormat &other)
-	: BFormatParameters(other),
-	  fImpl(other.fImpl)
+	: fImpl(other.fImpl)
 {
 }
 
@@ -18,14 +17,12 @@ BFormat &
 BFormat::operator=(const BFormat &other)
 {
 	fImpl = other.fImpl;
-	BFormatParameters::operator=(other);
 	return *this;
 }
 
 // constructor
 BFormat::BFormat(BFormatImpl *impl)
-	: BFormatParameters(impl ? impl->DefaultFormatParameters() : NULL),
-	  fImpl(impl)
+	: fImpl(impl)
 {
 }
 

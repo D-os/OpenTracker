@@ -3,14 +3,16 @@
 // constructor
 BIntegerFormatParameters::BIntegerFormatParameters(
 	const BIntegerFormatParameters *parent)
-	: fParent(parent)
+	: BNumberFormatParameters(parent),
+	  fParent(parent)
 {
 }
 
 // copy constructor
 BIntegerFormatParameters::BIntegerFormatParameters(
 	const BIntegerFormatParameters &other)
-	: fParent(other.fParent)
+	: BNumberFormatParameters(other),
+	  fParent(other.fParent)
 {
 }
 
@@ -38,6 +40,7 @@ BIntegerFormatParameters::ParentIntegerParameters() const
 BIntegerFormatParameters &
 BIntegerFormatParameters::operator=(const BIntegerFormatParameters &other)
 {
+	BNumberFormatParameters::operator=(other);
 	fParent = other.fParent;
 }
 

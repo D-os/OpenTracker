@@ -13,7 +13,8 @@ enum {
 // constructor
 BFloatFormatParameters::BFloatFormatParameters(
 	const BFloatFormatParameters *parent)
-	: fParent(parent),
+	: BNumberFormatParameters(parent),
+	  fParent(parent),
 	  fMinimalFractionDigits(0),
 	  fMaximalFractionDigits(100),
 	  fUseCapitals(false),
@@ -27,7 +28,8 @@ BFloatFormatParameters::BFloatFormatParameters(
 // copy constructor
 BFloatFormatParameters::BFloatFormatParameters(
 	const BFloatFormatParameters &other)
-	: fParent(other.fParent),
+	: BNumberFormatParameters(other),
+	  fParent(other.fParent),
 	  fMinimalFractionDigits(other.fMinimalFractionDigits),
 	  fMaximalFractionDigits(other.fMaximalFractionDigits),
 	  fUseCapitals(other.fUseCapitals),
@@ -178,6 +180,7 @@ BFloatFormatParameters::ParentFloatParameters() const
 BFloatFormatParameters &
 BFloatFormatParameters::operator=(const BFloatFormatParameters &other)
 {
+	BNumberFormatParameters::operator=(other);
 	fParent = other.fParent;
 	fMinimalFractionDigits = other.fMinimalFractionDigits;
 	fMaximalFractionDigits = other.fMaximalFractionDigits;

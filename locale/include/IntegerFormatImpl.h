@@ -2,10 +2,9 @@
 #define _B_INTEGER_FORMAT_IMPL_H_
 
 #include <NumberFormatImpl.h>
-#include <IntegerFormatParameters.h>
 
 struct format_field_position;
-class BIntegerFormat;
+class BIntegerFormatParameters;
 
 class BIntegerFormatImpl : public BNumberFormatImpl {
 	public:
@@ -14,10 +13,10 @@ class BIntegerFormatImpl : public BNumberFormatImpl {
 
 		// formatting
 
-		virtual status_t Format(const BIntegerFormat *format, int64 number,
-								BString *buffer) const = 0;
-		virtual status_t Format(const BIntegerFormat *format, int64 number,
-								BString *buffer,
+		virtual status_t Format(const BIntegerFormatParameters *parameters,
+								int64 number, BString *buffer) const = 0;
+		virtual status_t Format(const BIntegerFormatParameters *parameters,
+								int64 number, BString *buffer,
 								format_field_position *positions,
 								int32 positionCount = 1,
 								int32 *fieldCount = NULL,
@@ -25,11 +24,13 @@ class BIntegerFormatImpl : public BNumberFormatImpl {
 
 		// TODO: ...
 
-		BIntegerFormatParameters *DefaultIntegerFormatParameters();
-		const BIntegerFormatParameters *DefaultIntegerFormatParameters() const;
+		virtual BNumberFormatParameters *DefaultNumberFormatParameters();
+		virtual const BNumberFormatParameters *DefaultNumberFormatParameters()
+			const;
 
-	private:
-		BIntegerFormatParameters	fParameters;
+		virtual BIntegerFormatParameters *DefaultIntegerFormatParameters() = 0;
+		virtual const BIntegerFormatParameters *DefaultIntegerFormatParameters()
+			const = 0;
 };
 
 

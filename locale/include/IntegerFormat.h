@@ -6,6 +6,11 @@
 
 class BIntegerFormatImpl;
 
+// Note: BIntegerFormat is derived from BIntegerFormatParameters only due
+// to my laziness. The parameters should probably be a private member
+// and this class (and its base classes) should mirror the parameters
+// classes' accessor methods.
+//
 class BIntegerFormat : public BNumberFormat, public BIntegerFormatParameters {
 	public:
 		BIntegerFormat(const BIntegerFormat &other);
