@@ -44,18 +44,21 @@ All rights reserved.
 
 
 class TWindowMenu : public BMenu {
-public:
-						TWindowMenu(const BList *team, const char *signature);
+	public:
+		TWindowMenu(const BList *team, const char *signature);
 
-virtual void			AttachedToWindow();
-virtual void			DetachedFromWindow();
-		
+		virtual void	AttachedToWindow();
+		virtual void	DetachedFromWindow();
+
 		BPoint			ScreenLocation();
+		void			SetExpanded(bool status, int addAtIndex);
+		static bool		WindowShouldBeListed(uint32 behavior);
 
-private:
-const 	BList*			fTeam;
+	private:
+		const BList		*fTeam;
 		BString			fApplicationSignature;
+		bool			fExpanded;
+		int				fExpandedIndex;
 };
 
 #endif /* WINDOWMENU_H */
-

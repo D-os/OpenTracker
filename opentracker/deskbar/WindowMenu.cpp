@@ -48,6 +48,7 @@ All rights reserved.
 
 #include "tracker_private.h"
 
+
 const int32 kDesktopWindow = 1024;
 const int32 kMenuWindow	= 1025;
 const uint32 kWindowScreen = 1026;
@@ -56,8 +57,9 @@ const int32 kTeamFloater = 4;
 const int32 kListFloater = 5;
 const int32 kSystemFloater = 6;
 
-inline bool
-WindowShouldBeListed(uint32 behavior)
+
+bool
+TWindowMenu::WindowShouldBeListed(uint32 behavior)
 {
 	if (behavior == kNormalWindow || behavior == kWindowScreen)
 		return true;
@@ -65,24 +67,26 @@ WindowShouldBeListed(uint32 behavior)
 	return false;
 }
 
+
 TWindowMenu::TWindowMenu(const BList *team, const char *signature)
 	:	BMenu("Deskbar Team Menu"), fTeam(team), 
-		fApplicationSignature(signature)
+		fApplicationSignature(signature), fExpanded(false), fExpandedIndex(0)
 {
 	SetItemMargins(0.0f, 0.0f, 0.0f, 0.0f);
 }
+
 
 void
 TWindowMenu::AttachedToWindow()
 {
 	SetFont(be_plain_font);
-
+	
 	BMenuItem *item = NULL;
 	while ((item = RemoveItem((int32)0)) != NULL)
 		delete (item);
-
+	
 	int32 miniCount = 0;
-
+	
 	bool dragging = false;
 	TBarView *barview =(static_cast<TBarApp *>(be_app))->BarView();
 	if (barview && barview->LockLooper()) {
@@ -104,13 +108,15 @@ TWindowMenu::AttachedToWindow()
 		}
 		barview->UnlockLooper();
 	}
-
+	
+	int32 parentMenuItems = 0;
+	
 	int32 numTeams = fTeam->CountItems();
 	for (int32 i = 0; i < numTeams; i++) {
 		team_id	theTeam = (team_id)fTeam->ItemAt(i);
 		int32 count = 0;
 		int32 *tokens = get_token_list(theTeam, &count);
-
+		
 		for (int32 j = 0; j < count; j++) {
 			window_info *wInfo = get_window_info(tokens[j]);
 			if (wInfo == NULL)
@@ -118,21 +124,37 @@ TWindowMenu::AttachedToWindow()
 
 			if (WindowShouldBeListed(wInfo->w_type)
 				&& (wInfo->show_hide_level <= 0 || wInfo->is_mini)) {
+				// Don't add new items if we're expanded. We've already done this,
+				// they've just been moved.
 				int32 numItems = CountItems();
 				int32 addIndex = 0;
 				for (; addIndex < numItems; addIndex++)
 					if (strcasecmp(ItemAt(addIndex)->Label(), wInfo->name) > 0)
 						break;
-				
-				TWindowMenuItem* item = new TWindowMenuItem(wInfo->name, wInfo->id, 
-					wInfo->is_mini, ((1 << current_workspace()) & wInfo->workspaces) != 0,
-					dragging);
 
-				// disable app's window dropping for now
-				if (dragging)
-					item->SetEnabled(false);
-					
-				AddItem(item, addIndex);
+				if (!fExpanded) {
+					TWindowMenuItem *item = new TWindowMenuItem(wInfo->name, wInfo->id, 
+						wInfo->is_mini, ((1 << current_workspace()) & wInfo->workspaces) != 0,
+						dragging);
+
+					// disable app's window dropping for now
+					if (dragging)
+						item->SetEnabled(false);
+
+					AddItem(item, addIndex);
+				} else {
+					TTeamMenuItem *parentItem = static_cast<TTeamMenuItem *>(Superitem());
+					if (parentItem->ExpandedWindowItem(wInfo->id)) {
+						TWindowMenuItem *item = parentItem->ExpandedWindowItem(wInfo->id);
+						if (item == NULL)
+							continue;
+
+						item->SetTo(wInfo->name, wInfo->id, wInfo->is_mini,
+							((1 << current_workspace()) & wInfo->workspaces) != 0, dragging);
+						parentMenuItems++;
+					}
+				}
+
 				if (wInfo->is_mini)
 					miniCount++;
 			}
@@ -141,7 +163,7 @@ TWindowMenu::AttachedToWindow()
 		free(tokens);
 	}
 
-	int32 itemCount = CountItems();
+	int32 itemCount = CountItems() + parentMenuItems;
 	if (itemCount < 1) {
 		TWindowMenuItem *noWindowsItem =
  			new TWindowMenuItem("No Windows", -1, false, false);
@@ -149,7 +171,7 @@ TWindowMenu::AttachedToWindow()
 		noWindowsItem->SetEnabled(false);
 
 		AddItem(noWindowsItem);
- 		
+
 		// if an application has no windows, this feature makes it easy to quit it.
  		// (but we only add this option if the application is not Tracker.)
  		if (fApplicationSignature.Compare(kTrackerSignature) != 0) {
@@ -172,21 +194,23 @@ TWindowMenu::AttachedToWindow()
 			else if (miniCount == 0)
 				show->SetEnabled(false);
 			
-			AddSeparatorItem();
+			if (!parentMenuItems)
+				AddSeparatorItem();
 			AddItem(hide);
 			AddItem(show);
 			AddItem(close);
 		}
 	}
-
+	
 	BMenu::AttachedToWindow();
 }
+
 
 void
 TWindowMenu::DetachedFromWindow()
 {
-	//	//	in expando mode the teammenu will not call DragStop,
-	//	thus, it needs to be called from here
+	// in expando mode the teammenu will not call DragStop,
+	// thus, it needs to be called from here
 	TBarView *barview = (dynamic_cast<TBarApp*>(be_app))->BarView();
 	if (barview && barview->Expando()) {
 		BLooper *looper = barview->Looper();
@@ -196,12 +220,22 @@ TWindowMenu::DetachedFromWindow()
 			looper->Unlock();
 		}
 	}
-
+	
 	BMenu::DetachedFromWindow();
 }
+
 
 BPoint
 TWindowMenu::ScreenLocation()
 {
 	return BMenu::ScreenLocation();
 }
+
+
+void
+TWindowMenu::SetExpanded(bool status, int lastIndex)
+{
+	fExpanded = status;
+	fExpandedIndex = lastIndex;
+}
+

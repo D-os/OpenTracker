@@ -35,37 +35,50 @@ All rights reserved.
 #include <Debug.h>
 #include <stdio.h>
 #include <Bitmap.h>
-#include "icons.h"
+
+#include "BarApp.h"
 #include "BarMenuBar.h"
 #include "ExpandoMenuBar.h"
 #include "ResourceSet.h"
 #include "TeamMenu.h"
 #include "WindowMenu.h"
 #include "WindowMenuItem.h"
+#include "icons.h"
+
 
 const float	kHPad = 10.0f;
 const float	kVPad = 2.0f;
 const float	kLabelOffset = 8.0f;
 const BRect	kIconRect(1.0f, 1.0f, 13.0f, 14.0f);
 
-TWindowMenuItem::TWindowMenuItem(const char* title, int32 id,
+
+TWindowMenuItem::TWindowMenuItem(const char *title, int32 id,
 	bool mini, bool currentWorkspace, bool dragging)
 	:	BMenuItem(title, NULL),
-		fID(id),
-		fMini(mini),
-		fCurrentWS(currentWorkspace),
-		fDragging(dragging)
+	fID(id),
+	fMini(mini),
+	fCurrentWorkSpace(currentWorkspace),
+	fDragging(dragging),
+	fExpanded(false),
+	fRequireUpdate(false),
+	fModified(false)
 {
+	Initialize(title);
+}
 
+
+void
+TWindowMenuItem::Initialize(const char *title)
+{
 	if (fMini)
- 		fBitmap = fCurrentWS
+ 		fBitmap = fCurrentWorkSpace
 			? AppResSet()->FindBitmap(B_MESSAGE_TYPE, R_WindowHiddenIcon)
 			: AppResSet()->FindBitmap(B_MESSAGE_TYPE, R_WindowHiddenSwitchIcon);
 	else
- 		fBitmap = fCurrentWS
+ 		fBitmap = fCurrentWorkSpace
 			? AppResSet()->FindBitmap(B_MESSAGE_TYPE, R_WindowShownIcon)
 			: AppResSet()->FindBitmap(B_MESSAGE_TYPE, R_WindowShownSwitchIcon);
-							  
+
 	BFont font(be_plain_font);
 	fTitleWidth = ceilf(font.StringWidth(title));
 	font_height fontHeight;
@@ -74,12 +87,49 @@ TWindowMenuItem::TWindowMenuItem(const char* title, int32 id,
 	fTitleDescent = ceilf(fontHeight.descent + fontHeight.leading);
 }
 
+
+void
+TWindowMenuItem::SetTo(const char *title, int32 id,
+	bool mini, bool currentWorkspace, bool dragging)
+{
+	fModified = fCurrentWorkSpace != currentWorkspace || fMini != mini;
+
+	fID = id;
+	fMini = mini;
+	fCurrentWorkSpace = currentWorkspace;
+	fDragging = dragging;
+	fRequireUpdate = false;
+
+	Initialize(title);
+}
+
+
+bool
+TWindowMenuItem::ChangedState()
+{
+	return fModified;
+}
+
+
+int32
+TWindowMenuItem::ID()
+{
+	return fID;
+}
+
+
 void
 TWindowMenuItem::GetContentSize(float *width, float *height)
 {
-	*width = kHPad + fTitleWidth + kHPad;
-	if (fID >= 0)
-		*width += fBitmap->Bounds().Width() + kLabelOffset; 
+	if (!fExpanded) {
+		*width = kHPad + fTitleWidth + kHPad;
+		if (fID >= 0)
+			*width += fBitmap->Bounds().Width() + kLabelOffset;
+	} else
+		*width = Frame().Width() - kHPad;
+
+	// ToDo: label width is not correct yet - the text label is
+	//	always written completely, if it fits or not!
 
 	*height = (fID >= 0) ? fBitmap->Bounds().Height() : 0.0f;
 	float labelHeight = fTitleAscent + fTitleDescent;
@@ -87,13 +137,56 @@ TWindowMenuItem::GetContentSize(float *width, float *height)
 	*height += kVPad * 2;
 }
 
+
+void
+TWindowMenuItem::Draw()
+{
+	if (fExpanded) {
+		rgb_color menuColor = ui_color(B_MENU_BACKGROUND_COLOR);
+		BRect frame(Frame());
+		BMenu *menu = Menu();
+
+		menu->PushState();
+
+		//	if not selected or being tracked on, fill with gray
+		TBarView *barview = (static_cast<TBarApp *>(be_app))->BarView();
+		if (!IsSelected() && !menu->IsRedrawAfterSticky() || barview->Dragging() || !IsEnabled()) {
+			menu->SetHighColor(menuColor);
+			menu->FillRect(frame);
+
+			if (fExpanded) {
+				rgb_color shadow = tint_color(menuColor, B_DARKEN_1_TINT);
+				menu->SetHighColor(shadow);
+				frame.right = frame.left + kHPad / 2;
+				menu->FillRect(frame);
+			}	
+		}
+
+		if (IsEnabled() && IsSelected() && !menu->IsRedrawAfterSticky()) {
+			// fill
+			menu->SetHighColor(tint_color(menuColor, B_HIGHLIGHT_BACKGROUND_TINT));
+			menu->FillRect(frame);
+		} else 
+			menu->SetLowColor(menuColor);
+
+		menu->MovePenTo(ContentLocation());
+		DrawContent();
+		menu->PopState();
+	}
+	BMenuItem::Draw();
+}
+
+
 void
 TWindowMenuItem::DrawContent()
 {
 	BMenu *menu = Menu();
+	menu->PushState();
+
 	BRect frame(Frame());
 	BPoint contLoc = ContentLocation() + BPoint(kHPad, kVPad);
-
+	if (fExpanded)
+		contLoc.x += kHPad;
 	menu->SetDrawingMode(B_OP_COPY);
 
 	if (fID >= 0) {
@@ -105,7 +198,6 @@ TWindowMenuItem::DrawContent()
 			contLoc.x -= 8;
 
 		menu->MovePenTo(contLoc);
-			
 		menu->DrawBitmapAsync(fBitmap);
 
 		if (width > 16)
@@ -118,8 +210,11 @@ TWindowMenuItem::DrawContent()
 	contLoc.y = frame.top + ((frame.Height() - fTitleAscent - fTitleDescent) / 2) + 1.0f;
 
 	menu->MovePenTo(contLoc);
+	// Set the pen color so that the label is always visible.
+	menu->SetHighColor(0, 0, 0);
 	BMenuItem::DrawContent();
 }
+
 
 status_t
 TWindowMenuItem::Invoke(BMessage *)
@@ -128,18 +223,45 @@ TWindowMenuItem::Invoke(BMessage *)
 		if (fID >= 0) {
 			int32 action = (modifiers() & B_CONTROL_KEY)
 				? B_MINIMIZE_WINDOW :B_BRING_TO_FRONT;
-	
+
 			bool doZoom = false;
 			BRect zoomRect(0.0f, 0.0f, 0.0f, 0.0f);
-			BMenuItem *item = Menu()->Superitem();
+			BMenuItem *item;
+			if (!fExpanded)
+				item = Menu()->Superitem();
+			else
+				item = this;
+
 			if (item->Menu()->Window() != NULL) {
 				zoomRect = item->Menu()->ConvertToScreen(item->Frame());
 				doZoom = fMini && (action == B_BRING_TO_FRONT) ||
 						  !fMini && (action == B_MINIMIZE_WINDOW);
 			}
-	
+
 			do_window_action(fID, action, zoomRect, doZoom);
 		}
 	}
 	return B_OK;
 }
+
+
+void
+TWindowMenuItem::ExpandedItem(bool status)
+{
+	fExpanded = status;
+}
+
+
+void
+TWindowMenuItem::SetRequireUpdate()
+{
+	fRequireUpdate = true;
+}
+
+
+bool
+TWindowMenuItem::RequiresUpdate()
+{
+	return fRequireUpdate;
+}
+

@@ -40,30 +40,44 @@ All rights reserved.
 #define WINDOWMENUITEM_H
 
 #include <MenuItem.h>
+#include <String.h>
 
 
 class BBitmap;
 
 
 class TWindowMenuItem : public BMenuItem {
-public:
-	TWindowMenuItem(const char *title, int32 id, bool mini,
-		bool current_ws, bool dragging=false);
+	public:
+		TWindowMenuItem(const char *title, int32 id, bool mini,
+			bool currentWorkSpace, bool dragging = false);
 
-protected:
-	virtual	void GetContentSize(float *width, float *height);
-	virtual void DrawContent();
-	virtual status_t Invoke(BMessage *message = NULL);
+		void ExpandedItem(bool state);
+		void SetTo(const char *title, int32 id, bool mini,
+			bool currentWorkSpace, bool dragging = false);
+		int32 ID();
+		void SetRequireUpdate();
+		bool RequiresUpdate();
+		bool ChangedState();
 
-private: 
-	int32 fID;
-	bool fMini;
-	bool fCurrentWS;
-	const BBitmap *fBitmap;
-	float fTitleWidth;
-	float fTitleAscent;
-	float fTitleDescent;
-	bool fDragging;
+	protected:
+		void Initialize(const char *title);
+		virtual	void GetContentSize(float *width, float *height);
+		virtual void DrawContent();
+		virtual status_t Invoke(BMessage *message = NULL);
+		virtual void Draw();
+
+	private: 
+		int32 fID;
+		bool fMini;
+		bool fCurrentWorkSpace;
+		const BBitmap *fBitmap;
+		float fTitleWidth;
+		float fTitleAscent;
+		float fTitleDescent;
+		bool fDragging;
+		bool fExpanded;
+		bool fRequireUpdate;
+		bool fModified;
 };
 
 /****************************************************************************
