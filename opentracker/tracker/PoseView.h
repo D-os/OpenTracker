@@ -271,6 +271,7 @@ public:
 	// selection
 	PoseList *SelectionList() const;
 	void SelectAll();
+	void InvertSelection();
 	int32 SelectMatchingEntries(const BMessage *);
 	void ShowSelectionWindow();
 	void ClearSelection();

@@ -44,6 +44,7 @@ All rights reserved.
 #include "QueryContainerWindow.h"
 #include "QueryPoseView.h"
 
+
 BQueryContainerWindow::BQueryContainerWindow(LockingList<BWindow> *windowList,
 	uint32 containerWindowFlags, window_look look,
 	window_feel feel, uint32 flags, uint32 workspace)
@@ -52,17 +53,20 @@ BQueryContainerWindow::BQueryContainerWindow(LockingList<BWindow> *windowList,
 {
 }
 
+
 BPoseView *
 BQueryContainerWindow::NewPoseView(Model *model, BRect rect, uint32)
 {
 	return new BQueryPoseView(model, rect);
 }
 
+
 BQueryPoseView *
 BQueryContainerWindow::PoseView() const
 {
 	return static_cast<BQueryPoseView *>(fPoseView);
 }
+
 
 void
 BQueryContainerWindow::CreatePoseView(Model *model)
@@ -74,6 +78,7 @@ BQueryContainerWindow::CreatePoseView(Model *model)
 
 	AddChild(fPoseView);
 }
+
 
 void
 BQueryContainerWindow::AddWindowMenu(BMenu *menu)
@@ -92,10 +97,15 @@ BQueryContainerWindow::AddWindowMenu(BMenu *menu)
 	item->SetTarget(PoseView());
 	menu->AddItem(item);
 
+	item = new BMenuItem("Invert Selection", new BMessage(kInvertSelection), 'S');
+	item->SetTarget(PoseView());
+	menu->AddItem(item);
+
 	item = new BMenuItem("Close", new BMessage(B_CLOSE_REQUESTED), 'W');
 	item->SetTarget(this);
 	menu->AddItem(item);
 }
+
 
 void 
 BQueryContainerWindow::AddWindowContextMenus(BMenu *menu)
@@ -105,6 +115,7 @@ BQueryContainerWindow::AddWindowContextMenus(BMenu *menu)
 	menu->AddItem(resizeItem);
 	menu->AddItem(new BMenuItem("Select"B_UTF8_ELLIPSIS, new BMessage(kShowSelectionWindow), 'A', B_SHIFT_KEY));
 	menu->AddItem(new BMenuItem("Select All", new BMessage(B_SELECT_ALL), 'A'));
+	menu->AddItem(new BMenuItem("Invert Selection", new BMessage(kInvertSelection), 'S'));
 	BMenuItem *closeItem = new BMenuItem("Close",
 		new BMessage(B_CLOSE_REQUESTED), 'W');
 	menu->AddItem(closeItem);
@@ -119,16 +130,15 @@ void
 BQueryContainerWindow::SetUpDefaultState()
 {
 	BNode defaultingNode;
-	
-	
+
 	WindowStateNodeOpener opener(this, true);
 		// this is our destination node, whatever it is for this window
 	if (!opener.StreamNode())
 		return;
-	
+
 	BString defaultStatePath(kQueryTemplates);
 	BString sanitizedType(PoseView()->SearchForType());
-	
+
 	defaultStatePath += '/';
 	int32 length = sanitizedType.Length();
 	char *buf = sanitizedType.LockBuffer(length);
@@ -136,7 +146,7 @@ BQueryContainerWindow::SetUpDefaultState()
 		if (buf[index] == '/')
 			buf[index] = '_';
 	sanitizedType.UnlockBuffer(length);
-	
+
 	defaultStatePath += sanitizedType;
 
 	PRINT(("looking for default query state at %s\n", defaultStatePath.String()));
@@ -147,7 +157,7 @@ BQueryContainerWindow::SetUpDefaultState()
 	}
 
 	// copy over the attributes
-	
+
 	// set up a filter of the attributes we want copied
 	const char *allowAttrs[] = {
 		kAttrWindowFrame,
@@ -164,6 +174,7 @@ BQueryContainerWindow::SetUpDefaultState()
 	AttributeStreamFileNode fileNode(&defaultingNode);
 	*opener.StreamNode() << memoryNode << filter << fileNode;
 }
+
 
 bool 
 BQueryContainerWindow::ActiveOnDevice(dev_t device) const

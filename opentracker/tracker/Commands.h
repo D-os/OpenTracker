@@ -80,6 +80,7 @@ const uint32 kResizeToFit = 'Trtf';
 const uint32 kSelectMatchingEntries = 'Tsme';
 const uint32 kShowSelectionWindow = 'Tssw';
 const uint32 kShowSettingsWindow = 'Tstw';
+const uint32 kInvertSelection = 'Tisl';
 
 const uint32 kCancelButton = 'Tcnl';
 const uint32 kDefaultButton = 'Tact';

@@ -124,7 +124,8 @@ BVolumeWindow::AddWindowContextMenus(BMenu *menu)
 	menu->AddItem(new BMenuItem("Clean Up", new BMessage(kCleanup), 'K'));
 	menu->AddItem(new BMenuItem("Select"B_UTF8_ELLIPSIS, new BMessage(kShowSelectionWindow), 'A', B_SHIFT_KEY));
 	menu->AddItem(new BMenuItem("Select All", new BMessage(B_SELECT_ALL), 'A'));
-
+	menu->AddItem(new BMenuItem("Invert Selection", new BMessage(kInvertSelection), 'S'));
+	
 	BMenuItem *closeItem = new BMenuItem("Close",
 		new BMessage(B_CLOSE_REQUESTED), 'W');
 	menu->AddItem(closeItem);

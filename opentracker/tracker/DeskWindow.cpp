@@ -66,6 +66,7 @@ All rights reserved.
 const char *kShelfPath = "tracker_shelf";
 	// replicant support
 
+
 BDeskWindow::BDeskWindow(LockingList<BWindow> *windowList)
 	:	BContainerWindow(windowList, 0,
 			kPrivateDesktopWindowLook, kPrivateDesktopWindowFeel,
@@ -78,6 +79,7 @@ BDeskWindow::BDeskWindow(LockingList<BWindow> *windowList)
 {
 }
 
+
 BDeskWindow::~BDeskWindow()
 {
 	SaveDesktopPoseLocations();
@@ -88,6 +90,7 @@ BDeskWindow::~BDeskWindow()
 	PoseView()->StopSettingsWatch();
 	stop_watching(this);
 }
+
 
 static void
 WatchAddOnDir(directory_which dirName, BDeskWindow *window)
@@ -101,6 +104,7 @@ WatchAddOnDir(directory_which dirName, BDeskWindow *window)
 		TTracker::WatchNode(&nodeRef, B_WATCH_DIRECTORY, window);
 	}
 }
+
 
 void
 BDeskWindow::Init(const BMessage *)
@@ -137,6 +141,7 @@ BDeskWindow::Init(const BMessage *)
 	_inherited::Init();
 }
 
+
 struct AddOneShortcutParams {
 	BDeskWindow *window;
 	std::set<uint32> *currentAddonShortcuts;
@@ -160,6 +165,7 @@ AddOneShortcut(const Model *model, const char *, uint32 shortcut, void *context)
 	
 	return false;
 }
+
 
 void
 BDeskWindow::MenusBeginning()
@@ -186,6 +192,7 @@ BDeskWindow::MenusBeginning()
 	}
 }
 
+
 void
 BDeskWindow::Quit()
 {
@@ -207,11 +214,13 @@ BDeskWindow::Quit()
 	_inherited::Quit();
 }
 
+
 BPoseView *
 BDeskWindow::NewPoseView(Model *model, BRect rect, uint32 viewMode)
 {
 	return new DesktopPoseView(model, rect, viewMode);
 }
+
 
 void
 BDeskWindow::CreatePoseView(Model *model)
@@ -236,6 +245,7 @@ BDeskWindow::CreatePoseView(Model *model)
 	PoseView()->StartSettingsWatch();
 }
 
+
 void 
 BDeskWindow::AddWindowContextMenus(BMenu *menu)
 {
@@ -253,17 +263,18 @@ BDeskWindow::AddWindowContextMenus(BMenu *menu)
 	menu->AddItem(new BMenuItem("Select"B_UTF8_ELLIPSIS,
 		new BMessage(kShowSelectionWindow), 'A', B_SHIFT_KEY));
 	menu->AddItem(new BMenuItem("Select All", new BMessage(B_SELECT_ALL), 'A'));
+	menu->AddItem(new BMenuItem("Invert Selection", new BMessage(kInvertSelection), 'S'));
 
 	menu->AddSeparatorItem();
 	menu->AddItem(new MountMenu("Mount"));
 
 	menu->AddSeparatorItem();
-
 	menu->AddItem(new BMenu(kAddOnsMenuName));
 
 	// target items as needed
 	menu->SetTargetForItems(PoseView());
 }
+
 
 void
 BDeskWindow::AddTrashContextMenu()
@@ -278,6 +289,7 @@ BDeskWindow::AddTrashContextMenu()
 	fTrashContextMenu->AddItem(new BMenuItem("Get Info", new BMessage(kGetInfo), 'I'));
 	fTrashContextMenu->SetTargetForItems(PoseView());
 }
+
 
 void
 BDeskWindow::ShowContextMenu(BPoint loc, const entry_ref *ref, BView *view)
@@ -309,6 +321,7 @@ BDeskWindow::ShowContextMenu(BPoint loc, const entry_ref *ref, BView *view)
 		_inherited::ShowContextMenu(loc, ref, view);
 }
 
+
 void 
 BDeskWindow::WorkspaceActivated(int32 workspace, bool state)
 {
@@ -316,11 +329,13 @@ BDeskWindow::WorkspaceActivated(int32 workspace, bool state)
 		fBackgroundImage->WorkspaceActivated(PoseView(), workspace, state);
 }
 
+
 void 
 BDeskWindow::SaveDesktopPoseLocations()
 {
 	PoseView()->SavePoseLocations(&fOldFrame);
 }
+
 
 void
 BDeskWindow::ScreenChanged(BRect frame, color_space space)
@@ -339,6 +354,7 @@ BDeskWindow::ScreenChanged(BRect frame, color_space space)
 		// get rearranged based on old pose info for the frame
 }
 
+
 void 
 BDeskWindow::UpdateDesktopBackgroundImages()
 {
@@ -346,6 +362,7 @@ BDeskWindow::UpdateDesktopBackgroundImages()
 	fBackgroundImage = BackgroundImage::Refresh(fBackgroundImage,
 		opener.Node(), true, PoseView());
 }
+
 
 void
 BDeskWindow::Show()
@@ -358,11 +375,13 @@ BDeskWindow::Show()
 	_inherited::Show();
 }
 
+
 bool
 BDeskWindow::ShouldAddScrollBars() const
 {
 	return false;
 }
+
 
 bool
 BDeskWindow::ShouldAddMenus() const
@@ -370,11 +389,13 @@ BDeskWindow::ShouldAddMenus() const
 	return false;
 }
 
+
 bool
 BDeskWindow::ShouldAddContainerView() const
 {
 	return false;
 }
+
 
 void
 BDeskWindow::MessageReceived(BMessage *message)
@@ -403,3 +424,4 @@ BDeskWindow::MessageReceived(BMessage *message)
 			break;
 	}
 }
+

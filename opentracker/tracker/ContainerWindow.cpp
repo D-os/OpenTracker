@@ -1338,6 +1338,10 @@ BContainerWindow::AddWindowMenu(BMenu *menu)
 	item->SetTarget(PoseView());
 	menu->AddItem(item);
 	
+	item = new BMenuItem("Invert Selection", new BMessage(kInvertSelection), 'S');
+	item->SetTarget(PoseView());
+	menu->AddItem(item);
+	
 	if (!IsTrash()) {
 		item = new BMenuItem("Open Parent", new BMessage(kOpenParentDir),
 			B_UP_ARROW);
@@ -1374,6 +1378,7 @@ BContainerWindow::AddShortcuts()
 	AddShortcut('T', B_COMMAND_KEY, new BMessage(kMoveToTrash), PoseView());
 	AddShortcut('K', B_COMMAND_KEY, new BMessage(kCleanup), PoseView());
 	AddShortcut('A', B_COMMAND_KEY, new BMessage(B_SELECT_ALL), PoseView());
+	AddShortcut('S', B_COMMAND_KEY, new BMessage(kInvertSelection), PoseView());
 	AddShortcut('A', B_COMMAND_KEY | B_SHIFT_KEY, new BMessage(kShowSelectionWindow), PoseView());
 	AddShortcut('G', B_COMMAND_KEY, new BMessage(kEditQuery), PoseView());
 		// it is ok to add a global Edit query shortcut here, PoseView will
@@ -2018,6 +2023,7 @@ BContainerWindow::AddWindowContextMenus(BMenu *menu)
 	menu->AddItem(new BMenuItem("Select"B_UTF8_ELLIPSIS,
 		new BMessage(kShowSelectionWindow), 'A', B_SHIFT_KEY));
 	menu->AddItem(new BMenuItem("Select All", new BMessage(B_SELECT_ALL), 'A'));
+	menu->AddItem(new BMenuItem("Invert Selection", new BMessage(kInvertSelection), 'S'));
 	if (!IsTrash()) 
 		menu->AddItem(new BMenuItem("Open Parent", new BMessage(kOpenParentDir),
 			B_UP_ARROW));

@@ -73,6 +73,10 @@ All rights reserved.
 #include "PoseView.h"
 #include "Tracker.h"
 
+
+const char *kDefaultFilePanelTemplate = "FilePanelSettings";
+
+
 static uint32
 GetLinkFlavor(const Model *model, bool resolve = true)
 {
@@ -89,6 +93,7 @@ GetLinkFlavor(const Model *model, bool resolve = true)
 
 	return B_FILE_NODE;
 }
+
 
 static filter_result
 key_down_filter(BMessage *message, BHandler **, BMessageFilter *filter)
@@ -121,6 +126,7 @@ key_down_filter(BMessage *message, BHandler **, BMessageFilter *filter)
 
 	return B_DISPATCH_MESSAGE;
 }
+
 
 filter_result
 TFilePanel::MessageDropFilter(BMessage *message, BHandler **, BMessageFilter *filter)
@@ -171,6 +177,7 @@ TFilePanel::MessageDropFilter(BMessage *message, BHandler **, BMessageFilter *fi
 
 	return B_SKIP_MESSAGE;
 }
+
 
 filter_result
 TFilePanel::FSFilter(BMessage *message, BHandler **, BMessageFilter *filter)
@@ -229,9 +236,9 @@ TFilePanel::FSFilter(BMessage *message, BHandler **, BMessageFilter *filter)
 			}
 			break;
 	}
-
 	return B_DISPATCH_MESSAGE;
 }
+
 
 TFilePanel::TFilePanel(file_panel_mode mode, BMessenger *target,
 		const BEntry *startDir, uint32 nodeFlavors, bool multipleSelection,
@@ -263,14 +270,12 @@ TFilePanel::TFilePanel(file_panel_mode mode, BMessenger *target,
 	else
 		fTarget = BMessenger(be_app);
 
-
 	if (message)
 		SetMessage(message);
 	else if (fIsSavePanel)
 		fMessage = new BMessage(B_SAVE_REQUESTED);
 	else
 		fMessage = new BMessage(B_REFS_RECEIVED);
-
 
 	// check for legal starting directory
 	Model *model = new Model();
@@ -326,6 +331,7 @@ TFilePanel::TFilePanel(file_panel_mode mode, BMessenger *target,
 	Init();
 }
 
+
 TFilePanel::~TFilePanel()
 {
 	//	regardless of the hide/close method
@@ -344,6 +350,7 @@ TFilePanel::~TFilePanel()
 	delete fMessage;
 }
 
+
 void
 TFilePanel::DispatchMessage(BMessage *message, BHandler *handler)
 {
@@ -352,12 +359,14 @@ TFilePanel::DispatchMessage(BMessage *message, BHandler *handler)
 		AdjustButton();
 }
 
+
 BFilePanelPoseView *
 TFilePanel::PoseView() const
 {
 	ASSERT(dynamic_cast<BFilePanelPoseView *>(fPoseView));
 	return static_cast<BFilePanelPoseView *>(fPoseView);
 }
+
 
 bool
 TFilePanel::QuitRequested()
@@ -391,11 +400,13 @@ TFilePanel::Filter() const
 	return fPoseView->RefFilter();
 }
 
+
 void
 TFilePanel::SetTarget(BMessenger target)
 {
 	fTarget = target;
 }
+
 
 void
 TFilePanel::SetMessage(BMessage *message)
@@ -403,6 +414,7 @@ TFilePanel::SetMessage(BMessage *message)
 	delete fMessage;
 	fMessage = new BMessage(*message);
 }
+
 
 void
 TFilePanel::SetRefFilter(BRefFilter *filter)
@@ -414,6 +426,7 @@ TFilePanel::SetRefFilter(BRefFilter *filter)
 	fPoseView->CommitActivePose();
 	fPoseView->Refresh();
 }
+
 
 void
 TFilePanel::SetTo(const entry_ref *ref)
@@ -440,17 +453,20 @@ TFilePanel::SetTo(const entry_ref *ref)
 		// this - this is a workaround for a kit bug.
 }
 
+
 void
 TFilePanel::Rewind()
 {
 	fSelectionIterator = 0;
 }
 
+
 void
 TFilePanel::SetClientObject(BFilePanel *panel)
 {
 	fClientObject = panel;
 }
+
 
 void
 TFilePanel::AdjustButton()
@@ -510,6 +526,7 @@ TFilePanel::AdjustButton()
 	button->SetEnabled(enabled);
 }
 
+
 void
 TFilePanel::SelectionChanged()
 {
@@ -518,6 +535,7 @@ TFilePanel::SelectionChanged()
 	if (fClientObject)
 		fClientObject->SelectionChanged();
 }
+
 
 status_t
 TFilePanel::GetNextEntryRef(entry_ref *ref)
@@ -533,11 +551,13 @@ TFilePanel::GetNextEntryRef(entry_ref *ref)
 	return B_OK;
 }
 
+
 BPoseView *
 TFilePanel::NewPoseView(Model *model, BRect rect, uint32)
 {
 	return new BFilePanelPoseView(model, rect);
 }
+
 
 void
 TFilePanel::Init(const BMessage *)
@@ -728,7 +748,6 @@ TFilePanel::Init(const BMessage *)
 	SetSizeLimits(360, 10000, 200, 10000);
 }
 
-const char *kDefaultFilePanelTemplate = "FilePanelSettings";
 
 void 
 TFilePanel::RestoreState()
@@ -744,6 +763,7 @@ TFilePanel::RestoreState()
 	}
 }
 
+
 void 
 TFilePanel::SaveState(bool)
 {
@@ -756,11 +776,13 @@ TFilePanel::SaveState(bool)
 	}
 }
 
+
 void
 TFilePanel::SaveState(BMessage &message) const
 {
 	_inherited::SaveState(message);	
 }
+
 
 void 
 TFilePanel::RestoreWindowState(AttributeStreamNode *node)
@@ -778,11 +800,13 @@ TFilePanel::RestoreWindowState(AttributeStreamNode *node)
 	}
 }
 
+
 void
 TFilePanel::RestoreState(const BMessage &message)
 {
 	_inherited::RestoreState(message);	
 }
+
 
 void
 TFilePanel::RestoreWindowState(const BMessage &message)
@@ -800,6 +824,7 @@ TFilePanel::AddFileContextMenus(BMenu *menu)
 	menu->SetTargetForItems(PoseView());
 }
 
+
 void 
 TFilePanel::AddVolumeContextMenus(BMenu *menu)
 {	
@@ -808,6 +833,7 @@ TFilePanel::AddVolumeContextMenus(BMenu *menu)
 	menu->AddItem(new BMenuItem("Edit Name", new BMessage(kEditItem), 'E'));
 	menu->SetTargetForItems(PoseView());
 }
+
 
 void
 TFilePanel::AddWindowContextMenus(BMenu *menu)
@@ -826,15 +852,21 @@ TFilePanel::AddWindowContextMenus(BMenu *menu)
 	item->SetTarget(PoseView());
 	menu->AddItem(item);
 
+	item = new BMenuItem("Invert Selection", new BMessage(kInvertSelection), 'S');
+	item->SetTarget(PoseView());
+	menu->AddItem(item);
+
 	item = new BMenuItem("Go To Parent", new BMessage(kOpenParentDir), B_UP_ARROW);
 	item->SetTarget(this);
 	menu->AddItem(item);
 }
 
+
 void 
 TFilePanel::AddDropContextMenus(BMenu *)
 {
 }
+
 
 void
 TFilePanel::MenusBeginning()
@@ -849,11 +881,13 @@ TFilePanel::MenusBeginning()
 	fIsTrackingMenu = true;
 }
 
+
 void 
 TFilePanel::MenusEnded()
 {
 	fIsTrackingMenu = false;
 }
+
 
 void
 TFilePanel::ShowContextMenu(BPoint point, const entry_ref *ref, BView *view)
@@ -865,11 +899,13 @@ TFilePanel::ShowContextMenu(BPoint point, const entry_ref *ref, BView *view)
 	_inherited::ShowContextMenu(point, ref, view);
 }
 
+
 void
 TFilePanel::SetupNavigationMenu(const entry_ref *, BMenu *)
 {
 	// do nothing here so nav menu doesn't get added
 }
+
 
 void
 TFilePanel::SetButtonLabel(file_panel_button selector, const char *text)
@@ -915,6 +951,7 @@ TFilePanel::SetButtonLabel(file_panel_button selector, const char *text)
 	}
 }
 
+
 void
 TFilePanel::SetSaveText(const char *text)
 {
@@ -925,6 +962,7 @@ TFilePanel::SetSaveText(const char *text)
 	textControl->SetText(text);
 	textControl->TextView()->SelectAll();
 }
+
 
 void
 TFilePanel::MessageReceived(BMessage *message)
@@ -1167,6 +1205,7 @@ TFilePanel::MessageReceived(BMessage *message)
 	}
 }
 
+
 void 
 TFilePanel::OpenDirectory()
 {
@@ -1181,6 +1220,7 @@ TFilePanel::OpenDirectory()
 		PostMessage(&message);
 	}
 }
+
 
 void 
 TFilePanel::OpenParent()
@@ -1215,6 +1255,7 @@ TFilePanel::OpenParent()
 	}
 }
 
+
 bool 
 TFilePanel::CanOpenParent() const
 {
@@ -1232,6 +1273,7 @@ TFilePanel::CanOpenParent() const
 
 	return rootRef != *TargetModel()->NodeRef();
 }
+
 
 bool 
 TFilePanel::SwitchDirToDesktopIfNeeded(entry_ref &ref)
@@ -1285,6 +1327,7 @@ TFilePanel::SelectChildInParent(const entry_ref *, const node_ref *child)
 	return true;
 }
 
+
 int32
 TFilePanel::ShowCenteredAlert(const char *text, const char *button1,
 	const char *button2, const char *button3)
@@ -1294,6 +1337,7 @@ TFilePanel::ShowCenteredAlert(const char *text, const char *button1,
 	alert->MoveTo(Frame().left + 10, Frame().top + 10);
 	return alert->Go();
 }
+
 
 void
 TFilePanel::HandleSaveButton()
@@ -1357,6 +1401,7 @@ TFilePanel::HandleSaveButton()
 		PostMessage(B_CLOSE_REQUESTED);
 }
 
+
 void
 TFilePanel::OpenSelectionCommon(BMessage *openMessage)
 {
@@ -1388,6 +1433,7 @@ TFilePanel::OpenSelectionCommon(BMessage *openMessage)
 	if (fHideWhenDone)
 		PostMessage(B_CLOSE_REQUESTED);
 }
+
 
 void
 TFilePanel::HandleOpenButton()
@@ -1430,6 +1476,7 @@ TFilePanel::HandleOpenButton()
 	}
 }
 
+
 void
 TFilePanel::SwitchDirMenuTo(const entry_ref *ref)
 {
@@ -1446,6 +1493,7 @@ TFilePanel::SwitchDirMenuTo(const entry_ref *ref)
 	item->SetEntry(&entry);
 }
 
+
 void 
 TFilePanel::WindowActivated(bool active)
 {
@@ -1460,6 +1508,7 @@ BFilePanelPoseView::BFilePanelPoseView(Model *model, BRect frame, uint32 resizeM
 		fIsDesktop(false)
 {
 }
+
 
 void 
 BFilePanelPoseView::StartWatching()
@@ -1544,10 +1593,12 @@ BFilePanelPoseView::RestoreState(const BMessage &message)
 	_inherited::RestoreState(message);
 }
 
+
 void 
 BFilePanelPoseView::SavePoseLocations(BRect *)
 {
 }
+
 
 EntryListBase *
 BFilePanelPoseView::InitDirentIterator(const entry_ref *ref)
@@ -1557,6 +1608,7 @@ BFilePanelPoseView::InitDirentIterator(const entry_ref *ref)
 
 	return _inherited::InitDirentIterator(ref);
 }
+
 
 bool 
 BFilePanelPoseView::ShouldShowPose(const Model *model, const PoseInfo *poseInfo)
@@ -1575,11 +1627,13 @@ BFilePanelPoseView::SetIsDesktop(bool on)
 	fIsDesktop = on;
 }
 
+
 bool 
 BFilePanelPoseView::IsDesktopView() const
 {
 	return fIsDesktop;
 }
+
 
 void
 BFilePanelPoseView::ShowVolumes(bool visible, bool showShared)
@@ -1596,6 +1650,7 @@ BFilePanelPoseView::ShowVolumes(bool visible, bool showShared)
 	if (filepanel)
 		filepanel->SetTo(TargetModel()->EntryRef());
 }
+
 
 void
 BFilePanelPoseView::AdaptToVolumeChange(BMessage *message)

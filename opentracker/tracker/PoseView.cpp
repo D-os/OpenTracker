@@ -1889,6 +1889,10 @@ BPoseView::MessageReceived(BMessage *message)
 				SelectAll();
 			break;
 		}
+		case kInvertSelection:
+			InvertSelection();
+			break;
+			
 		case kShowSelectionWindow:
 			ShowSelectionWindow();
 			break;
@@ -5212,6 +5216,54 @@ BPoseView::SelectAll()
 			}
 		}
 
+		loc.y += fListElemHeight;
+	}
+
+	if (fSelectionChangedHook)
+		ContainerWindow()->SelectionChanged();
+}
+
+void
+BPoseView::InvertSelection()
+{
+	//Since this function has about the same code as
+	//SelectAll(), we could make SelectAll() empty the selection, 
+	//then call InvertSelection()
+	BRect bounds(Bounds());
+	
+	int32 startIndex = 0;
+	BPoint loc(0, 0);
+	
+	fMimeTypesInSelectionCache.MakeEmpty();
+	fSelectionPivotPose = NULL;
+	fRealPivotPose = NULL;
+	
+	bool iconMode = ViewMode() != kListMode;
+	
+	int32 count = fPoseList->CountItems();
+	for (int32 index = startIndex; index < count; index++) {
+		BPose *pose = fPoseList->ItemAt(index);
+		
+		if (!pose->IsSelected()) {
+			if (index == startIndex)
+				fSelectionPivotPose = pose;
+			fSelectionList->AddItem(pose);
+			pose->Select(true);
+		} else {
+			fSelectionList->RemoveItem(pose);
+			pose->Select(false);
+		}
+		
+		BRect poseRect;
+		if (iconMode)
+			poseRect = pose->CalcRect(this);
+		else
+			poseRect = pose->CalcRect(loc, this);
+
+		if (bounds.Intersects(poseRect)) {
+			pose->Draw(poseRect, this, false);
+			Flush();
+		}	
 		loc.y += fListElemHeight;
 	}
 
