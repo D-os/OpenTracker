@@ -14,7 +14,6 @@
 
 // ToDo: specify the length in BString::UnlockBuffer() to speed things up!
 // ToDo: BCollatorAddOn::GetSortKey() doesn't work correctly
-// ToDo: "ignore punctuation" code is missing
 
 
 struct input_context {
@@ -74,9 +73,11 @@ getNextChar(const char **string, input_context &context)
 		return c;
 	}
 
-	// ToDo: take input_context::ignore_punctuation into account!
+	do {
+		c = BUnicodeChar::FromUTF8(string);
+	} while (context.ignore_punctuation
+		&& (BUnicodeChar::IsPunctuation(c) || BUnicodeChar::IsSpace(c)));
 
-	c = BUnicodeChar::FromUTF8(string);
 	if (c == 223) {
 		context.double_char = 's';
 		return 's';
@@ -240,9 +241,9 @@ BCollatorAddOn::Compare(const char *a, const char *b, int32 length, int8 strengt
 				uint32 charA = getNextChar(&a, contextA);
 				uint32 charB = getNextChar(&b, contextB);
 				if (charA == 0)
-					return charB == 0 ? 0 : charB;
+					return charB == 0 ? 0 : -(int32)charB;
 				else if (charB == 0)
-					return -(int32)charA;
+					return (int32)charA;
 
 				charA = getPrimaryChar(charA);
 				charB = getPrimaryChar(charB);
@@ -259,9 +260,9 @@ BCollatorAddOn::Compare(const char *a, const char *b, int32 length, int8 strengt
 				uint32 charA = getNextChar(&a, contextA);
 				uint32 charB = getNextChar(&b, contextB);
 				if (charA == 0)
-					return charB == 0 ? 0 : charB;
+					return charB == 0 ? 0 : -(int32)charB;
 				else if (charB == 0)
-					return -(int32)charA;
+					return (int32)charA;
 
 				uint32 primaryA = getPrimaryChar(charA);
 				uint32 primaryB = getPrimaryChar(charB);
@@ -285,9 +286,9 @@ BCollatorAddOn::Compare(const char *a, const char *b, int32 length, int8 strengt
 				uint32 charA = getNextChar(&a, contextA);
 				uint32 charB = getNextChar(&b, contextB);
 				if (charA == 0)
-					return charB == 0 ? 0 : charB;
+					return charB == 0 ? 0 : -(int32)charB;
 				else if (charB == 0)
-					return -(int32)charA;
+					return (int32)charA;
 
 				uint32 primaryA = getPrimaryChar(charA);
 				uint32 primaryB = getPrimaryChar(charB);
