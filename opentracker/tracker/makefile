@@ -5,7 +5,7 @@ NAME= Tracker
 LIB_NAME= libtracker.so
 
 #BIG_TRACKER=TRUE
-DEBUGGER= FALSE
+DEBUGGER= TRUE
 
 ROOT_DIR = ..
 
@@ -75,6 +75,7 @@ sources_src := \
 	EntryIterator.cpp \
 	FBCPadding.cpp \
 	FSClipboard.cpp \
+	FSUndoRedo.cpp \
 	FSUtils.cpp \
 	FavoritesConfig.cpp \
 	FavoritesMenu.cpp \
