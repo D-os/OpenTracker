@@ -363,6 +363,7 @@ public:
 	void HideBarberPole();
 
 	bool fShowSelectionWhenInactive;
+	bool fTransparentSelection;
 	bool fIsDrawingSelectionRect;
 
 	bool IsWatchingDateFormatChange();
@@ -652,6 +653,7 @@ protected:
 	bool fHasPosesInClipboard : 1;
 
 	BRect fStartFrame;
+	BRect fSelectionRect;
 
 	static float fFontHeight;
 	static font_height fFontInfo;

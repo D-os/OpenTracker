@@ -110,12 +110,14 @@ private:
 	BCheckBox *fSingleWindowBrowseCheckBox;
 	BCheckBox *fShowNavigatorCheckBox;
 	BCheckBox *fShowSelectionWhenInactiveCheckBox;
+	BCheckBox *fTransparentSelectionCheckBox;
 	BCheckBox *fSortFolderNamesFirstCheckBox;
 
 	bool fShowFullPathInTitleBar;
 	bool fSingleWindowBrowse;
 	bool fShowNavigator;
 	bool fShowSelectionWhenInactive;
+	bool fTransparentSelection;
 	bool fSortFolderNamesFirst;
 	
 	typedef SettingsView _inherited;

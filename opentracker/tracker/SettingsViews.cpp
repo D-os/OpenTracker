@@ -391,6 +391,13 @@ WindowsSettingsView::WindowsSettingsView(BRect rect)
 
 	frame.OffsetBy(0, itemSpacing);
 
+	fTransparentSelectionCheckBox = new BCheckBox(frame, "", "Transparent Selection Box",
+		new BMessage(kTransparentSelectionChanged));
+	AddChild(fTransparentSelectionCheckBox);
+	fTransparentSelectionCheckBox->ResizeToPreferred();
+
+	frame.OffsetBy(0, itemSpacing);
+
 	fSortFolderNamesFirstCheckBox = new BCheckBox(frame, "", "Sort Folder Names First",
 		new BMessage(kSortFolderNamesFirstChanged));
 	AddChild(fSortFolderNamesFirstCheckBox);
@@ -405,6 +412,7 @@ WindowsSettingsView::AttachedToWindow()
 	fShowNavigatorCheckBox->SetTarget(this);
 	fShowFullPathInTitleBarCheckBox->SetTarget(this);
 	fShowSelectionWhenInactiveCheckBox->SetTarget(this);
+	fTransparentSelectionCheckBox->SetTarget(this);
 	fSortFolderNamesFirstCheckBox->SetTarget(this);
 }
 
@@ -459,6 +467,21 @@ WindowsSettingsView::MessageReceived(BMessage *message)
 			break;
 		}
 
+		case kTransparentSelectionChanged:
+		{
+			settings.SetTransparentSelection(
+					fTransparentSelectionCheckBox->Value() == 1);
+
+			// Make the notification message and send it to the tracker:
+			BMessage notificationMessage;
+			notificationMessage.AddBool("TransparentSelection",
+					fTransparentSelectionCheckBox->Value() == 1);
+			tracker->SendNotices(kTransparentSelectionChanged, &notificationMessage);
+
+			Window()->PostMessage(kSettingsContentsModified);
+			break;
+		}
+
 		case kSortFolderNamesFirstChanged:
 		{
 			settings.SetSortFolderNamesFirst(fSortFolderNamesFirstCheckBox->Value() == 1);
@@ -489,6 +512,7 @@ WindowsSettingsView::SetDefaults()
 	settings.SetSingleWindowBrowse(false);
 	settings.SetShowNavigator(false);
 	settings.SetShowSelectionWhenInactive(true);
+	settings.SetTransparentSelection(false);
 	settings.SetSortFolderNamesFirst(false);
 
 	ShowCurrentSettings(true);
@@ -505,6 +529,7 @@ WindowsSettingsView::Revert()
 	settings.SetSingleWindowBrowse(fSingleWindowBrowse);
 	settings.SetShowNavigator(fShowNavigator);
 	settings.SetShowSelectionWhenInactive(fShowSelectionWhenInactive);
+	settings.SetTransparentSelection(fTransparentSelection);
 	settings.SetSortFolderNamesFirst(fSortFolderNamesFirst);
 
 	ShowCurrentSettings(true);
@@ -525,6 +550,7 @@ WindowsSettingsView::ShowCurrentSettings(bool sendNotices)
 	fShowNavigatorCheckBox->SetEnabled(settings.SingleWindowBrowse());
 	fShowNavigatorCheckBox->SetValue(settings.ShowNavigator());
 	fShowSelectionWhenInactiveCheckBox->SetValue(settings.ShowSelectionWhenInactive());
+	fTransparentSelectionCheckBox->SetValue(settings.TransparentSelection());
 	fSortFolderNamesFirstCheckBox->SetValue(settings.SortFolderNamesFirst());
 	
 	if (sendNotices) {
@@ -532,6 +558,7 @@ WindowsSettingsView::ShowCurrentSettings(bool sendNotices)
 		tracker->SendNotices(kShowNavigatorChanged);
 		tracker->SendNotices(kWindowsShowFullPathChanged);
 		tracker->SendNotices(kShowSelectionWhenInactiveChanged);
+		tracker->SendNotices(kTransparentSelectionChanged);
 		tracker->SendNotices(kSortFolderNamesFirstChanged);
 	}
 }
@@ -546,6 +573,7 @@ WindowsSettingsView::RecordRevertSettings()
 	fSingleWindowBrowse = settings.SingleWindowBrowse();
 	fShowNavigator = settings.ShowNavigator();
 	fShowSelectionWhenInactive = settings.ShowSelectionWhenInactive();
+	fTransparentSelection = settings.TransparentSelection();
 	fSortFolderNamesFirst = settings.SortFolderNamesFirst();
 }
 
@@ -562,6 +590,8 @@ WindowsSettingsView::ShowsRevertSettings() const
 			(fShowNavigatorCheckBox->Value() > 0))
 		&& (fShowSelectionWhenInactive ==
 			(fShowSelectionWhenInactiveCheckBox->Value() > 0))
+		&& (fTransparentSelection ==
+			(fTransparentSelectionCheckBox->Value() > 0))
 		&& (fSortFolderNamesFirst ==
 			(fSortFolderNamesFirstCheckBox->Value() > 0));
 }

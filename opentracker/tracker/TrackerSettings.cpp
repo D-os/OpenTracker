@@ -81,6 +81,9 @@ class TTrackerState : public Settings {
 		
 		bool ShowSelectionWhenInactive();
 		void SetShowSelectionWhenInactive(bool);
+
+		bool TransparentSelection();
+		void SetTransparentSelection(bool);
 	
 		bool SingleWindowBrowse();
 		void SetSingleWindowBrowse(bool);
@@ -125,6 +128,7 @@ class TTrackerState : public Settings {
 		BooleanValueSetting *fMountSharedVolumesOntoDesktop;
 		BooleanValueSetting *fShowFullPathInTitleBar;
 		BooleanValueSetting *fShowSelectionWhenInactive;
+		BooleanValueSetting *fTransparentSelection;
 		BooleanValueSetting *fSortFolderNamesFirst;
 		BooleanValueSetting *fSingleWindowBrowse;
 		BooleanValueSetting *fShowNavigator;
@@ -237,6 +241,7 @@ TTrackerState::LoadSettingsIfNeeded()
 	Add(fDesktopFilePanelRoot = new BooleanValueSetting("DesktopFilePanelRoot", true));
 	Add(fShowFullPathInTitleBar = new BooleanValueSetting("ShowFullPathInTitleBar", false));
 	Add(fShowSelectionWhenInactive = new BooleanValueSetting("ShowSelectionWhenInactive", true));
+	Add(fTransparentSelection = new BooleanValueSetting("TransparentSelection", false));
 	Add(fSortFolderNamesFirst = new BooleanValueSetting("SortFolderNamesFirst", false));
  	Add(fSingleWindowBrowse = new BooleanValueSetting("SingleWindowBrowse", false));
 	Add(fShowNavigator = new BooleanValueSetting("ShowNavigator", false));
@@ -461,6 +466,20 @@ void
 TrackerSettings::SetShowSelectionWhenInactive(bool enabled)
 {
 	gTrackerState.fShowSelectionWhenInactive->SetValue(enabled);
+}
+
+
+bool
+TrackerSettings::TransparentSelection()
+{
+	return gTrackerState.fTransparentSelection->Value();
+}
+
+
+void
+TrackerSettings::SetTransparentSelection(bool enabled)
+{
+	gTrackerState.fTransparentSelection->SetValue(enabled);
 }
 
 

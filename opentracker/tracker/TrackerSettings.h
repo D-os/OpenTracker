@@ -96,6 +96,8 @@ class TrackerSettings {
 		void SetSortFolderNamesFirst(bool);
 		bool ShowSelectionWhenInactive();
 		void SetShowSelectionWhenInactive(bool);
+		bool TransparentSelection();
+		void SetTransparentSelection(bool);
 	
 		bool SingleWindowBrowse();
 		void SetSingleWindowBrowse(bool);

@@ -216,6 +216,7 @@ BPoseView::BPoseView(Model *model, BRect bounds, uint32 viewMode, uint32 resizeM
 	
 	fViewState->SetViewMode(viewMode);
 	fShowSelectionWhenInactive = TrackerSettings().ShowSelectionWhenInactive();
+	fTransparentSelection = TrackerSettings().TransparentSelection();
 }
 
 
@@ -871,6 +872,7 @@ BPoseView::AttachedToWindow()
 	}
 
 	BHandler::StartWatching(be_app, kShowSelectionWhenInactiveChanged);
+	BHandler::StartWatching(be_app, kTransparentSelectionChanged);
 	BHandler::StartWatching(be_app, kSortFolderNamesFirstChanged);
 	BHandler::StartWatching(be_app, kShowVolumeSpaceBar);
 	BHandler::StartWatching(be_app, kSpaceBarColorChanged);
@@ -2177,12 +2179,15 @@ BPoseView::MessageReceived(BMessage *message)
 							break;
 
 						case kShowSelectionWhenInactiveChanged:
-						{
 							message->FindBool("ShowSelectionWhenInactive", &fShowSelectionWhenInactive);
 							TrackerSettings().SetShowSelectionWhenInactive(fShowSelectionWhenInactive);
 							Invalidate();
 							break;
-						}
+
+						case kTransparentSelectionChanged:
+							message->FindBool("TransparentSelection", &fTransparentSelection);
+							TrackerSettings().SetTransparentSelection(fTransparentSelection);
+							break;
 
 						case kSortFolderNamesFirstChanged:
 							if (ViewMode() == kListMode) {
@@ -6506,11 +6511,14 @@ BPoseView::DragSelectionRect(BPoint startPoint, bool shouldExtend)
 	GetMouse(&newMousePoint, &button);
 
 	// draw initial empty selection rectangle
-	BRect selectionRect(startPoint, startPoint - BPoint(1, 1));
+	BRect lastselectionRect;
+	fSelectionRect = lastselectionRect = BRect(startPoint, startPoint - BPoint(1, 1));
 
-	SetDrawingMode(B_OP_INVERT);
-	StrokeRect(selectionRect, B_MIXED_COLORS);
-	SetDrawingMode(B_OP_OVER);
+	if (!fTransparentSelection) {
+		SetDrawingMode(B_OP_INVERT);
+		StrokeRect(fSelectionRect, B_MIXED_COLORS);
+		SetDrawingMode(B_OP_OVER);
+	}
 
 	BList *selectionList = new BList;
 
@@ -6519,16 +6527,18 @@ BPoseView::DragSelectionRect(BPoint startPoint, bool shouldExtend)
 		GetMouse(&newMousePoint, &button);
 		if (newMousePoint != oldMousePoint) {
 			oldMousePoint = newMousePoint;
-			BRect oldRect = selectionRect;
-			selectionRect.top = std::min(newMousePoint.y, startPoint.y);
-			selectionRect.left = std::min(newMousePoint.x, startPoint.x);
-			selectionRect.bottom = std::max(newMousePoint.y, startPoint.y);
-			selectionRect.right = std::max(newMousePoint.x, startPoint.x);
+			BRect oldRect = fSelectionRect;
+			fSelectionRect.top = std::min(newMousePoint.y, startPoint.y);
+			fSelectionRect.left = std::min(newMousePoint.x, startPoint.x);
+			fSelectionRect.bottom = std::max(newMousePoint.y, startPoint.y);
+			fSelectionRect.right = std::max(newMousePoint.x, startPoint.x);
 
 			// erase old rect
-			SetDrawingMode(B_OP_INVERT);
-			StrokeRect(oldRect, B_MIXED_COLORS);
-			SetDrawingMode(B_OP_OVER);
+			if (!fTransparentSelection) {
+				SetDrawingMode(B_OP_INVERT);
+				StrokeRect(oldRect, B_MIXED_COLORS);
+				SetDrawingMode(B_OP_OVER);
+			}
 
 			fIsDrawingSelectionRect = true;
 
@@ -6536,16 +6546,38 @@ BPoseView::DragSelectionRect(BPoint startPoint, bool shouldExtend)
 
 			// use current selection rectangle to scan poses
 			if (ViewMode() == kListMode)
-				SelectPosesListMode(selectionRect, &selectionList);
+				SelectPosesListMode(fSelectionRect, &selectionList);
 			else
-				SelectPosesIconMode(selectionRect, &selectionList);
+				SelectPosesIconMode(fSelectionRect, &selectionList);
 
 			Window()->UpdateIfNeeded();
 
-			// draw new sel rect
-			SetDrawingMode(B_OP_INVERT);
-			StrokeRect(selectionRect, B_MIXED_COLORS);
-			SetDrawingMode(B_OP_OVER);
+			// draw new selected rect
+			if (!fTransparentSelection) {
+				SetDrawingMode(B_OP_INVERT);
+				StrokeRect(fSelectionRect, B_MIXED_COLORS);
+				SetDrawingMode(B_OP_OVER);
+			} else {
+				BRegion updateRegion1;
+				BRegion updateRegion2;
+
+				bool samewidth = fSelectionRect.Width() == lastselectionRect.Width();
+				bool sameheight = fSelectionRect.Height() == lastselectionRect.Height();
+
+				updateRegion1.Include(fSelectionRect);
+				updateRegion1.Exclude(lastselectionRect.InsetByCopy(samewidth ? 0 : 1, sameheight ? 0 : 1));
+				updateRegion2.Include(lastselectionRect);
+				updateRegion2.Exclude(fSelectionRect.InsetByCopy(samewidth ? 0 : 1, sameheight ? 0 : 1));
+				updateRegion1.Include(&updateRegion2);
+				BRect unionRect = fSelectionRect & lastselectionRect;
+				updateRegion1.Exclude(unionRect & BRect(-2000, startPoint.y, 2000, startPoint.y));
+				updateRegion1.Exclude(unionRect & BRect(startPoint.x, -2000, startPoint.x, 2000));
+
+				lastselectionRect = fSelectionRect;
+
+				Invalidate(&updateRegion1);
+				Window()->UpdateIfNeeded();
+			}
 
 			Flush();
 		}
@@ -6558,17 +6590,23 @@ BPoseView::DragSelectionRect(BPoint startPoint, bool shouldExtend)
 	fIsDrawingSelectionRect = false;
 
 	// do final erase of selection rect
-	SetDrawingMode(B_OP_INVERT);
-	StrokeRect(selectionRect, B_MIXED_COLORS);
-	SetDrawingMode(B_OP_COPY);
+	if (!fTransparentSelection) {
+		SetDrawingMode(B_OP_INVERT);
+		StrokeRect(fSelectionRect, B_MIXED_COLORS);
+		SetDrawingMode(B_OP_COPY);
+	} else {
+		Invalidate(fSelectionRect);
+		fSelectionRect.Set(0, 0, -1, -1);
+		Window()->UpdateIfNeeded();
+	}
 
 	// we now need to update the pose view's selection list by clearing it
 	// and then polling each pose for selection state and rebuilding list
 	fSelectionList->MakeEmpty();
 	fMimeTypesInSelectionCache.MakeEmpty();
-	
+
 	EachListItem(fPoseList, AddIfPoseSelected, fSelectionList);
-	
+
 	// and now make sure that the pivot point is in sync
 	if (fSelectionPivotPose && !fSelectionList->HasItem(fSelectionPivotPose))
 		fSelectionPivotPose = NULL;
@@ -7808,6 +7846,23 @@ BPoseView::Draw(BRect updateRect)
 		SetViewColor(color);
 	}
 	DrawViewCommon(updateRect);
+
+	if (fTransparentSelection && fSelectionRect.IsValid()) {
+		SetDrawingMode(B_OP_ALPHA);
+		SetHighColor(255, 255, 255, 128);
+		if (fSelectionRect.Width() == 0 || fSelectionRect.Height() == 0)
+			StrokeLine(fSelectionRect.LeftTop(), fSelectionRect.RightBottom());
+		else {
+			StrokeRect(fSelectionRect);
+			BRect interior = fSelectionRect;
+			interior.InsetBy(1, 1);
+			if (interior.IsValid()) {
+				SetHighColor(80, 80, 80, 90);
+				FillRect(interior);
+			}
+		}
+		SetDrawingMode(B_OP_OVER);
+	}
 }
 
 
