@@ -3,6 +3,7 @@
 SUBDIRS = \
 	lib \
 	add-ons \
+	apps \
 	tools \
 	languages \
 	test
