@@ -341,7 +341,9 @@ static int compareProps(const void *l, const void *r);
 static uint32 getProps2(uint32 c, uint16 *pI1, uint16 *pI2, uint16 *pI3, uint16 *pI4);
 #endif
 
+#if 0
 static uint32 getProps(uint32 c, uint16 *pI1, uint16 *pI2, uint16 *pI3);
+#endif
 static void setProps(uint32 c, uint32 x, uint16 *pI1, uint16 *pI2, uint16 *pI3);
 static uint16 allocStage2(void);
 static uint16 allocProps(void);
@@ -495,26 +497,26 @@ makeProps(Props *p)
 		// this code point needs exception values
 		if (gBeVerbose) {
             if (x != 0) {
-                printf("*** code 0x%06x needs an exception because it is irregular\n", p->code);
+                printf("*** code 0x%06lx needs an exception because it is irregular\n", p->code);
             } else if (count == 1) {
-                printf("*** code 0x%06x needs an exception because its value would be %ld\n", p->code, value);
+                printf("*** code 0x%06lx needs an exception because its value would be %ld\n", p->code, value);
             } else if (value<MIN_VALUE || MAX_VALUE<value) {
-                printf("*** code 0x%06x needs an exception because its value is out-of-bounds at %ld (not [%ld..%ld]\n", p->code, value, MIN_VALUE,MAX_VALUE);
+                printf("*** code 0x%06lx needs an exception because its value is out-of-bounds at %ld (not [%ld..%ld]\n", p->code, value, MIN_VALUE,MAX_VALUE);
             } else {
-                printf("*** code 0x%06x needs an exception because it has %u values\n", p->code, count);
+                printf("*** code 0x%06lx needs an exception because it has %u values\n", p->code, count);
             }
         }
 
-        ++exceptionsCount;
-        x = EXCEPTION_BIT;
+		++exceptionsCount;
+		x = EXCEPTION_BIT;
 
-        /* allocate and create exception values */
-        value = exceptionsTop;
-        if (value>=4096) {
-            fprintf(stderr, "genprops: out of exceptions memory at U+%06x. (%d exceeds allocated space)\n",
-                    p->code, value);
-            exit(B_NO_MEMORY);
-        } else {
+		/* allocate and create exception values */
+		value = exceptionsTop;
+		if (value >= 4096) {
+			fprintf(stderr, "genprops: out of exceptions memory at U+%06lx. (%ld exceeds allocated space)\n",
+				p->code, value);
+			exit(B_NO_MEMORY);
+		} else {
             uint32 first = (uint32)p->canonicalCombining<<16;
             uint16 length = 1;
 
@@ -1099,7 +1101,7 @@ generateData(const char *dataDirectory)
 	PropertyFile file;
 	status_t status = file.SetTo(dataDirectory, PROPERTIES_FILE_NAME);
 	if (status < B_OK) {
-		fprintf(stderr, "genprops: unable to create data memory, error %d\n", errorCode);
+		fprintf(stderr, "genprops: unable to create data memory, error %ld\n", errorCode);
 		return status;
 	}
 
@@ -1139,6 +1141,7 @@ getProps2(uint32 c, uint16 *pI1, uint16 *pI2, uint16 *pI3, uint16 *pI4)
 }
 #endif
 
+#if 0
 /* get properties before compacting them */
 static uint32
 getProps(uint32 c, uint16 *pI1, uint16 *pI2, uint16 *pI3)
@@ -1150,6 +1153,7 @@ getProps(uint32 c, uint16 *pI1, uint16 *pI2, uint16 *pI3)
     *pI3 = i3 = (uint16)(stage2[i2]+(c&(STAGE_3_BLOCK-1)));
     return props[i3];
 }
+#endif
 
 /* set properties before compacting them */
 static void

@@ -329,7 +329,7 @@ BCollatorAddOn::GetSortKey(const char *string, BString *key, int8 strength,
 
 			input_context context(ignorePunctuation);
 			uint32 c;
-			for (int32 i = 0; (c = GetNextChar(&string, context)) && i < length; i++) {
+			for (uint32 i = 0; (c = GetNextChar(&string, context)) && i < length; i++) {
 				if (c < 0x80)
 					*buffer++ = tolower(c);
 				else
@@ -355,7 +355,7 @@ BCollatorAddOn::GetSortKey(const char *string, BString *key, int8 strength,
 
 			input_context context(ignorePunctuation);
 			uint32 c;
-			for (int32 i = 0; (c = GetNextChar(&string, context)) && i < length; i++) {
+			for (uint32 i = 0; (c = GetNextChar(&string, context)) && i < length; i++) {
 				BUnicodeChar::ToUTF8(c, &buffer);
 			}
 			*buffer = '\0';

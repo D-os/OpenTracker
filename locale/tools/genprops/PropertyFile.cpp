@@ -23,7 +23,7 @@ PropertyFile::SetTo(const char *directory, const char *name)
 		sizeof(UnicodePropertiesHeader),
 		B_HOST_IS_BENDIAN,
 		PROPERTIES_FORMAT,
-		3, 0, 0		// version (taken from the ICU data version)
+		{ 3, 0, 0 }		// version (taken from the ICU data version)
 	};
 
 	return Write(&header, sizeof(header));
