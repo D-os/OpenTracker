@@ -5,30 +5,30 @@
 
 
 #include <Catalog.h>
+#include <Locale.h>
+#include <LocaleRoster.h>
 
 #include <stdio.h>	// <- for debugging only
-#include <ctype.h>
 
 
-BCatalog::BCatalog(BLocale *locale, const char *signature)
+BCatalog::BCatalog(const char *signature, const char *language)
 {
-	// ToDo: the collator construction will have to change...
-	//		build catalog add-on chain here!
-
-	fCatalog = new BCatalogAddOn(locale, signature, NULL);
+	fCatalog = be_locale_roster->LoadCatalog(signature, language);
 }
 
 
 BCatalog::~BCatalog()
 {
-	delete fCatalog;
+	be_locale_roster->UnloadCatalog( fCatalog);
 }
 
 
 const char *
-BCatalog::GetString(const char *string)
+BCatalog::GetString(const char *string,
+						  const char *context,
+						  const char *comment)
 {
-	return fCatalog->GetString(string);
+	return fCatalog->GetString(string,context,comment);
 }
 
 
@@ -40,14 +40,14 @@ BCatalog::GetString(uint32 id)
 
 
 status_t 
-BCatalog::GetData(const char *name, BMessage &msg)
+BCatalog::GetData(const char *name, BMessage *msg)
 {
 	return fCatalog->GetData(name, msg);
 }
 
 
 status_t 
-BCatalog::GetData(uint32 id, BMessage &msg)
+BCatalog::GetData(uint32 id, BMessage *msg)
 {
 	return fCatalog->GetData(id, msg);
 }
@@ -56,10 +56,19 @@ BCatalog::GetData(uint32 id, BMessage &msg)
 //	#pragma mark -
 
 
-BCatalogAddOn::BCatalogAddOn(const BLocale *locale, const char *signature, const BCatalogAddOn *next)
+BCatalogAddOn::BCatalogAddOn(const char *signature, 
+									  const char *language,
+									  BCatalogAddOnInfo* info)
+	:	fSignature( signature)
+	,	fLanguageName( language)
+	,	fAddOnInfo( info)
+	,	fNext( NULL)
 {
 }
 
+BCatalogAddOn::~BCatalogAddOn()
+{
+}
 
 bool 
 BCatalogAddOn::CanHaveData() const
@@ -76,7 +85,8 @@ BCatalogAddOn::CanWriteData() const
 
 
 status_t 
-BCatalogAddOn::SetString(const char *string, const char *translated)
+BCatalogAddOn::SetString(const char *string, const char *translated,
+								 const char *context, const char *comment)
 {
 	return EOPNOTSUPP;
 }
@@ -90,14 +100,27 @@ BCatalogAddOn::SetString(int32 id, const char *translated)
 
 
 status_t 
-BCatalogAddOn::SetData(const char *name, BMessage &msg)
+BCatalogAddOn::GetData(const char *name, BMessage *msg)
 {
 	return EOPNOTSUPP;
 }
 
 
 status_t 
-BCatalogAddOn::SetData(uint32 id, BMessage &msg)
+BCatalogAddOn::GetData(uint32 id, BMessage *msg)
+{
+	return EOPNOTSUPP;
+}
+
+status_t 
+BCatalogAddOn::SetData(const char *name, BMessage *msg)
+{
+	return EOPNOTSUPP;
+}
+
+
+status_t 
+BCatalogAddOn::SetData(uint32 id, BMessage *msg)
 {
 	return EOPNOTSUPP;
 }
