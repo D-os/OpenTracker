@@ -98,9 +98,9 @@ WidgetAttributeText::NewWidgetText(const Model *model,
 {
 	// call this to make the right WidgetAttributeText type for a
 	// given column
-	
+
 	const char *attrName = column->AttrName();
-	
+
 	if (strcmp(attrName, kAttrPath) == 0)
 		return new PathAttributeText(model, column);
 	else if (strcmp(attrName, kAttrMIMEType) == 0)
@@ -1156,22 +1156,22 @@ GenericAttributeText::ReadValue()
 
 	switch (fColumn->AttrType()) {
 		case B_STRING_TYPE:
-			{
-				char buffer[kGenericReadBufferSize];
-				length = fModel->Node()->ReadAttr(fColumn->AttrName(),
-					fColumn->AttrType(), 0, buffer, kGenericReadBufferSize - 1);
+		{
+			char buffer[kGenericReadBufferSize];
+			length = fModel->Node()->ReadAttr(fColumn->AttrName(),
+				fColumn->AttrType(), 0, buffer, kGenericReadBufferSize - 1);
 
-				if (length > 0) {
-					buffer[length] = '\0';
-					// make sure the buffer is null-terminated even if we
-					// didn't read the whole attribute in or it wasn't to
-					// begin with
-				
-					fFullValueText = buffer;
-					fValueIsDefined = true;
-				}
-				break;
+			if (length > 0) {
+				buffer[length] = '\0';
+				// make sure the buffer is null-terminated even if we
+				// didn't read the whole attribute in or it wasn't to
+				// begin with
+
+				fFullValueText = buffer;
+				fValueIsDefined = true;
 			}
+			break;
+		}
 
 		case B_SSIZE_T_TYPE:
 		case B_TIME_TYPE:
@@ -1188,67 +1188,68 @@ GenericAttributeText::ReadValue()
 		case B_UINT32_TYPE:
 		case B_UINT64_TYPE:
 		case B_DOUBLE_TYPE:
-			{
-				attr_info info;
-				GenericValueStruct tmp;
-				if (fModel->Node()->GetAttrInfo(fColumn->AttrName(), &info) == B_OK) {
-					if (info.size && info.size <= sizeof(int64))
-						length = fModel->Node()->ReadAttr(fColumn->AttrName(),
-							fColumn->AttrType(), 0, &tmp, (size_t)info.size);
-	
-						// We used tmp as a block of memory, now set the correct fValue:
-						
-						if (length == info.size)
-						
-							if (fColumn->AttrType() == B_FLOAT_TYPE
-								|| fColumn->AttrType() == B_DOUBLE_TYPE) {
-							
-								switch (info.size) {
-									case sizeof(float):
-										fValueIsDefined = true;
-										fValue.floatt = tmp.floatt;
-										break;
-										
-									case sizeof(double):
-										fValueIsDefined = true;
-										fValue.doublet = tmp.doublet;
-										break;
-										
-									default:
-										TRESPASS();
-								}
-								
-							} else { 	
-					
-								switch (info.size) {
-									case sizeof(char):	// Takes care of bool, too.
-										fValueIsDefined = true;
-										fValue.int8t = tmp.int8t;
-										break;
-										
-									case sizeof(int16):
-										fValueIsDefined = true;
-										fValue.int16t = tmp.int16t;
-										break;
-										
-									case sizeof(int32):	// Takes care of time_t, too.
-										fValueIsDefined = true;
-										fValue.int32t = tmp.int32t;
-										break;
-										
-									case sizeof(int64):	// Taked care of off_t, too.
-										fValueIsDefined = true;
-										fValue.int64t = tmp.int64t;
-										break;
-										
-									default:
-										TRESPASS();
-								}
-							}
+		{
+			// read in the numerical bit representation and attach it
+			// with a type, depending on the bytes that could be read
+			attr_info info;
+			GenericValueStruct tmp;
+			if (fModel->Node()->GetAttrInfo(fColumn->AttrName(), &info) == B_OK) {
+				if (info.size && info.size <= sizeof(int64)) {
+					length = fModel->Node()->ReadAttr(fColumn->AttrName(),
+						fColumn->AttrType(), 0, &tmp, (size_t)info.size);
+				}
+
+				// We used tmp as a block of memory, now set the correct fValue:
+
+				if (length == info.size) {
+					if (fColumn->AttrType() == B_FLOAT_TYPE
+						|| fColumn->AttrType() == B_DOUBLE_TYPE) {
+						// filter out special float/double types
+						switch (info.size) {
+							case sizeof(float):
+								fValueIsDefined = true;
+								fValue.floatt = tmp.floatt;
+								break;
+
+							case sizeof(double):
+								fValueIsDefined = true;
+								fValue.doublet = tmp.doublet;
+								break;
+
+							default:
+								TRESPASS();
 						}
-	
-				break;
+					} else {
+						// handle the standard data types
+						switch (info.size) {
+							case sizeof(char):	// Takes care of bool, too.
+								fValueIsDefined = true;
+								fValue.int8t = tmp.int8t;
+								break;
+
+							case sizeof(int16):
+								fValueIsDefined = true;
+								fValue.int16t = tmp.int16t;
+								break;
+
+							case sizeof(int32):	// Takes care of time_t, too.
+								fValueIsDefined = true;
+								fValue.int32t = tmp.int32t;
+								break;
+
+							case sizeof(int64):	// Taked care of off_t, too.
+								fValueIsDefined = true;
+								fValue.int64t = tmp.int64t;
+								break;
+
+							default:
+								TRESPASS();
+						}
+					}
+				}
 			}
+			break;
+		}
 	}
 }
 
@@ -1272,6 +1273,10 @@ GenericAttributeText::FitValue(BString *result, const BPoseView *view)
 	char buffer[256];
 
 	switch (fColumn->AttrType()) {
+		case B_SIZE_T_TYPE:
+			TruncFileSizeBase(result, fValue.int32t, view, fOldWidth);
+			return;
+
 		case B_SSIZE_T_TYPE:
 			if (fValue.int32t > 0) {
 				TruncFileSizeBase(result, fValue.int32t, view, fOldWidth);
