@@ -12,6 +12,9 @@ if $(OSPLAT) = PPC {
 # Use copyattr for copying.
 CP = copyattr --data ;
 
+# mkdir shall not fail, if the directory already exists.
+MKDIR = mkdir -p ;
+
 # Specify how to get beres.
 {
 	local archive = tools.tgz ;
@@ -36,6 +39,22 @@ CP = copyattr --data ;
 	RESCOMP = beres ;
 }
 
+# Specify how to get the unit test stuff.
+# TODO: Currently only an x86 archive is available.
+if $(OSPLAT) = X86 {
+	local archive = unittests.zip ;
+	MakeLocate $(archive) : $(LOCALE_DOWNLOADS_DIR) ;
+	local url ;
+	if $(OSPLAT) = X86 {
+		url = http://tfs.cs.tu-berlin.de/~bonefish/private/unittests-x86.zip ;
+	} else {
+	}
+	Download $(archive) : $(url) ;
+	local targetDir = $(LOCALE_GENERATED_DIR) ;
+	LOCATE on UnitTester = $(LOCALE_UNITTESTS_DIR) ;
+	LOCATE on libcppunit.so = [ FDirName $(LOCALE_UNITTESTS_DIR) lib ] ;
+	Unarchive UnitTester libcppunit.so : $(archive) : $(targetDir) ;
+}
 
 # Add the locale includes to the system include dirs.
 SYSHDRS += $(LOCALE_INCLUDE_DIR) $(LOCALE_POSIX_INCLUDE_DIR) ;
