@@ -35,18 +35,17 @@ All rights reserved.
 #include <stdlib.h>
 #include <string.h>
 
+#include <Debug.h>
 #include <Volume.h>
 #include <fs_info.h>
-#include <Debug.h>
 
 #include "Attributes.h"
 #include "Commands.h"
 #include "FSClipboard.h"
 #include "IconCache.h"
-#include "Utilities.h"
-#include "PoseView.h"
 #include "Pose.h"
-#include "Tracker.h"
+#include "PoseView.h"
+#include "Utilities.h"
 
 
 int32

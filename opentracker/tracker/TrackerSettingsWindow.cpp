@@ -33,11 +33,9 @@ All rights reserved.
 */
 
 #include "SettingsViews.h"
-#include "Tracker.h"
 #include "TrackerSettings.h"
 #include "TrackerSettingsWindow.h"
 
-#include <Alert.h>
 #include <CheckBox.h>
 
 const BPoint kSettingsWindowOffset(30, 30);

@@ -34,12 +34,8 @@ All rights reserved.
 
 #include "TrackerString.h"
 
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include <Alert.h>
-#include <OS.h>
 
 TrackerString::TrackerString()
 {

@@ -38,7 +38,7 @@ All rights reserved.
 #ifndef __BACKGROUND_IMAGE__
 #define __BACKGROUND_IMAGE__
 
-#include "String.h"
+#include <String.h>
 #include "ObjectList.h"
 
 class BNode;

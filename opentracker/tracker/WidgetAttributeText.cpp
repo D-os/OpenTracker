@@ -33,7 +33,6 @@ All rights reserved.
 */
 
 #include <fs_attr.h>
-#include <malloc.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -45,6 +44,8 @@ All rights reserved.
 #include <Debug.h>
 #include <NodeInfo.h>
 #include <Path.h>
+#include <TextView.h>
+#include <Volume.h>
 #include <VolumeRoster.h>
 
 #include "Attributes.h"
@@ -55,12 +56,9 @@ All rights reserved.
 #include "MimeTypes.h"
 #include "PoseView.h"
 #include "SettingsViews.h"
-#include "TextView.h"
 #include "Utilities.h"
 #include "ViewState.h"
-#include "Volume.h"
 #include "WidgetAttributeText.h"
-#include "Tracker.h"
 
 
 template <class View>

@@ -450,6 +450,7 @@ DraggableIcon::DraggableIcon(BRect rect, const char *name, const char *mimeType,
 	}
 }
 
+
 void 
 DraggableIcon::SetTarget(BMessenger target)
 {
