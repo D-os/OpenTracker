@@ -3506,10 +3506,10 @@ BPoseView::FindDragNDropAction(const BMessage *dragMessage, bool &canCopy,
 	canLink = false;
 	if (!dragMessage->HasInt32("be:actions"))
 		return false;
-	
+
 	int32 action;
-	for (int32 index = 0; dragMessage->FindInt32("be:actions", index, &action)
-		== B_OK; index++) 
+	for (int32 index = 0;
+			dragMessage->FindInt32("be:actions", index, &action) == B_OK; index++) {
 		switch (action) {
 			case B_MOVE_TARGET: 
 				canMove = true;
@@ -3527,7 +3527,7 @@ BPoseView::FindDragNDropAction(const BMessage *dragMessage, bool &canCopy,
 				canLink = true;
 				break;
 		}
-
+	}
 	return canCopy || canMove || canErase || canLink;
 }
 
@@ -3822,7 +3822,6 @@ BPoseView::HandleDropCommon(BMessage *message, Model *targetModel, BPose *target
 	if (poseView)
 		containerWindow = poseView->ContainerWindow();
 
-
 	// look for srcWindow to determine whether drag was initiated in tracker
 	BContainerWindow *srcWindow = NULL;
 	message->FindPointer("src_window", (void **) &srcWindow);
@@ -3973,7 +3972,7 @@ BPoseView::HandleDropCommon(BMessage *message, Model *targetModel, BPose *target
 			if (!canCopy && !canMove && !canLink && containerWindow) {
 				if (((buttons & B_SECONDARY_MOUSE_BUTTON)
 					|| (modifiers() & B_CONTROL_KEY))) {
-					switch (containerWindow->ShowDropContextMenu(view->ConvertToScreen(dropPt))) {
+					switch (containerWindow->ShowDropContextMenu(dropPt)) {
 						case kCreateRelativeLink:
 							canRelativeLink = true;
 							break;
