@@ -46,6 +46,7 @@ All rights reserved.
 #include "PublicCommands.h"
 #include "RecentItems.h"
 #include "StatusView.h"
+#include "IconMenuItem.h"
 
 // from roster_private.h
 const uint32 CMD_SHUTDOWN_SYSTEM = 301;

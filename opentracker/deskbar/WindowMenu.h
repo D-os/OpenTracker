@@ -40,6 +40,7 @@ All rights reserved.
 #define WINDOWMENU_H
 
 #include <Menu.h>
+#include <String.h>
 
 
 class TWindowMenu : public BMenu {

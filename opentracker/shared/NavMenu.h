@@ -44,17 +44,19 @@ All rights reserved.
 #include <MenuItem.h>
 #include <PopUpMenu.h>
 #include <StorageDefs.h>
+#include <Entry.h>
 
-#include "EntryIterator.h"
-#include "IconMenuItem.h"
-#include "ObjectList.h"
 #include "SlowMenu.h"
+
+template<class T> class BObjectList;
 
 namespace BPrivate {
 
 class Model;
 class BContainerWindow;
 class ModelMenuItem;
+class EntryListBase;
+
 
 class TrackingHookData {
 public:
@@ -96,7 +98,6 @@ public:
 	void SetTypesList(const BObjectList<BString> *list);
 	const BObjectList<BString> *TypesList() const;	
 	
-	
 	void AddNavDir(const Model *mode, uint32 what, BHandler *target,
 		bool populateSubmenu);
 	
@@ -124,7 +125,6 @@ protected:
 	void AddOneItem(Model *);
 	void AddRootItemsIfNeeded();
 	static void SetTrackingHookDeep(BMenu *, bool (*)(BMenu *, void *), void *);
-	
 	
 	entry_ref fNavDir;
 	BMessage fMessage;

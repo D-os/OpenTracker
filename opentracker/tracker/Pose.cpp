@@ -35,6 +35,7 @@ All rights reserved.
 #include <stdlib.h>
 #include <string.h>
 
+#include <Volume.h>
 #include <fs_info.h>
 #include <Debug.h>
 

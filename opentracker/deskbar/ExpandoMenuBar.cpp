@@ -37,6 +37,7 @@ All rights reserved.
 #include <NodeInfo.h>
 #include <Roster.h>
 #include <Screen.h>
+#include <Bitmap.h>
 
 #include "icons.h"
 #include "icons_logo.h"
