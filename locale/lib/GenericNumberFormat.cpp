@@ -1,4 +1,6 @@
 #include <algorithm>
+#include <float.h>
+#include <math.h>
 #include <new>
 #include <stdlib.h>
 
@@ -9,6 +11,9 @@
 // constants (more below the helper classes)
 
 static const int kMaxIntDigitCount = 20;	// int64: 19 + sign, uint64: 20
+static const int kMaxFloatDigitCount = DBL_DIG + 2;
+	// double: mantissa precision + 2
+
 
 // Symbol
 
@@ -47,6 +52,14 @@ BGenericNumberFormat::Symbol::SetTo(const char *symbol)
 	}
 	return B_OK;
 }
+
+
+// SpecialNumberSymbols
+struct BGenericNumberFormat::SpecialNumberSymbols {
+	const Symbol	*nan;
+	const Symbol	*infinity;
+	const Symbol	*negative_infinity;
+};
 
 
 // GroupingInfo
@@ -347,7 +360,7 @@ class BGenericNumberFormat::BufferWriter {
 
 		void Append(char c, int32 count)	// ASCII 128 chars only!
 		{
-			if (count < 0)
+			if (count <= 0)
 				return;
 			int32 newPosition = fPosition + count;
 			fDryRun |= (newPosition >= fBufferSize);
@@ -359,6 +372,28 @@ class BGenericNumberFormat::BufferWriter {
 			fCharCount += count;
 		}
 
+		void Append(const Symbol &symbol, int32 count)
+		{
+			if (count <= 0)
+				return;
+			int32 bytes = count * symbol.length;
+			int32 newPosition = fPosition + bytes;
+			fDryRun |= (newPosition >= fBufferSize);
+			if (!fDryRun && count > 0) {
+				for (int i = 0; i < count * symbol.length; i++)
+					fBuffer[i] = symbol.symbol[i % symbol.length];
+				fBuffer[newPosition] = '\0';
+			}
+			fPosition = newPosition;
+			fCharCount += count * symbol.char_count;
+		}
+
+		void Append(const Symbol *symbol, int32 count)
+		{
+			if (symbol)
+				Append(*symbol, count);
+		}
+
 	private:
 		char	*fBuffer;
 		int32	fBufferSize;
@@ -366,6 +401,80 @@ class BGenericNumberFormat::BufferWriter {
 		int32	fCharCount;
 		bool	fDryRun;
 };
+
+
+// constants
+
+// digit symbols
+static const BGenericNumberFormat::Symbol kDefaultDigitSymbols[] = {
+	"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
+};
+
+// decimal separator symbol
+static const BGenericNumberFormat::Symbol kDefaultFractionSeparator = ".";
+
+// grouping separator symbols
+static const char *kDefaultGroupingSeparators[] = { "," };
+static const int32 kDefaultGroupingSeparatorCount
+	= sizeof(kDefaultGroupingSeparators) / sizeof(const char*);
+static const char *kNoGroupingSeparators[] = { };
+static const int32 kNoGroupingSeparatorCount = 0;
+
+// grouping sizes
+static const size_t kDefaultGroupingSizes[] = { 3 };
+static const int32 kDefaultGroupingSizeCount
+	= sizeof(kDefaultGroupingSizes) / sizeof(size_t);
+static const size_t kNoGroupingSizes[] = { };
+static const int32 kNoGroupingSizeCount = 0;
+
+// grouping info
+static const BGenericNumberFormat::GroupingInfo kDefaultGroupingInfo(
+	kDefaultGroupingSeparators, kDefaultGroupingSeparatorCount,
+	kDefaultGroupingSizes, kDefaultGroupingSizeCount
+);
+static const BGenericNumberFormat::GroupingInfo kNoGroupingInfo(
+	kNoGroupingSeparators, kNoGroupingSeparatorCount,
+	kNoGroupingSizes, kNoGroupingSizeCount
+);
+
+// exponent symbol
+static const BGenericNumberFormat::Symbol kDefaultExponentSymbol = "e";
+static const BGenericNumberFormat::Symbol kDefaultUpperCaseExponentSymbol
+	= "E";
+
+// NaN symbol
+static const BGenericNumberFormat::Symbol kDefaultNaNSymbol = "NaN";
+static const BGenericNumberFormat::Symbol kDefaultUpperCaseNaNSymbol = "NaN";
+
+// infinity symbol
+static const BGenericNumberFormat::Symbol kDefaultInfinitySymbol
+	= "infinity";
+static const BGenericNumberFormat::Symbol kDefaultUpperCaseInfinitySymbol
+	= "INFINITY";
+
+// negative infinity symbol
+static const BGenericNumberFormat::Symbol kDefaultNegativeInfinitySymbol
+	= "-infinity";
+static const BGenericNumberFormat::Symbol
+	kDefaultUpperCaseNegativeInfinitySymbol = "-INFINITY";
+
+// sign symbols
+static const BGenericNumberFormat::SignSymbols kDefaultSignSymbols(
+	"+", "-", " ", "",	// prefixes
+	"", "", "", ""		// suffixes
+);
+
+// mantissa sign symbols
+static const BGenericNumberFormat::SignSymbols kDefaultMantissaSignSymbols(
+	"", "", "", "",	// prefixes
+	"", "", "", ""		// suffixes
+);
+
+// exponent sign symbols
+static const BGenericNumberFormat::SignSymbols kDefaultExponentSignSymbols(
+	"+", "-", " ", "",	// prefixes
+	"", "", "", ""		// suffixes
+);
 
 
 // Integer
@@ -419,7 +528,7 @@ class BGenericNumberFormat::Integer {
 		void Format(BufferWriter &writer, const Symbol *digitSymbols,
 			const SignSymbols *signSymbols,
 			number_format_sign_policy signPolicy,
-			const GroupingInfo *groupingInfo, int32 minDigits)
+			const GroupingInfo *groupingInfo, int32 minDigits)  const
 		{
 			const Symbol *suffix;
 			// write sign prefix
@@ -447,7 +556,7 @@ class BGenericNumberFormat::Integer {
 				// special case for zero and less the one minimal digit
 				writer.Append(digitSymbols[0]);
 			} else {
-				// not zero
+				// not zero or at least one minimal digit
 				if (groupingInfo) {
 					// use grouping
 					// pad with zeros up to minDigits
@@ -466,8 +575,8 @@ class BGenericNumberFormat::Integer {
 				} else {
 					// no grouping
 					// pad with zeros up to minDigits
-					for (int i = fDigitCount; i < minDigits; i++)
-						writer.Append(digitSymbols[0]);
+					if (fDigitCount < minDigits)
+						writer.Append(digitSymbols, minDigits - fDigitCount);
 					// write digits
 					for (int i = fDigitCount - 1; i >= 0; i--)
 						writer.Append(digitSymbols[fDigits[i]]);
@@ -494,64 +603,372 @@ class BGenericNumberFormat::Integer {
 		bool	fNegative;
 };
 
-// constants
 
-// digit symbols
-static const BGenericNumberFormat::Symbol kDefaultDigitSymbols[] = {
-	"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
+// Float
+class BGenericNumberFormat::Float {
+	public:
+		Float(double number)
+			: fNegative(signbit(number)),
+			  fClass(fpclassify(number)),
+			  fExponent(0),
+			  fDigitCount(0)
+		{
+			// filter special cases
+			switch (fClass) {
+				case FP_NAN:
+				case FP_INFINITE:
+					return;
+				case FP_ZERO:
+					fDigits[0] = 0;
+					fDigitCount = 1;
+					return;
+				case FP_NORMAL:
+				case FP_SUBNORMAL:
+					break;
+			}
+			if (fNegative)
+				number = -number;
+			// We start with an exponent great enough to make
+			// number / 10^fExponent < 10. It may even be < 1 or 0.1.
+			// We simply cut those digits later.
+			fExponent = (int)ceil(log10(number));
+			int shiftBy = kMaxFloatDigitCount - fExponent - 1;
+			// We don't multiply with 10^shiftBy not in one go, since for
+			// subnormal numbers 10^shiftBy will not be representable. Maybe
+			// also for normal numbers close to the limit -- so don't risk
+			// anything, for the time being. TODO: Optimize later.
+			double mantissa = number * pow(10, shiftBy / 2);
+			mantissa *= pow(10, shiftBy - shiftBy / 2);
+			// get the mantissa's digits -- we drop trailing zeros
+			int32 firstNonNull = -1;
+			for (int i = 0; i < kMaxFloatDigitCount; i++) {
+				char digit = (char)fmod(mantissa, 10);
+				if (firstNonNull < 0 && digit > 0)
+					firstNonNull = i;
+				if (firstNonNull >= 0)
+					fDigits[i - firstNonNull] = digit;
+				mantissa /= 10;
+			}
+			if (firstNonNull >= 0)
+				fDigitCount = kMaxFloatDigitCount - firstNonNull;
+			else
+				fDigitCount = 0;
+			// drop leading zeros
+			while (fDigitCount > 0 && fDigits[fDigitCount - 1] == 0) {
+				fDigitCount--;
+				fExponent--;
+			}
+			// due to rounding effects we may end up with zero: switch to its
+			// canaonical representation then
+			if (fDigitCount == 0) {
+				fExponent = 0;
+				fDigits[0] = 0;
+				fDigitCount = 1;
+			}
+		}
+
+		void Format(BufferWriter &writer, const Symbol *digitSymbols,
+			const SpecialNumberSymbols *specialNumbers,
+			const Symbol *fractionSeparator,
+			const Symbol *exponentSymbol,
+			const SignSymbols *signSymbols,
+			const SignSymbols *mantissaSignSymbols,
+			const SignSymbols *exponentSignSymbols,
+			float_format_type formatType,
+			number_format_sign_policy signPolicy,
+			const GroupingInfo *groupingInfo,
+			int32 minIntegerDigits, int32 minFractionDigits,
+			int32 maxFractionDigits, bool forceFractionSeparator,
+			bool keepTrailingFractionZeros) const
+		{
+			// deal with special numbers
+			switch (fClass) {
+				case FP_NAN:
+					writer.Append(specialNumbers->nan);
+					return;
+				case FP_INFINITE:
+					if (fNegative)
+						writer.Append(specialNumbers->negative_infinity);
+					else
+						writer.Append(specialNumbers->infinity);
+					return;
+				case FP_ZERO:
+				case FP_NORMAL:
+				case FP_SUBNORMAL:
+					break;
+			}
+			// format according to the specified format type
+			bool scientific = false;
+			switch (formatType) {
+				case B_FIXED_POINT_FLOAT_FORMAT:
+					break;
+				case B_SCIENTIFIC_FLOAT_FORMAT:
+					scientific = true;
+					break;
+				case B_AUTO_FLOAT_FORMAT:
+					// the criterion printf() uses:
+					scientific = (fExponent >= maxFractionDigits
+								  || fExponent < -4);
+					break;
+			}
+			// finally invoke the respective method that does the formatting
+			if (scientific) {
+				FormatScientific(writer, digitSymbols, fractionSeparator,
+					exponentSymbol, signSymbols, mantissaSignSymbols,
+					exponentSignSymbols, signPolicy, minIntegerDigits,
+					minFractionDigits, maxFractionDigits,
+					forceFractionSeparator, keepTrailingFractionZeros);
+			} else {
+				FormatFixedPoint(writer, digitSymbols, fractionSeparator,
+					signSymbols, mantissaSignSymbols, signPolicy, groupingInfo,
+					minIntegerDigits, minFractionDigits, maxFractionDigits,
+					forceFractionSeparator, keepTrailingFractionZeros);
+			}
+		}
+
+		void FormatScientific(BufferWriter &writer, const Symbol *digitSymbols,
+			const Symbol *fractionSeparator,
+			const Symbol *exponentSymbol,
+			const SignSymbols *signSymbols,
+			const SignSymbols *mantissaSignSymbols,
+			const SignSymbols *exponentSignSymbols,
+			number_format_sign_policy signPolicy,
+			int32 minIntegerDigits, int32 minFractionDigits,
+			int32 maxFractionDigits, bool forceFractionSeparator,
+			bool keepTrailingFractionZeros) const
+		{
+			const Symbol *suffix;
+			const Symbol *mantissaSuffix;
+			// write sign prefix
+			if (fNegative) {
+				writer.Append(signSymbols->MinusPrefix());
+				writer.Append(mantissaSignSymbols->MinusPrefix());
+				suffix = signSymbols->MinusSuffix();
+				mantissaSuffix = mantissaSignSymbols->MinusSuffix();
+			} else {
+				switch (signPolicy) {
+					case B_USE_NEGATIVE_SIGN_ONLY:
+						writer.Append(signSymbols->NoForcePlusPrefix());
+						writer.Append(mantissaSignSymbols->NoForcePlusPrefix());
+						suffix = signSymbols->NoForcePlusSuffix();
+						mantissaSuffix
+							= mantissaSignSymbols->NoForcePlusSuffix();
+						break;
+					case B_USE_SPACE_FOR_POSITIVE_SIGN:
+						writer.Append(signSymbols->PadPlusPrefix());
+						writer.Append(mantissaSignSymbols->PadPlusPrefix());
+						suffix = signSymbols->PadPlusSuffix();
+						mantissaSuffix = mantissaSignSymbols->PadPlusSuffix();
+						break;
+					case B_USE_POSITIVE_SIGN:
+						writer.Append(signSymbols->PlusPrefix());
+						writer.Append(mantissaSignSymbols->PlusPrefix());
+						suffix = signSymbols->PlusSuffix();
+						mantissaSuffix = mantissaSignSymbols->PlusSuffix();
+						break;
+				}
+			}
+			// round
+			int32 exponent = fExponent;
+			char digits[kMaxFloatDigitCount];
+			int32 integerDigits = max(minIntegerDigits, 1L);
+			int32 fractionDigits
+				= max(fDigitCount - integerDigits, minFractionDigits);
+			fractionDigits = min(fractionDigits, maxFractionDigits);
+			int32 digitCount
+				= _Round(digits, integerDigits + fractionDigits, exponent);
+			fractionDigits = digitCount - integerDigits;
+			if (keepTrailingFractionZeros)
+				fractionDigits = max(fractionDigits, minFractionDigits);
+			fractionDigits = min(fractionDigits, maxFractionDigits);
+			// the mantissa
+			// integer part
+			int32 existingIntegerDigits = min(integerDigits, digitCount);
+			for (int i = 0; i < existingIntegerDigits; i++)
+				writer.Append(digitSymbols[digits[digitCount - i - 1]]);
+			// pad with zeros to get the desired number of integer digits
+			if (existingIntegerDigits < integerDigits) {
+				writer.Append(digitSymbols,
+							  integerDigits - existingIntegerDigits);
+			}
+			// unless the number is 0, adjust the exponent
+			if (!_IsZero(digits, digitCount))
+				exponent -= integerDigits - 1;
+			// fraction part
+			if (fractionDigits > 0 || forceFractionSeparator)
+				writer.Append(fractionSeparator);
+			int32 existingFractionDigits
+				= min(digitCount - integerDigits, fractionDigits);
+			for (int i = existingFractionDigits - 1; i >= 0; i--)
+				writer.Append(digitSymbols[digits[i]]);
+			// pad with zeros to get the desired number of fraction digits
+			if (fractionDigits > existingFractionDigits) {
+				writer.Append(digitSymbols,
+							  fractionDigits - existingFractionDigits);
+			}
+			writer.Append(mantissaSuffix);
+			// the exponent
+			writer.Append(exponentSymbol);
+			Integer((int64)exponent).Format(writer, digitSymbols,
+				exponentSignSymbols, B_USE_POSITIVE_SIGN, &kNoGroupingInfo, 2);
+			// sign suffix
+			writer.Append(suffix);
+		}
+
+		void FormatFixedPoint(BufferWriter &writer, const Symbol *digitSymbols,
+			const Symbol *fractionSeparator,
+			const SignSymbols *signSymbols,
+			const SignSymbols *mantissaSignSymbols,
+			number_format_sign_policy signPolicy,
+			const GroupingInfo *groupingInfo,
+			int32 minIntegerDigits, int32 minFractionDigits,
+			int32 maxFractionDigits, bool forceFractionSeparator,
+			bool keepTrailingFractionZeros) const
+		{
+			const Symbol *suffix;
+			const Symbol *mantissaSuffix;
+			// write sign prefix
+			if (fNegative) {
+				writer.Append(signSymbols->MinusPrefix());
+				writer.Append(mantissaSignSymbols->MinusPrefix());
+				suffix = signSymbols->MinusSuffix();
+				mantissaSuffix = mantissaSignSymbols->MinusSuffix();
+			} else {
+				switch (signPolicy) {
+					case B_USE_NEGATIVE_SIGN_ONLY:
+						writer.Append(signSymbols->NoForcePlusPrefix());
+						writer.Append(mantissaSignSymbols->NoForcePlusPrefix());
+						suffix = signSymbols->NoForcePlusSuffix();
+						mantissaSuffix
+							= mantissaSignSymbols->NoForcePlusSuffix();
+						break;
+					case B_USE_SPACE_FOR_POSITIVE_SIGN:
+						writer.Append(signSymbols->PadPlusPrefix());
+						writer.Append(mantissaSignSymbols->PadPlusPrefix());
+						suffix = signSymbols->PadPlusSuffix();
+						mantissaSuffix = mantissaSignSymbols->PadPlusSuffix();
+						break;
+					case B_USE_POSITIVE_SIGN:
+						writer.Append(signSymbols->PlusPrefix());
+						writer.Append(mantissaSignSymbols->PlusPrefix());
+						suffix = signSymbols->PlusSuffix();
+						mantissaSuffix = mantissaSignSymbols->PlusSuffix();
+						break;
+				}
+			}
+			// round
+			int32 exponent = fExponent;
+			char digits[kMaxFloatDigitCount];
+			int32 integerDigits = max(minIntegerDigits, exponent + 1L);
+			int32 fractionDigits
+				= max(fDigitCount - integerDigits, minFractionDigits);
+			fractionDigits = min(fractionDigits, maxFractionDigits);
+			int32 digitCount
+				= _Round(digits, integerDigits + fractionDigits, exponent);
+			fractionDigits = digitCount - integerDigits;
+			if (keepTrailingFractionZeros)
+				fractionDigits = max(fractionDigits, minFractionDigits);
+			fractionDigits = min(fractionDigits, maxFractionDigits);
+			// integer part
+			int32 existingIntegerDigits = min(integerDigits, exponent + 1);
+			existingIntegerDigits = max(existingIntegerDigits, 0L);
+			if (groupingInfo) {
+				// use grouping
+				// pad with zeros up to minDigits
+				for (int i = integerDigits - 1;
+					 i >= existingIntegerDigits;
+					 i--) {
+					if (i != integerDigits - 1)
+						writer.Append(groupingInfo->SeparatorForDigit(i));
+					writer.Append(digitSymbols[0]);
+				}
+				// write digits
+				for (int i = existingIntegerDigits - 1; i >= 0; i--) {
+					if (i != integerDigits - 1)
+						writer.Append(groupingInfo->SeparatorForDigit(i));
+					writer.Append(digitSymbols[digits[
+						digitCount - existingIntegerDigits + i]]);
+				}
+			} else {
+				// no grouping
+				// pad with zeros to get the desired number of integer digits
+				if (existingIntegerDigits < integerDigits) {
+					writer.Append(digitSymbols[0],
+								  integerDigits - existingIntegerDigits);
+				}
+				// write digits
+				for (int i = 0; i < existingIntegerDigits; i++)
+					writer.Append(digitSymbols[digits[digitCount - i - 1]]);
+			}
+			// fraction part
+			if (fractionDigits > 0 || forceFractionSeparator)
+				writer.Append(fractionSeparator);
+			int32 existingFractionDigits
+				= min(digitCount - existingIntegerDigits, fractionDigits);
+			for (int i = existingFractionDigits - 1; i >= 0; i--)
+				writer.Append(digitSymbols[digits[i]]);
+			// pad with zeros to get the desired number of fraction digits
+			if (fractionDigits > existingFractionDigits) {
+				writer.Append(digitSymbols,
+							  fractionDigits - existingFractionDigits);
+			}
+			// sign suffixes
+			writer.Append(mantissaSuffix);
+			writer.Append(suffix);
+		}
+
+	private:
+		int32 _Round(char *digits, int32 count, int32 &exponent) const
+		{
+			if (count > fDigitCount)
+				count = fDigitCount;
+			int firstNonNull = -1;
+// TODO: Non-hardcoded base-independent rounding.
+			bool carry = false;
+			if (count < fDigitCount)
+				carry = (fDigits[fDigitCount - count - 1] >= 5);
+			for (int i = 0; i < count; i++) {
+				char digit =  fDigits[fDigitCount - count + i];
+				if (carry) {
+					digit++;
+					if (digit == 10)	// == base
+						digit = 0;
+					else
+						carry = false;
+				}
+				if (firstNonNull < 0 && digit > 0)
+					firstNonNull = i;
+				if (firstNonNull >= 0)
+					digits[i - firstNonNull] = digit;
+			}
+			if (firstNonNull < 0) {
+				if (carry) {
+					// 9.999999... -> 10
+					digits[0] = 1;
+					exponent++;
+				} else {
+					// 0.0000...1 -> 0
+					exponent = 0;
+					digits[0] = 0;
+				}
+				count = 1;
+			} else
+				count -= firstNonNull;
+			return count;
+		}
+
+		static bool _IsZero(const char *digits, int32 digitCount)
+		{
+			return (digitCount == 1 && digits[0] == 0);
+		}
+
+	private:
+		bool	fNegative;
+		int		fClass;
+		int32	fExponent;
+		char	fDigits[kMaxFloatDigitCount];
+		int32	fDigitCount;
 };
-
-// decimal separator symbol
-static const BGenericNumberFormat::Symbol kDefaultDecimalSeparator = ".";
-
-// grouping separator symbols
-static const char *kDefaultGroupingSeparators[] = { "," };
-static const int32 kDefaultGroupingSeparatorCount
-	= sizeof(kDefaultGroupingSeparators) / sizeof(const char*);
-
-// grouping sizes
-static const size_t kDefaultGroupingSizes[] = { 3 };
-static const int32 kDefaultGroupingSizeCount
-	= sizeof(kDefaultGroupingSizes) / sizeof(size_t);
-
-// grouping info
-static const BGenericNumberFormat::GroupingInfo kDefaultGroupingInfo(
-	kDefaultGroupingSeparators, kDefaultGroupingSeparatorCount,
-	kDefaultGroupingSizes, kDefaultGroupingSizeCount
-);
-
-// exponent symbol
-static const BGenericNumberFormat::Symbol kDefaultExponentSymbol = "e";
-static const BGenericNumberFormat::Symbol kDefaultUpperCaseExponentSymbol
-	= "E";
-
-// NaN symbol
-static const BGenericNumberFormat::Symbol kDefaultNaNSymbol = "NaN";
-static const BGenericNumberFormat::Symbol kDefaultUpperCaseNaNSymbol = "NaN";
-
-// infinity symbol
-static const BGenericNumberFormat::Symbol kDefaultInfinitySymbol
-	= "infinity";
-static const BGenericNumberFormat::Symbol kDefaultUpperCaseInfinitySymbol
-	= "INFINITY";
-
-// negative infinity symbol
-static const BGenericNumberFormat::Symbol kDefaultNegativeInfinitySymbol
-	= "-infinity";
-static const BGenericNumberFormat::Symbol
-	kDefaultUpperCaseNegativeInfinitySymbol = "-INFINITY";
-
-// sign symbols
-static const BGenericNumberFormat::SignSymbols kDefaultSignSymbols(
-	"+", "-", " ", "",	// prefixes
-	"", "", "", ""		// suffixes
-);
-
-// exponent sign symbols
-static const BGenericNumberFormat::SignSymbols kDefaultExponentSignSymbols(
-	"+", "-", " ", "",	// prefixes
-	"", "", "", ""		// suffixes
-);
 
 
 // constructor
@@ -559,7 +976,7 @@ BGenericNumberFormat::BGenericNumberFormat()
 	: fIntegerParameters(),
 	  fFloatParameters(),
 	  fDigitSymbols(NULL),
-	  fDecimalSeparator(NULL),
+	  fFractionSeparator(NULL),
 	  fGroupingInfo(NULL),
 	  fExponentSymbol(NULL),
 	  fUpperCaseExponentSymbol(NULL),
@@ -570,6 +987,7 @@ BGenericNumberFormat::BGenericNumberFormat()
 	  fNegativeInfinitySymbol(NULL),
 	  fUpperCaseNegativeInfinitySymbol(NULL),
 	  fSignSymbols(NULL),
+	  fMantissaSignSymbols(NULL),
 	  fExponentSignSymbols(NULL)
 {
 }
@@ -602,30 +1020,102 @@ BGenericNumberFormat::FormatInteger(
 // FormatInteger
 status_t
 BGenericNumberFormat::FormatInteger(
+	const BIntegerFormatParameters *parameters, uint64 number, BString *buffer,
+	format_field_position *positions, int32 positionCount, int32 *fieldCount,
+	bool allFieldPositions) const
+{
+	if (!buffer)
+		return B_BAD_VALUE;
+	char localBuffer[1024];
+	status_t error = FormatInteger(parameters, number, localBuffer,
+		sizeof(localBuffer), positions, positionCount, fieldCount,
+		allFieldPositions);
+	if (error == B_OK) {
+		buffer->Append(localBuffer);
+		// TODO: Check, if the allocation succeeded.
+	}
+	return error;
+}
+
+// FormatInteger
+status_t
+BGenericNumberFormat::FormatInteger(
 	const BIntegerFormatParameters *parameters, int64 number, char *buffer,
 	size_t bufferSize, format_field_position *positions, int32 positionCount,
 	int32 *fieldCount, bool allFieldPositions) const
 {
+	Integer integer(number);
+	return FormatInteger(parameters, integer, buffer, bufferSize, positions,
+						 positionCount, fieldCount, allFieldPositions);
+}
+
+// FormatInteger
+status_t
+BGenericNumberFormat::FormatInteger(
+	const BIntegerFormatParameters *parameters, uint64 number, char *buffer,
+	size_t bufferSize, format_field_position *positions, int32 positionCount,
+	int32 *fieldCount, bool allFieldPositions) const
+{
+	Integer integer(number);
+	return FormatInteger(parameters, integer, buffer, bufferSize, positions,
+						 positionCount, fieldCount, allFieldPositions);
+}
+
+// FormatFloat
+status_t
+BGenericNumberFormat::FormatFloat(const BFloatFormatParameters *parameters,
+	double number, BString *buffer, format_field_position *positions,
+	int32 positionCount, int32 *fieldCount, bool allFieldPositions) const
+{
+	if (!buffer)
+		return B_BAD_VALUE;
+	// TODO: How to ensure that this is enough?
+	char localBuffer[1024];
+	status_t error = FormatFloat(parameters, number, localBuffer,
+		sizeof(localBuffer), positions, positionCount, fieldCount,
+		allFieldPositions);
+	if (error == B_OK) {
+		buffer->Append(localBuffer);
+		// TODO: Check, if the allocation succeeded.
+	}
+	return error;
+}
+
+// FormatFloat
+status_t
+BGenericNumberFormat::FormatFloat(const BFloatFormatParameters *parameters,
+	double number, char *buffer, size_t bufferSize,
+	format_field_position *positions, int32 positionCount, int32 *fieldCount,
+	bool allFieldPositions) const
+{
 	// TODO: Check parameters.
 	if (!parameters)
-		parameters = DefaultIntegerFormatParameters();
+		parameters = DefaultFloatFormatParameters();
 	if (bufferSize <= parameters->FormatWidth())
 		return EOVERFLOW;
-	// decompose number into digits
-	Integer integer(number);
+	Float floatNumber(number);
 	// prepare some parameters
 	const GroupingInfo *groupingInfo = NULL;
 	if (parameters->UseGrouping())
 		groupingInfo = GetGroupingInfo();
+	bool upperCase = parameters->UseUpperCase();
+	SpecialNumberSymbols specialSymbols;
+	GetSpecialNumberSymbols(upperCase, &specialSymbols);
 	// compute the length of the formatted string
 	BufferWriter writer;
-	integer.Format(writer, DigitSymbols(),
-		GetSignSymbols(), parameters->SignPolicy(), groupingInfo,
-		parameters->MinimalIntegerDigits());
+	floatNumber.Format(writer, DigitSymbols(), &specialSymbols,
+		FractionSeparator(), ExponentSymbol(), GetSignSymbols(),
+		MantissaSignSymbols(), ExponentSignSymbols(),
+		parameters->FloatFormatType(), parameters->SignPolicy(), groupingInfo,
+		parameters->MinimalIntegerDigits(), parameters->MinimalFractionDigits(),
+		parameters->MaximalFractionDigits(),
+		parameters->AlwaysUseFractionSeparator(),
+		parameters->KeepTrailingFractionZeros());
 	int32 stringLength = writer.StringLength();
 	int32 charCount = writer.CharCount();
 	// consider alignment and check the available space in the buffer
 	int32 padding = max(0L, (int32)parameters->FormatWidth() - charCount);
+// TODO: Padding with zeros.
 	if (bufferSize <= stringLength + padding)
 		return EOVERFLOW;
 	// prepare for writing
@@ -634,9 +1124,14 @@ BGenericNumberFormat::FormatInteger(
 	if (parameters->Alignment() == B_ALIGN_FORMAT_RIGHT && padding > 0)
 		writer.Append(' ', padding);
 	// write the number
-	integer.Format(writer, DigitSymbols(),
-		GetSignSymbols(), parameters->SignPolicy(), groupingInfo,
-		parameters->MinimalIntegerDigits());
+	floatNumber.Format(writer,  DigitSymbols(), &specialSymbols,
+		FractionSeparator(), ExponentSymbol(), GetSignSymbols(),
+		MantissaSignSymbols(), ExponentSignSymbols(),
+		parameters->FloatFormatType(), parameters->SignPolicy(), groupingInfo,
+		parameters->MinimalIntegerDigits(), parameters->MinimalFractionDigits(),
+		parameters->MaximalFractionDigits(),
+		parameters->AlwaysUseFractionSeparator(),
+		parameters->KeepTrailingFractionZeros());
 	// write padding for left field alignment
 	if (parameters->Alignment() == B_ALIGN_FORMAT_LEFT && padding > 0)
 		writer.Append(' ', padding);
@@ -725,11 +1220,11 @@ BGenericNumberFormat::SetDigitSymbols(const char **digits)
 	return B_OK;
 }
 
-// SetDecimalSeparator
+// SetFractionSeparator
 status_t
-BGenericNumberFormat::SetDecimalSeparator(const char *decimalSeparator)
+BGenericNumberFormat::SetFractionSeparator(const char *decimalSeparator)
 {
-	return _SetSymbol(&fDecimalSeparator, decimalSeparator);
+	return _SetSymbol(&fFractionSeparator, decimalSeparator);
 }
 
 // SetGroupingInfo
@@ -808,10 +1303,10 @@ BGenericNumberFormat::SetSpecialNumberSymbols(const char *nan,
 // SetSignSymbols
 status_t
 BGenericNumberFormat::SetSignSymbols(const char *plusPrefix,
-			const char *minusPrefix, const char *padPlusPrefix,
-			const char *noForcePlusPrefix, const char *plusSuffix,
-			const char *minusSuffix, const char *padPlusSuffix,
-			const char *noForcePlusSuffix)
+	const char *minusPrefix, const char *padPlusPrefix,
+	const char *noForcePlusPrefix, const char *plusSuffix,
+	const char *minusSuffix, const char *padPlusSuffix,
+	const char *noForcePlusSuffix)
 {
 	if (!fSignSymbols) {
 		fSignSymbols = new(nothrow) SignSymbols;
@@ -819,6 +1314,24 @@ BGenericNumberFormat::SetSignSymbols(const char *plusPrefix,
 			return B_NO_MEMORY;
 	}
 	return fSignSymbols->SetTo(plusPrefix, minusPrefix, padPlusPrefix,
+		noForcePlusPrefix, plusSuffix, minusSuffix, padPlusSuffix,
+		noForcePlusSuffix);
+}
+
+// SetMantissaSignSymbols
+status_t
+BGenericNumberFormat::SetMantissaSignSymbols(const char *plusPrefix,
+	const char *minusPrefix, const char *padPlusPrefix,
+	const char *noForcePlusPrefix, const char *plusSuffix,
+	const char *minusSuffix, const char *padPlusSuffix,
+	const char *noForcePlusSuffix)
+{
+	if (!fMantissaSignSymbols) {
+		fMantissaSignSymbols = new(nothrow) SignSymbols;
+		if (!fMantissaSignSymbols)
+			return B_NO_MEMORY;
+	}
+	return fMantissaSignSymbols->SetTo(plusPrefix, minusPrefix, padPlusPrefix,
 		noForcePlusPrefix, plusSuffix, minusSuffix, padPlusSuffix,
 		noForcePlusSuffix);
 }
@@ -837,6 +1350,49 @@ BGenericNumberFormat::SetExponentSignSymbols(const char *plusPrefix,
 		plusPrefix, plusSuffix, minusSuffix, plusSuffix, plusSuffix);
 }
 
+// FormatInteger
+status_t
+BGenericNumberFormat::FormatInteger(
+	const BIntegerFormatParameters *parameters, const Integer &integer,
+	char *buffer, size_t bufferSize, format_field_position *positions,
+	int32 positionCount, int32 *fieldCount, bool allFieldPositions) const
+{
+	// TODO: Check parameters.
+	if (!parameters)
+		parameters = DefaultIntegerFormatParameters();
+	if (bufferSize <= parameters->FormatWidth())
+		return EOVERFLOW;
+	// prepare some parameters
+	const GroupingInfo *groupingInfo = NULL;
+	if (parameters->UseGrouping())
+		groupingInfo = GetGroupingInfo();
+	// compute the length of the formatted string
+	BufferWriter writer;
+	integer.Format(writer, DigitSymbols(),
+		GetSignSymbols(), parameters->SignPolicy(), groupingInfo,
+		parameters->MinimalIntegerDigits());
+	int32 stringLength = writer.StringLength();
+	int32 charCount = writer.CharCount();
+	// consider alignment and check the available space in the buffer
+	int32 padding = max(0L, (int32)parameters->FormatWidth() - charCount);
+// TODO: Padding with zeros.
+	if (bufferSize <= stringLength + padding)
+		return EOVERFLOW;
+	// prepare for writing
+	writer.SetTo(buffer, bufferSize);
+	// write padding for right field alignment
+	if (parameters->Alignment() == B_ALIGN_FORMAT_RIGHT && padding > 0)
+		writer.Append(' ', padding);
+	// write the number
+	integer.Format(writer, DigitSymbols(),
+		GetSignSymbols(), parameters->SignPolicy(), groupingInfo,
+		parameters->MinimalIntegerDigits());
+	// write padding for left field alignment
+	if (parameters->Alignment() == B_ALIGN_FORMAT_LEFT && padding > 0)
+		writer.Append(' ', padding);
+	return B_OK;
+}
+
 // DigitSymbols
 const BGenericNumberFormat::Symbol *
 BGenericNumberFormat::DigitSymbols() const
@@ -844,11 +1400,12 @@ BGenericNumberFormat::DigitSymbols() const
 	return (fDigitSymbols ? fDigitSymbols : kDefaultDigitSymbols);
 }
 
-// DecimalSeparator
+// FractionSeparator
 const BGenericNumberFormat::Symbol *
-BGenericNumberFormat::DecimalSeparator() const
+BGenericNumberFormat::FractionSeparator() const
 {
-	return (fDecimalSeparator ? fDecimalSeparator : &kDefaultDecimalSeparator);
+	return (fFractionSeparator ? fFractionSeparator
+							   : &kDefaultFractionSeparator);
 }
 
 // GetGroupingInfo
@@ -906,11 +1463,29 @@ BGenericNumberFormat::NegativeInfinitySymbol(bool upperCase) const
 					  : &kDefaultNegativeInfinitySymbol);
 }
 
+// GetSpecialNumberSymbols
+void
+BGenericNumberFormat::GetSpecialNumberSymbols(bool upperCase,
+	SpecialNumberSymbols *symbols) const
+{
+	symbols->nan = NaNSymbol(upperCase);
+	symbols->infinity = InfinitySymbol(upperCase);
+	symbols->negative_infinity = NegativeInfinitySymbol(upperCase);
+}
+
 // GetSignSymbols
 const BGenericNumberFormat::SignSymbols *
 BGenericNumberFormat::GetSignSymbols() const
 {
 	return (fSignSymbols ? fSignSymbols : &kDefaultSignSymbols);
+}
+
+// MantissaSignSymbols
+const BGenericNumberFormat::SignSymbols *
+BGenericNumberFormat::MantissaSignSymbols() const
+{
+	return (fMantissaSignSymbols ? fMantissaSignSymbols
+								 : &kDefaultMantissaSignSymbols);
 }
 
 // ExponentSignSymbols

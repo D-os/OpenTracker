@@ -25,6 +25,34 @@ class BGenericNumberFormat {
 							   int32 *fieldCount = NULL,
 							   bool allFieldPositions = false) const;
 
+		status_t FormatInteger(const BIntegerFormatParameters *parameters,
+							   uint64 number, BString *buffer,
+							   format_field_position *positions = NULL,
+							   int32 positionCount = 1,
+							   int32 *fieldCount = NULL,
+							   bool allFieldPositions = false) const;
+
+		status_t FormatInteger(const BIntegerFormatParameters *parameters,
+							   uint64 number, char *buffer, size_t bufferSize,
+							   format_field_position *positions = NULL,
+							   int32 positionCount = 1,
+							   int32 *fieldCount = NULL,
+							   bool allFieldPositions = false) const;
+
+		status_t FormatFloat(const BFloatFormatParameters *parameters,
+							 double number, BString *buffer,
+							 format_field_position *positions = NULL,
+							 int32 positionCount = 1,
+							 int32 *fieldCount = NULL,
+							 bool allFieldPositions = false) const;
+
+		status_t FormatFloat(const BFloatFormatParameters *parameters,
+							 double number, char *buffer, size_t bufferSize,
+							 format_field_position *positions = NULL,
+							 int32 positionCount = 1,
+							 int32 *fieldCount = NULL,
+							 bool allFieldPositions = false) const;
+
 		// default number format parameters
 
 		status_t SetDefaultIntegerFormatParameters(
@@ -40,7 +68,7 @@ class BGenericNumberFormat {
 		// other parameters configuring the formatter
 
 		status_t SetDigitSymbols(const char **digits);
-		status_t SetDecimalSeparator(const char *decimalSeparator);
+		status_t SetFractionSeparator(const char *decimalSeparator);
 		status_t SetGroupingInfo(const char **groupingSeparators,
 			size_t separatorCount, size_t *groupSizes, size_t sizeCount);
 		status_t SetExponentSymbol(const char *exponentSymbol,
@@ -55,15 +83,25 @@ class BGenericNumberFormat {
 			const char *noForcePlusPrefix = NULL, const char *plusSuffix = NULL,
 			const char *minusSuffix = NULL, const char *padPlusSuffix = NULL,
 			const char *noForcePlusSuffix = NULL);
+		status_t SetMantissaSignSymbols(const char *plusPrefix,
+			const char *minusPrefix, const char *padPlusPrefix,
+			const char *noForcePlusPrefix = NULL, const char *plusSuffix = NULL,
+			const char *minusSuffix = NULL, const char *padPlusSuffix = NULL,
+			const char *noForcePlusSuffix = NULL);
 		status_t SetExponentSignSymbols(const char *plusPrefix,
 			const char *minusPrefix, const char *plusSuffix = NULL,
 			const char *minusSuffix = NULL);
+// TODO: Support engineering representation of scientific format (exponent
+// is a multiple of 3), i.e. allow setting the number of which the exponent
+// must be a multiple of.
 
 	private:
+		class BufferWriter;
+		class Float;
+		class GroupingInfo;
 		class Integer;
 		class SignSymbols;
-		class BufferWriter;
-		class GroupingInfo;
+		struct SpecialNumberSymbols;
 
 		struct Symbol {
 			char	*symbol;
@@ -77,14 +115,25 @@ class BGenericNumberFormat {
 			void Unset()	{ SetTo(NULL); }
 		};
 
+		status_t FormatInteger(const BIntegerFormatParameters *parameters,
+							   const Integer &integer, char *buffer,
+							   size_t bufferSize,
+							   format_field_position *positions = NULL,
+							   int32 positionCount = 1,
+							   int32 *fieldCount = NULL,
+							   bool allFieldPositions = false) const;
+
 		const Symbol *DigitSymbols() const;
-		const Symbol *DecimalSeparator() const;
+		const Symbol *FractionSeparator() const;
 		const GroupingInfo *GetGroupingInfo() const;
 		const Symbol *ExponentSymbol(bool upperCase = false) const;
 		const Symbol *NaNSymbol(bool upperCase = false) const;
 		const Symbol *InfinitySymbol(bool upperCase = false) const;
 		const Symbol *NegativeInfinitySymbol(bool upperCase = false) const;
+		void GetSpecialNumberSymbols(bool upperCase,
+									 SpecialNumberSymbols *symbols) const;
 		const SignSymbols *GetSignSymbols() const;
+		const SignSymbols *MantissaSignSymbols() const;
 		const SignSymbols *ExponentSignSymbols() const;
 
 		static status_t _SetSymbol(Symbol **symbol, const char *str);
@@ -92,7 +141,7 @@ class BGenericNumberFormat {
 		BIntegerFormatParameters	fIntegerParameters;
 		BFloatFormatParameters		fFloatParameters;
 		Symbol						*fDigitSymbols;
-		Symbol						*fDecimalSeparator;
+		Symbol						*fFractionSeparator;
 		GroupingInfo				*fGroupingInfo;
 		Symbol						*fExponentSymbol;
 		Symbol						*fUpperCaseExponentSymbol;
@@ -103,6 +152,7 @@ class BGenericNumberFormat {
 		Symbol						*fNegativeInfinitySymbol;
 		Symbol						*fUpperCaseNegativeInfinitySymbol;
 		SignSymbols					*fSignSymbols;
+		SignSymbols					*fMantissaSignSymbols;
 		SignSymbols					*fExponentSignSymbols;
 };
 
