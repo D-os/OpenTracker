@@ -27,6 +27,9 @@ class BCatalog {
 	private:
 		BCatalogAddOn *fCatalog;
 
+		BCatalog(const BCatalog&);
+		const BCatalog& operator= (const BCatalog&);
+			// hide assignment and copy-constructor
 };
 
 
