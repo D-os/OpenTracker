@@ -2291,7 +2291,6 @@ BContainerWindow::AddWindowContextMenus(BMenu *menu)
 	menu->AddItem(new BMenuItem("Select"B_UTF8_ELLIPSIS,
 		new BMessage(kShowSelectionWindow), 'A', B_SHIFT_KEY));
 	menu->AddItem(new BMenuItem("Select All", new BMessage(B_SELECT_ALL), 'A'));
-	menu->AddItem(new BMenuItem("Invert Selection", new BMessage(kInvertSelection), 'S'));
 	if (!IsTrash()) 
 		menu->AddItem(new BMenuItem("Open Parent", new BMessage(kOpenParentDir),
 			B_UP_ARROW));
