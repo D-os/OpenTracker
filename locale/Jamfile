@@ -1,0 +1,8 @@
+SubDir LOCALE_TOP ;
+
+SubInclude LOCALE_TOP add-ons ;
+SubInclude LOCALE_TOP apps ;
+SubInclude LOCALE_TOP languages ;
+SubInclude LOCALE_TOP lib ;
+SubInclude LOCALE_TOP test ;
+SubInclude LOCALE_TOP tools ;

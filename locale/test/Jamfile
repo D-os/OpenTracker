@@ -1,0 +1,17 @@
+SubDir LOCALE_TOP test ;
+
+rule SimpleTest
+{
+	# SimpleTest <sources> ;
+	local sources = $(1) ;
+	local name = $(sources[1]:B) ;
+	Application $(name) : $(sources) : be liblocale.so ;
+}
+
+SimpleTest localeTest.cpp ;
+SimpleTest collatorTest.cpp ;
+SimpleTest collatorSpeed.cpp ;
+SimpleTest catalogTest.cpp ;
+AddOn catalogTestAddOn : catalogTestAddOn.cpp : be liblocale.so ;
+SimpleTest catalogSpeed.cpp ;
+SimpleTest genericNumberFormatTest.cpp ;
