@@ -2,46 +2,87 @@
 #
 # Setup global variables.
 
-# warnings settings
-if $(WARNINGS) != 0 {
-	if $(OSPLAT) = X86 {
-		CCFLAGS += -Wall -Wno-multichar -Wmissing-prototypes ;
-		CCFLAGS += -Wpointer-arith -Wcast-align -Wsign-compare ;
-		C++FLAGS += -Wall -Wno-multichar -Wmissing-prototypes ;
-		C++FLAGS += -Wno-ctor-dtor-privacy -Woverloaded-virtual ;
-		C++FLAGS += -Wpointer-arith -Wcast-align -Wsign-compare ;
-	} else {
-		CCFLAGS += -w on -requireprotos ;
-	}
-}
-
-# debugging settings
-if $(DEBUG) {
-	OPTIMIZE = 0 ;
-	FDEFINES += DEBUG=$(DEBUG) ;
-	CCFLAGS += -g ;
-	C++FLAGS += -g ;
-	LINKFLAGS += -g ;
-}
-
-# optimization settings
-if $(OPTIMIZE) = 0 {
-	if $(OSPLAT) = X86 {
-		OPTIM ?= -O0 ;
-	} else {
-		OPTIM ?= -O0 ;
-	}
-} else {
-	if $(OSPLAT) = X86 {
-		OPTIM ?= -O1 ;
-	} else {
-		OPTIM ?= -O7 ;
-	}
-}
-
 # C and C++ flags
 if $(OSPLAT) = PPC {
 	# filter out -nosyspath
 	CFLAGS = [ FFilter $(CFLAGS) : -nosyspath ] ;
 	C++FLAGS = [ FFilter $(C++FLAGS) : -nosyspath ] ;
 }
+
+# Use copyattr for copying.
+CP = copyattr --data ;
+
+# Add the locale includes to the system include dirs.
+SYSHDRS += $(LOCALE_INCLUDE_DIR) $(LOCALE_POSIX_INCLUDE_DIR) ;
+
+# Modify the main target dirs for catalogs and tools.
+SetConfigVar LOCATE_MAIN_TARGET : LOCALE_TOP add-ons catalogs
+	: [ FDirName $(LOCALE_DISTRO_DIR) add-ons catalogs ] ;
+SetConfigVar LOCATE_MAIN_TARGET : LOCALE_TOP tools
+	: [ FDirName $(LOCALE_DISTRO_DIR) tools ] ;
+
+rule SetUpSubDirBuildSettings {
+	# SetUpSubDirBuildSettings <dir> ;
+	#
+	# Sets up the compiler flags and defines based on the WARNINGS, DEBUG, and
+	# OPTIMIZE variables. Also sets the locations for the targets (objects,
+	# libraries and executables).
+	#
+	# <dir>: Parameters as passed to the SubDir rule, i.e. the name of the
+	#        TOP variable and the subdir tokens.
+	#
+	local dir = $(1) ;
+
+	# warnings settings
+	if $(WARNINGS) != 0 {
+		if $(OSPLAT) = X86 {
+			CCFLAGS += -Wall -Wno-multichar -Wmissing-prototypes ;
+			CCFLAGS += -Wpointer-arith -Wcast-align -Wsign-compare ;
+			C++FLAGS += -Wall -Wno-multichar -Wmissing-prototypes ;
+			C++FLAGS += -Wno-ctor-dtor-privacy -Woverloaded-virtual ;
+			C++FLAGS += -Wpointer-arith -Wcast-align -Wsign-compare ;
+		} else {
+			CCFLAGS += -w on -requireprotos ;
+		}
+	}
+
+	# debugging settings
+	if $(DEBUG) {
+		OPTIMIZE = 0 ;
+		FDEFINES += DEBUG=$(DEBUG) ;
+		CCFLAGS += -g ;
+		C++FLAGS += -g ;
+		LINKFLAGS += -g ;
+	}
+
+	# optimization settings
+	if $(OPTIMIZE) = 0 {
+		if $(OSPLAT) = X86 {
+			OPTIM ?= -O0 ;
+		} else {
+			OPTIM ?= -O0 ;
+		}
+	} else {
+		if $(OSPLAT) = X86 {
+			OPTIM ?= -O1 ;
+		} else {
+			OPTIM ?= -O7 ;
+		}
+	}
+
+	# setup objects location
+	local objdir = [ FDirName $(LOCALE_OBJECTS_DIR) $(dir[2-]) ] ;
+	SEARCH_SOURCE += $(objdir) ;
+	LOCATE_SOURCE = $(objdir) ;
+	LOCATE_TARGET = $(objdir) ;
+
+	# setup main targets location
+	LOCATE_MAIN_TARGET ?= [ FDirName $(LOCALE_DISTRO_DIR) $(dir[2-]) ] ;
+}
+
+# The LOCATE_MAIN_TARGET variable shall be reset for each subdirectory.
+AUTO_SET_UP_CONFIG_VARIABLES += LOCATE_MAIN_TARGET ;
+
+# Add the rules setting up the build settings for a subdirectory to the
+# rules invoked by SubDir.
+SUBDIRRULES += SetUpSubDirBuildSettings ;

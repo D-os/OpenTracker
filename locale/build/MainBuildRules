@@ -2,29 +2,36 @@
 #
 # Rules that specify what to build and how to do it.
 
-rule SharedLibraryFromObjects
+rule Application
 {
-	# SharedLibraryFromObjects <name> : <objects> : <libraries> ;
+	# Application <name> : <sources> : <libraries> ;
 	#
-	# Links a shared library from objects.
+	# Creates an application from sources.
 	#
-	# <name>: Name of the shared library. Grist is allowed.
-	# <objects>: List of object files. Grist will be set.
+	# <name>: Name of the application. Grist is allowed.
+	# <sources>: List of source files. Grist will be set.
 	# <libraries>: List of libraries to link against.
 	#
 	local lib = $(1) ;
-	local objects = $(2) ;
+	local sources = $(2) ;
 	local libs = $(3) ;
-	MainFromObjects $(lib) : $(objects) ;
-	MakeLocate $(lib) : $(LOCATE_TARGET) ;
-	local linkFlags ;
-	if $(OSPLAT) = X86 {
-		linkFlags = -nostart -Xlinker -soname=\"$(lib)\" ;
-	} else {
-		linkFlags = -xms ;
-	}
-	LINKFLAGS on $(lib) = [ on $(lib) return $(LINKFLAGS) ] $(linkFlags) ;
+
+	Main $(lib) : $(sources) ;
+	MakeLocate $(lib) : $(LOCATE_MAIN_TARGET) ;
 	LinkAgainst $(lib) : $(libs) ;
+}
+
+rule AddOn
+{
+	# AddOn <name> : <sources> : <libraries> ;
+	#
+	# Creates an add-on from sources.
+	#
+	# <name>: Name of the add-on. Grist is allowed.
+	# <sources>: List of source files. Grist will be set.
+	# <libraries>: List of libraries to link against.
+	#
+	SharedLibrary $(1) : $(2) : $(3) ;
 }
 
 rule SharedLibrary
@@ -37,9 +44,20 @@ rule SharedLibrary
 	# <sources>: List of source files. Grist will be set.
 	# <libraries>: List of libraries to link against.
 	#
-	MakeLocateObjects $(2) ;
-	Objects $(2) ;
-	SharedLibraryFromObjects $(1) : $(2:S=$(SUFOBJ)) : $(3) ;
+	local lib = $(1) ;
+	local sources = $(2) ;
+	local libs = $(3) ;
+
+	Main $(lib) : $(sources) ;
+	MakeLocate $(lib) : $(LOCATE_MAIN_TARGET) ;
+	local linkFlags ;
+	if $(OSPLAT) = X86 {
+		linkFlags = -nostart -Xlinker -soname=\"$(lib)\" ;
+	} else {
+		linkFlags = -xms ;
+	}
+	LINKFLAGS on $(lib) = [ on $(lib) return $(LINKFLAGS) ] $(linkFlags) ;
+	LinkAgainst $(lib) : $(libs) ;
 }
 
 rule StaticLibrary
@@ -52,9 +70,8 @@ rule StaticLibrary
 	# <source>: List of source files. Grist will be set.
 	#
 	local lib = $(1) ;
-	MakeLocateObjects $(2) ;
-# TODO: What about MakeLocateObject?
 	Library $(lib) : $(2) ;
+	MakeLocate $(lib) : $(LOCATE_MAIN_TARGET) ;
 
 	# If KEEPOBJS is set, Library doesn't make the library depend on `lib'.
 	if $(KEEPOBJS) {
@@ -158,7 +175,7 @@ actions ResComp
 
 rule XRes
 {
-	# XRes <target> : <resource files>
+	# XRes <target> : <resource files> ;
 	#
 	# Adds resources to a file.
 	#
@@ -182,9 +199,9 @@ actions MimeSet
 	mimeset -f "$(1)" ;
 }
 
-rule SysSubDirHdrs
+rule SubDirSysHdrs
 {
-	# SysSubDirHdrs <dirs>
+	# SubDirSysHdrs <dirs> ;
 	#
 	# Adds directories to the system include search paths for the current
 	# subdirectory. Counterpart of SubDirHdrs which adds non-system include
@@ -193,10 +210,10 @@ rule SysSubDirHdrs
 	# <dirs>: The directories to be added to the current subdir's system
 	# include search paths.
 	#
-	SYSSUBDIRHDRS += [ FDirName $(1) ] ;
+	SUBDIRSYSHDRS += [ FDirName $(1) ] ;
 }
 
-# FSysIncludes <dirs>
+# FSysIncludes <dirs> ;
 #
 # Counterpart of FIncludes for system include search paths.
 #
@@ -205,4 +222,3 @@ if $(OSPLAT) = X86 {
 } else {
 	rule FSysIncludes { return "-i "$(<) ; }
 }
-

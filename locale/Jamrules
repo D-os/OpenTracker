@@ -1,11 +1,15 @@
 
-# The directory for build system specific files.
-LOCALE_BUILD_DIR = [ FDirName $(LOCALE_TOP) build ] ;
+# The directories used by the build.
+LOCALE_BUILD_DIR			= [ FDirName $(LOCALE_TOP) build ] ;
+LOCALE_DISTRO_DIR			= [ FDirName $(LOCALE_TOP) distro ] ;
+LOCALE_INCLUDE_DIR			= [ FDirName $(LOCALE_TOP) include ] ;
+LOCALE_OBJECTS_DIR			= [ FDirName $(LOCALE_TOP) objects ] ;
+LOCALE_POSIX_INCLUDE_DIR	= [ FDirName $(LOCALE_TOP) include posix ] ;
 
 # Cache files for header scanning and jamfile caching.
 HCACHEFILE = header_cache ;
 JCACHEFILE = jamfile_cache ;
-LOCATE on $(HCACHEFILE) $(JCACHEFILE) = $(LOCALE_BUILD_DIR) ;
+LOCATE on $(HCACHEFILE) $(JCACHEFILE) = $(LOCALE_OBJECTS_DIR) ;
 
 include [ FDirName $(LOCALE_BUILD_DIR) HelperRules ] ;
 include [ FDirName $(LOCALE_BUILD_DIR) ConfigRules ] ;

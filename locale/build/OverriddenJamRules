@@ -2,6 +2,16 @@
 #
 # Jam rules that need to be overridden for good reasons.
 
+# Overridden to support objects as source files for main targets.
+rule UserObject
+{
+	switch $(2)
+	{
+		case *.o    : return ;
+		case *      : ECHO "unknown suffix on" $(2) ;
+	}
+}
+
 # Overridden to allow for spaces in file names and to support resources.
 rule Link
 {
@@ -89,7 +99,7 @@ rule Object
 	# different from $(SEARCH_SOURCE).
 
 	HDRS on $(<) = $(SEARCH_SOURCE) $(SUBDIRHDRS) $(HDRS) ;
-	SYSHDRS on $(<) = $(SYSSUBDIRHDRS) $(SYSHDRS) ;
+	SYSHDRS on $(<) = $(SUBDIRSYSHDRS) $(SYSHDRS) ;
 
 	# handle #includes for source: Jam scans for headers with
 	# the regexp pattern $(HDRSCAN) and then invokes $(HDRRULE)
@@ -197,3 +207,7 @@ rule MkDir
 		}
 	}
 }
+
+# Add SUBDIRSYSHDRS to the variables that shall be reset automatically by the
+# SubDir rule.
+SUBDIRRESET += SYSHDRS ;
