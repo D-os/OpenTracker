@@ -3,6 +3,7 @@
 
 
 #include <SupportDefs.h>
+#include <Archivable.h>
 
 
 class BString;
@@ -21,9 +22,10 @@ enum collator_strengths {
 };
 
 
-class BCollator {
+class BCollator : public BArchivable {
 	public:
 		BCollator();
+		BCollator(BMessage *archive);
 		~BCollator();
 
 		void SetDefaultStrength(int8 strength);
@@ -39,8 +41,13 @@ class BCollator {
 		bool Greater(const char *, const char *, int32 len = -1, int8 strength = B_COLLATE_DEFAULT);
 		bool GreaterOrEqual(const char *, const char *, int32 len = -1, int8 strength = B_COLLATE_DEFAULT);
 
+		// (un-)archiving API
+		status_t Archive(BMessage *archive, bool deep);
+		static BArchivable *Instantiate(BMessage *archive);
+
 	private:
 		BCollatorAddOn	*fCollator;
+		image_id		fCollatorImage;
 		int8			fStrength;
 		bool			fIgnorePunctuation;
 };
@@ -71,13 +78,18 @@ BCollator::GreaterOrEqual(const char *s1, const char *s2, int32 len, int8 streng
 
 // For BCollator add-on implementations:
 
-class BCollatorAddOn {
+class BCollatorAddOn : public BArchivable {
 	public:
 		BCollatorAddOn();
+		BCollatorAddOn(BMessage *archive);
 		virtual ~BCollatorAddOn();
 
 		virtual void GetSortKey(const char *string, BString *key, int8 strength, bool ignorePunctuation);
 		virtual int Compare(const char *a, const char *b, int32 length, int8 strength, bool ignorePunctuation);
+
+		// (un-)archiving API
+		virtual status_t Archive(BMessage *archive, bool deep);
+		static BArchivable *Instantiate(BMessage *archive);
 };
 
 #endif	/* _COLLATOR_H_ */
