@@ -6,8 +6,9 @@
 #include <Catalog.h>
 #include <String.h>
 
-namespace BPrivate {
+class BFile;
 
+namespace BPrivate {
 
 /*
  * The key-type for the hash_map which maps native strings or IDs to
@@ -68,12 +69,12 @@ class DefaultCatalog : public BCatalogAddOn {
 		~DefaultCatalog();
 
 		// overrides of BCatalogAddOn:
-		const char *GetString(const char *string, const char *context=NULL,
-						const char *comment=NULL);
+		const char *GetString(const char *string, const char *context = NULL,
+						const char *comment = NULL);
 		const char *GetString(uint32 id);
 		//
 		status_t SetString(const char *string, const char *translated, 
-					const char *context=NULL, const char *comment=NULL);
+					const char *context = NULL, const char *comment = NULL);
 		status_t SetString(int32 id, const char *translated);
 		void UpdateFingerprint();
 

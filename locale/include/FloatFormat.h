@@ -4,6 +4,7 @@
 #include <NumberFormat.h>
 #include <FloatFormatParameters.h>
 
+class BString;
 class BFloatFormatImpl;
 
 class BFloatFormat : public BNumberFormat, public BFloatFormatParameters {

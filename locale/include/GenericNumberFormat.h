@@ -4,6 +4,7 @@
 #include <FloatFormatParameters.h>
 #include <IntegerFormatParameters.h>
 
+class BString;
 struct format_field_position;
 
 class BGenericNumberFormat {

@@ -5,6 +5,7 @@
 
 struct format_field_position;
 class BFloatFormatParameters;
+class BString;
 
 class BFloatFormatImpl : public BNumberFormatImpl {
 	public:

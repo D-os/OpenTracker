@@ -7,6 +7,7 @@
 class BCatalogAddOn;
 class BLocale;
 class BMessage;
+struct entry_ref;
 
 
 class BCatalog {
@@ -17,8 +18,8 @@ class BCatalog {
 			int32 fingerprint = 0);
 		virtual ~BCatalog();
 
-		const char *GetString(const char *string, const char *context=NULL,
-						const char *comment=NULL);
+		const char *GetString(const char *string, const char *context = NULL,
+						const char *comment = NULL);
 		const char *GetString(uint32 id);
 
 		status_t GetData(const char *name, BMessage *msg);

@@ -5,6 +5,7 @@
 #include <IntegerFormatParameters.h>
 
 class BIntegerFormatImpl;
+class BString;
 
 // Note: BIntegerFormat is derived from BIntegerFormatParameters only due
 // to my laziness. The parameters should probably be a private member
