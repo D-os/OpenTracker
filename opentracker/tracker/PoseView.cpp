@@ -5481,12 +5481,21 @@ BPoseView::KeyDown(const char *bytes, int32 count)
 		case B_RIGHT_ARROW:
 		case B_UP_ARROW:
 		case B_DOWN_ARROW:
-			{
-				int32 index;
-				BPose *pose = FindNearbyPose(key, &index);
+		{
+			int32 index;
+			BPose *pose = FindNearbyPose(key, &index);
+			
+			if (fMultipleSelection && modifiers() & B_SHIFT_KEY) {
+				if (pose->IsSelected()) {
+					RemovePoseFromSelection(fSelectionList->LastItem());
+					fSelectionPivotPose = pose;
+					ScrollIntoView(pose, index, false);
+				} else
+					AddPoseToSelection(pose, index, true);
+			} else
 				SelectPose(pose, index);
-				break;
-			}
+			break;
+		}
 			
 		case B_RETURN:
 			OpenSelection();
@@ -5591,44 +5600,44 @@ BPoseView::KeyDown(const char *bytes, int32 count)
 			}
 			break;
 		default:
-			{
-				// handle typeahead selection
-					
-				// create a null-terminated version of typed char
-				char searchChar[4] = { key, 0 };
-	
-				bigtime_t doubleClickSpeed;
-				get_click_speed(&doubleClickSpeed);
-
-				// start watching
-				if (fKeyRunner == NULL) {
-					fKeyRunner = new BMessageRunner(this, new BMessage(kCheckTypeahead), doubleClickSpeed);
-					if (fKeyRunner->InitCheck() != B_OK)
-						return;
-				}
+		{
+			// handle typeahead selection
 				
-				// add char to existing matchString or start new match string
-				// make sure we don't overfill matchstring
-				if (system_time() - fLastKeyTime < (doubleClickSpeed * 2)) {
-					uint32 nchars = B_FILE_NAME_LENGTH - strlen(fMatchString);
-					strncat(fMatchString, searchChar, nchars);
-				} else {
-					strncpy(fMatchString, searchChar, B_FILE_NAME_LENGTH - 1);
-				} 
-				fMatchString[B_FILE_NAME_LENGTH - 1] = '\0';
-				fLastKeyTime = system_time();
+			// create a null-terminated version of typed char
+			char searchChar[4] = { key, 0 };
 
-				fCountView->SetTypeAhead(fMatchString);
-	
-				int32 index;
-				BPose *pose = FindBestMatch(&index);
-				if (!pose) {		// wrap around
-					fMatchString[0] = '\0';
-					pose = FindBestMatch(&index);
-				}
-				SelectPose(pose, index);
-				break;
+			bigtime_t doubleClickSpeed;
+			get_click_speed(&doubleClickSpeed);
+
+			// start watching
+			if (fKeyRunner == NULL) {
+				fKeyRunner = new BMessageRunner(this, new BMessage(kCheckTypeahead), doubleClickSpeed);
+				if (fKeyRunner->InitCheck() != B_OK)
+					return;
 			}
+			
+			// add char to existing matchString or start new match string
+			// make sure we don't overfill matchstring
+			if (system_time() - fLastKeyTime < (doubleClickSpeed * 2)) {
+				uint32 nchars = B_FILE_NAME_LENGTH - strlen(fMatchString);
+				strncat(fMatchString, searchChar, nchars);
+			} else {
+				strncpy(fMatchString, searchChar, B_FILE_NAME_LENGTH - 1);
+			} 
+			fMatchString[B_FILE_NAME_LENGTH - 1] = '\0';
+			fLastKeyTime = system_time();
+
+			fCountView->SetTypeAhead(fMatchString);
+
+			int32 index;
+			BPose *pose = FindBestMatch(&index);
+			if (!pose) {		// wrap around
+				fMatchString[0] = '\0';
+				pose = FindBestMatch(&index);
+			}
+			SelectPose(pose, index);
+			break;
+		}
 	}
 }
 
@@ -5714,31 +5723,31 @@ BPoseView::FindNearbyPose(char arrowKey, int32 *poseIndex)
 {
 	int32 resultingIndex = -1;
 	BPose *poseToSelect = NULL;
-	BPose *selectedPose = fSelectionList->FirstItem();
+	BPose *selectedPose = fSelectionList->LastItem();
 
 	if (ViewMode() == kListMode) {
 		switch (arrowKey) {
-		case B_UP_ARROW:
-		case B_LEFT_ARROW:
-			if (selectedPose) {
-				resultingIndex = fPoseList->IndexOf(selectedPose) - 1;
-				poseToSelect = fPoseList->ItemAt(resultingIndex);
-			} else {
-				resultingIndex = fPoseList->CountItems() - 1;
-				poseToSelect = fPoseList->LastItem();
-			}
-			break;
+			case B_UP_ARROW:
+			case B_LEFT_ARROW:
+				if (selectedPose) {
+					resultingIndex = fPoseList->IndexOf(selectedPose) - 1;
+					poseToSelect = fPoseList->ItemAt(resultingIndex);
+				} else {
+					resultingIndex = fPoseList->CountItems() - 1;
+					poseToSelect = fPoseList->LastItem();
+				}
+				break;
 
-		case B_DOWN_ARROW:
-		case B_RIGHT_ARROW:
-			if (selectedPose) {
-				resultingIndex = fPoseList->IndexOf(selectedPose) + 1;
-				poseToSelect = fPoseList->ItemAt(resultingIndex);
-			} else {
-				resultingIndex = 0;
-				poseToSelect = fPoseList->FirstItem();
-			}
-			break;
+			case B_DOWN_ARROW:
+			case B_RIGHT_ARROW:
+				if (selectedPose) {
+					resultingIndex = fPoseList->IndexOf(selectedPose) + 1;
+					poseToSelect = fPoseList->ItemAt(resultingIndex);
+				} else {
+					resultingIndex = 0;
+					poseToSelect = fPoseList->FirstItem();
+				}
+				break;
 		}
 		*poseIndex = resultingIndex;
 		return poseToSelect ? poseToSelect : selectedPose;
