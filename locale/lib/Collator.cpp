@@ -9,7 +9,7 @@
 #include <String.h>
 #include <Message.h>
 
-#include <stdio.h>	// <- for debugging only
+#include <typeinfo>
 #include <ctype.h>
 
 
@@ -130,6 +130,18 @@ BCollator::BCollator()
 }
 
 
+BCollator::BCollator(BCollatorAddOn *collator, int8 strength, bool ignorePunctuation)
+	:
+	fCollator(collator),
+	fCollatorImage(B_ERROR),
+	fStrength(strength),
+	fIgnorePunctuation(ignorePunctuation)
+{
+	if (collator == NULL)
+		fCollator = new BCollatorAddOn();
+}
+
+
 BCollator::BCollator(BMessage *archive)
 	: BArchivable(archive),
 	fCollator(NULL),
@@ -231,11 +243,10 @@ BCollator::Archive(BMessage *archive, bool deep)
 	if (status == B_OK)
 		status = archive->AddBool("loc:punctuation", fIgnorePunctuation);
 
-	// ToDo: the following code makes the assumption that only loaded
-	//	add-ons would have to be archived - a BRuleBasedCollator would
-	//	have to be archived as well, though
 	BMessage collatorArchive;
-	if (status == B_OK && deep && fCollatorImage >= B_OK
+	if (status == B_OK && deep
+		&& typeid(*fCollator) != typeid(BCollatorAddOn)
+			// only archive subclasses from BCollatorAddOn
 		&& (status = fCollator->Archive(&collatorArchive, true)) == B_OK)
 		status = archive->AddMessage("loc:collator", &collatorArchive);
 
@@ -443,7 +454,7 @@ BArchivable *
 BCollatorAddOn::Instantiate(BMessage *archive)
 {
 	if (validate_instantiation(archive, "BCollatorAddOn"))
-		return new BCollator(archive);
+		return new BCollatorAddOn(archive);
 
 	return NULL;
 }
