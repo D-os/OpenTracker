@@ -66,8 +66,20 @@ printArray(const char *label, const char **strings, size_t size)
 			int compare = gCollator->Compare(strings[i], strings[i - 1]);
 			if (compare > 0)
 				printf("\n% 2u)", bucket++);
-			else if (compare < 0)
+			else if (compare < 0) {
 				printf("\t*** broken sort order!\n");
+				exit(-1);
+			}
+
+			// Test sort key generation
+
+			BString a, b;
+			gCollator->GetSortKey(strings[i - 1], &a);
+			gCollator->GetSortKey(strings[i], &b);
+
+			int keyCompare = strcmp(a.String(), b.String());
+			if (keyCompare > 0 || (keyCompare == 0 && compare != 0))
+				printf(" (*** \"%s\" wrong keys \"%s\" ***) ", a.String(), b.String());
 		} else
 			printf("% 2u)", bucket++);
 		printf("\t%s", strings[i]);
@@ -100,7 +112,7 @@ main(int argc, char **argv)
 			usage();
 	}
 
-	// test the collator
+	// test the BCollator::Compare() and GetSortKey() methods
 
 	gCollator = be_locale->Collator();
 	const char *strengthLabels[] = {"primary:  ", "secondary:", "tertiary: "};
@@ -114,8 +126,5 @@ main(int argc, char **argv)
 
 		printArray(strengthLabels[i], kStrings, kNumStrings);
 	}
-
-	// secondary level
-
 }
 
