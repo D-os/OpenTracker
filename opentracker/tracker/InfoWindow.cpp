@@ -132,6 +132,27 @@ OpenParentAndSelectOriginal(const entry_ref *ref)
 }
 
 
+static BWindow *
+OpenToolTipWindow(BRect rect, const char *name, const char *string, BMessenger target, BFont &font, BMessage *message)
+{
+	BWindow *window = new BWindow(rect, name, B_BORDERED_WINDOW_LOOK,
+		B_FLOATING_ALL_WINDOW_FEEL,
+		B_NOT_MOVABLE | B_NOT_CLOSABLE | B_NOT_ZOOMABLE | B_NOT_MINIMIZABLE
+		| B_NOT_RESIZABLE | B_AVOID_FOCUS | B_NO_WORKSPACE_ACTIVATION
+		| B_WILL_ACCEPT_FIRST_CLICK | B_ASYNCHRONOUS_CONTROLS);
+
+	TrackingView *trackingView = new TrackingView(window->Bounds(),
+		string, &font, message);
+	trackingView->SetTarget(target);
+	window->AddChild(trackingView);
+
+	window->Sync();
+	window->Show();
+
+	return window;
+}
+
+
 //	#pragma mark -
 
 
@@ -177,7 +198,7 @@ BInfoWindow::~BInfoWindow()
 BRect
 BInfoWindow::InfoWindowRect(bool)
 {
-	return BRect(70, 50, 385, 220);
+	return BRect(70, 50, 385, 240);
 }
 
 
@@ -705,7 +726,8 @@ AttributeView::AttributeView(BRect rect, Model *model)
 		fIsDropTarget(false),
 		fTitleEditView(NULL),
 		fPathWindow(NULL),
-		fLinkWindow(NULL)
+		fLinkWindow(NULL),
+		fDescWindow(NULL)
 {
 	// Set view color to standard background grey
 	SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
@@ -851,7 +873,10 @@ AttributeView::~AttributeView()
 	
 	if (fLinkWindow->Lock())
 		fLinkWindow->Quit();
-	
+
+	if (fDescWindow->Lock())
+		fDescWindow->Quit();
+
 	if (fModel->IsSymLink() && fIconModel != fModel)
 		delete fIconModel;
 }
@@ -861,7 +886,7 @@ void
 AttributeView::InitStrings(const Model *model)
 {
 	BMimeType mime;
-	char desc[B_MIME_TYPE_LENGTH];
+	char kind[B_MIME_TYPE_LENGTH];
 
 	ASSERT(model->IsNodeOpen());
 
@@ -903,14 +928,17 @@ AttributeView::InitStrings(const Model *model)
 		fLinkToStr = linkToPath;
 		if (!linked)
 			fLinkToStr += " (broken)";	// link points to missing object
+	} else if (model->IsExecutable()) {
+		if (((Model*)model)->GetLongVersionString(fDescStr, B_APP_VERSION_KIND) != B_OK)
+			fDescStr = "-";
 	}
 
 	if (mime.SetType(model->MimeType()) == B_OK
-		&& mime.GetShortDescription(desc) == B_OK)
-		fDescStr = desc;
+		&& mime.GetShortDescription(kind) == B_OK)
+		fKindStr = kind;
 
-	if (fDescStr.Length() == 0)
-		fDescStr = model->MimeType();
+	if (fKindStr.Length() == 0)
+		fKindStr = model->MimeType();
 }
 
 
@@ -1281,22 +1309,13 @@ AttributeView::MouseMoved(BPoint point, uint32, const BMessage *message)
 						rect.OffsetBy(rect.left * -1, 0);
 					else if (rect.right > screen.right)
 						rect.OffsetBy(screen.right - rect.right, 0);
+
 					if (!fPathWindow || BMessenger(fPathWindow).IsValid() == false) {
-						fPathWindow = new BWindow(rect, "fPathWindow",
-							B_BORDERED_WINDOW_LOOK, B_FLOATING_ALL_WINDOW_FEEL,
-							B_NOT_MOVABLE|B_NOT_CLOSABLE|B_NOT_ZOOMABLE
-							|B_NOT_MINIMIZABLE|B_NOT_RESIZABLE
-							|B_AVOID_FOCUS|B_NO_WORKSPACE_ACTIVATION
-							|B_WILL_ACCEPT_FIRST_CLICK|B_ASYNCHRONOUS_CONTROLS);
-						TrackingView* tv = new TrackingView(fPathWindow->Bounds(),
-							fPathStr.String(), &font, new BMessage(kOpenLinkSource));
-						tv->SetTarget(BMessenger(this));
-						fPathWindow->AddChild(tv);
-						fPathWindow->Sync();
-						fPathWindow->Show();
+						fPathWindow = OpenToolTipWindow(rect, "fPathWindow", fPathStr.String(),
+							BMessenger(this), font, new BMessage(kOpenLinkSource));
 					}
 				} else if (fLinkRect.Contains(point)
-					&& StringWidth(fLinkToStr.String()) > (Bounds().Width() - (fDivider + kBorderMargin))) {
+						&& StringWidth(fLinkToStr.String()) > (Bounds().Width() - (fDivider + kBorderMargin))) {
 					fTrackingState = no_track;
 					BRect rect(fLinkRect);
 					rect.right = rect.left + StringWidth(fLinkToStr.String()) + 4;
@@ -1305,19 +1324,25 @@ AttributeView::MouseMoved(BPoint point, uint32, const BMessage *message)
 						rect.OffsetBy(rect.left * -1, 0);
 					else if (rect.right > screen.right)
 						rect.OffsetBy(screen.right - rect.right, 0);
+
 					if (!fLinkWindow || BMessenger(fLinkWindow).IsValid() == false) {
-						fLinkWindow = new BWindow(rect, "fLinkWindow",
-							B_BORDERED_WINDOW_LOOK, B_FLOATING_ALL_WINDOW_FEEL,
-							B_NOT_MOVABLE|B_NOT_CLOSABLE|B_NOT_ZOOMABLE
-							|B_NOT_MINIMIZABLE|B_NOT_RESIZABLE
-							|B_AVOID_FOCUS|B_NO_WORKSPACE_ACTIVATION
-							|B_WILL_ACCEPT_FIRST_CLICK|B_ASYNCHRONOUS_CONTROLS);
-						TrackingView* tv = new TrackingView(fLinkWindow->Bounds(),
-							fLinkToStr.String(), &font, new BMessage(kOpenLinkTarget));
-						tv->SetTarget(BMessenger(this));
-						fLinkWindow->AddChild(tv);
-						fLinkWindow->Sync();
-						fLinkWindow->Show();
+						fLinkWindow = OpenToolTipWindow(rect, "fLinkWindow", fLinkToStr.String(),
+							BMessenger(this), font, new BMessage(kOpenLinkTarget));
+					}
+				} else if (fDescRect.Contains(point)
+					&& StringWidth(fDescStr.String()) > (Bounds().Width() - (fDivider + kBorderMargin))) {
+					fTrackingState = no_track;
+					BRect rect(fDescRect);
+					rect.right = rect.left + StringWidth(fDescStr.String()) + 4;
+					rect.OffsetBy(Window()->Frame().left, Window()->Frame().top);
+					if (rect.left < 0)
+						rect.OffsetBy(rect.left * -1, 0);
+					else if (rect.right > screen.right)
+						rect.OffsetBy(screen.right - rect.right, 0);
+
+					if (!fDescWindow || BMessenger(fDescWindow).IsValid() == false) {
+						fDescWindow = OpenToolTipWindow(rect, "fDescWindow", fDescStr.String(),
+							BMessenger(this), font, NULL);
 					}
 				}
 			}
@@ -1599,13 +1624,13 @@ AttributeView::Draw(BRect)
 	DrawString(fModifiedStr.String());
 	lineBase += lineHeight;
 
-	// Description
+	// Kind
 	MovePenTo(BPoint(fDivider - (StringWidth("Kind:")), lineBase));
 	SetHighColor(kAttrTitleColor);
 	DrawString("Kind:");
 	MovePenTo(BPoint(fDivider + kDrawMargin, lineBase));
 	SetHighColor(kAttrValueColor);
-	DrawString(fDescStr.String());
+	DrawString(fKindStr.String());
 	lineBase += lineHeight;
 
 	BFont normalFont;
@@ -1658,23 +1683,43 @@ AttributeView::Draw(BRect)
 		fLinkRect.bottom = lineBase + fontMetrics.descent;
 		fLinkRect.left = fDivider + 2;
 		fLinkRect.right = fLinkRect.left + StringWidth(fLinkToStr.String()) + 3;
+
+		// No description field
+		fDescRect = BRect(-1, -1, -1, -1);
 	} else if (fModel->IsExecutable()) {
+		//Version
 		MovePenTo(BPoint(fDivider - (StringWidth("Version:")), lineBase));
 		SetHighColor(kAttrTitleColor);
 		DrawString("Version:");
-		BString buffer;
 		MovePenTo(BPoint(fDivider + kDrawMargin, lineBase));
 		SetHighColor(kAttrValueColor);
-		if (fModel->GetLongVersionString(buffer, B_APP_VERSION_KIND) == B_OK) {
-			if (StringWidth(buffer.String()) > (Bounds().Width() - (fDivider + kBorderMargin))) {
+		BString nameString;
+		if (fModel->GetVersionString(nameString, B_APP_VERSION_KIND) == B_OK)
+			DrawString(nameString.String());
+		else
+			DrawString("-");
+		lineBase += lineHeight;
+		
+		// Description
+		MovePenTo(BPoint(fDivider - (StringWidth("Description:")), lineBase));
+		SetHighColor(kAttrTitleColor);
+		DrawString("Description:");
+		MovePenTo(BPoint(fDivider + kDrawMargin, lineBase));
+		SetHighColor(kAttrValueColor);
+		// Check for truncation
+		if (StringWidth(fDescStr.String()) > (Bounds().Width() - (fDivider + kBorderMargin))) {
 				BString nameString;
-				TruncString(&nameString, buffer.String(), this, 
+				TruncString(&nameString, fDescStr.String(), this, 
 					Bounds().Width() - (fDivider + kBorderMargin), B_TRUNCATE_MIDDLE);
 				DrawString(nameString.String());
 			} else 
-				DrawString(buffer.String());
-		} else
-			DrawString("-");
+				DrawString(fDescStr.String());
+
+		// Cache the position of the description field
+		fDescRect.top = lineBase - fontMetrics.ascent;
+		fDescRect.bottom = lineBase + fontMetrics.descent;
+		fDescRect.left = fDivider + 2;
+		fDescRect.right = fDescRect.left + StringWidth(fDescStr.String()) + 3;
 
 		// No link field
 		fLinkRect = BRect(-1, -1, -1, -1);
@@ -1731,7 +1776,7 @@ AttributeView::FinishEditingTitle(bool commit)
 	bool reopen = false;
 
 	const char *text = fTitleEditView->Text();
-	uint32 length = strlen(text);
+	int32 length = strlen(text);
 	if (commit && strcmp(text, fModel->Name()) != 0 && length < B_FILE_NAME_LENGTH) {
 		BEntry entry(fModel->EntryRef());
 		BDirectory parent;
@@ -1799,6 +1844,11 @@ AttributeView::WindowActivated(bool isFocus)
 		if (fLinkWindow->Lock()) {
 			fLinkWindow->Quit();
 			fLinkWindow = NULL;
+		}
+
+		if (fDescWindow->Lock()) {
+			fDescWindow->Quit();
+			fDescWindow = NULL;
 		}
 	}
 }
@@ -1986,9 +2036,11 @@ TrackingView::TrackingView(BRect frame, const char *str, const BFont *font, BMes
 void
 TrackingView::MouseDown(BPoint)
 {
-	fMouseDown = true;
-	fMouseInView = true;
-	InvertRect(Bounds());
+	if (Message() != NULL) {
+		fMouseDown = true;
+		fMouseInView = true;
+		InvertRect(Bounds());
+	}
 }
 
 
@@ -2008,16 +2060,21 @@ TrackingView::MouseMoved(BPoint, uint32 transit, const BMessage *)
 void
 TrackingView::MouseUp(BPoint)
 {
-	if (fMouseInView) Invoke();
-	fMouseDown = false;
-	Window()->Close();
+	if (Message() != NULL) {
+		if (fMouseInView) Invoke();
+		fMouseDown = false;
+		Window()->Close();
+	}
 }
 
 
 void
 TrackingView::Draw(BRect)
 {
-	SetHighColor(kLinkColor);
+	if (Message() != NULL)
+		SetHighColor(kLinkColor);
+	else
+		SetHighColor(kAttrValueColor);
 	SetLowColor(ViewColor());
 	
 	font_height fontHeight;

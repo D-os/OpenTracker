@@ -124,6 +124,7 @@ class AttributeView : public BView {
 		BString fSizeStr;
 		BString fModifiedStr;
 		BString fCreatedStr;
+		BString fKindStr;
 		BString fDescStr;
 
 		off_t fFreeBytes;
@@ -131,6 +132,7 @@ class AttributeView : public BView {
 
 		BRect fPathRect;
 		BRect fLinkRect;
+		BRect fDescRect;
 		BRect fTitleRect;
 		BRect fIconRect;
 		BRect fSizeRect;
@@ -150,6 +152,7 @@ class AttributeView : public BView {
 		PaneSwitch *fPermissionsSwitch;
 		BWindow *fPathWindow;
 		BWindow *fLinkWindow;
+		BWindow *fDescWindow;
 
 		typedef BView _inherited;
 };
