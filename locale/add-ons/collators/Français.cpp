@@ -54,6 +54,19 @@ class FrenchCollator : public BCollatorAddOn {
 static const char *kSignature = "application/x-vnd.locale-collator.french";
 
 
+inline char
+uint32_to_char(uint32 c)
+{
+	if (c > 255)
+		return 255;
+
+	return (char)c;
+}
+
+
+//	#pragma mark -
+
+
 FrenchCollator::FrenchCollator()
 {
 }
@@ -132,7 +145,7 @@ FrenchCollator::GetSortKey(const char *string, BString *key, int8 strength,
 	const char *source = string;
 	uint32 c;
 	for (uint32 i = 0; (c = GetNextChar(&source, context)) && i < length; i++) {
-		*buffer++ = (char)BUnicodeChar::ToLower(c);
+		*buffer++ = uint32_to_char(BUnicodeChar::ToLower(c));
 			// we only support Latin-1 characters here
 			// ToDo: this creates a non UTF-8 sort key - is that what we want?
 	}
@@ -159,9 +172,9 @@ FrenchCollator::GetSortKey(const char *string, BString *key, int8 strength,
 		for (uint32 i = 0; (c = GetNextChar(&source, context)) && i < length; i++) {
 			// ToDo: same problem as above, no UTF-8 key
 			if (BUnicodeChar::IsLower(c))
-				*buffer++ = (char)BUnicodeChar::ToUpper(c);
+				*buffer++ = uint32_to_char(BUnicodeChar::ToUpper(c));
 			else
-				*buffer++ = (char)BUnicodeChar::ToLower(c);
+				*buffer++ = uint32_to_char(BUnicodeChar::ToLower(c));
 		}
 	}
 
