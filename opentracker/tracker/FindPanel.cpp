@@ -718,7 +718,7 @@ FindPanel::FindPanel(BRect frame, BFile *node, FindWindow *parent,
 	rect.left = rect.right - 100;
 	fVolMenu = new BPopUpMenu("", false, false);	// don't radioMode
 	menuField = new BMenuField(rect, "", "On", fVolMenu);
-	menuField->SetDivider(20.0f);
+	menuField->SetDivider(menuField->StringWidth(menuField->Label()) + 8);
 	AddChild(menuField);
 	AddVolumes(fVolMenu);
 
@@ -762,7 +762,7 @@ FindPanel::FindPanel(BRect frame, BFile *node, FindWindow *parent,
 	rect.right = rect.left + 200;
 	rect.bottom = rect.top + 20;;
 	fQueryName = new BTextControl(rect, "queryName", "Query name:", "", 0);
-	fQueryName->SetDivider(60);
+	fQueryName->SetDivider(fQueryName->StringWidth(fQueryName->Label()) + 5);
 	fMoreOptionsPane->AddItem(fQueryName, 1);
 	FillCurrentQueryName(fQueryName, parent);
 	
