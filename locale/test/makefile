@@ -14,11 +14,11 @@ endif
 default: all
 
 all:	localeTest collatorTest collatorSpeed catalogTest catalogTestAddOn \
-		catalogSpeed
+		catalogSpeed genericNumberFormatTest
 
 clean:
 	rm -rf localeTest collatorTest collatorSpeed catalogTest catalogTestAddOn \
-			 catalogSpeed
+			 catalogSpeed genericNumberFormatTest
 
 localeTest:	localeTest.cpp
 	gcc localeTest.cpp $(CFLAGS) $(INCPATHS) $(LIBPATHS) $(LIBS)
@@ -37,4 +37,7 @@ catalogTestAddOn:	catalogTestAddOn.cpp
 
 catalogSpeed:	catalogSpeed.cpp
 	gcc catalogSpeed.cpp $(CFLAGS) $(INCPATHS) $(LIBPATHS) $(LIBS)
+
+genericNumberFormatTest:	genericNumberFormatTest.cpp
+	gcc $< $(CFLAGS) $(INCPATHS) $(LIBPATHS) $(LIBS)
 

@@ -1,8 +1,10 @@
+*.dbg
 catalogSpeed
 catalogTest
 catalogTestAddOn
 collatorSpeed
 collatorTest
+genericNumberFormatTest
+locale
 localeTest
 TestCat.catalog
-locale
