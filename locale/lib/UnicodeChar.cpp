@@ -684,3 +684,25 @@ BUnicodeChar::FromUTF8(const char **in)
 	return c;
 }
 
+size_t
+BUnicodeChar::UTF8StringLength(const char *str)
+{
+	size_t len = 0;
+	while (*str) {
+		FromUTF8(&str);
+		len++;
+	}
+	return len;
+}
+
+size_t
+BUnicodeChar::UTF8StringLength(const char *str, size_t maxLength)
+{
+	size_t len = 0;
+	while (len < maxLength && *str) {
+		FromUTF8(&str);
+		len++;
+	}
+	return len;
+}
+

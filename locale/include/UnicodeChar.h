@@ -215,6 +215,9 @@ class BUnicodeChar {
 		static uint32 FromUTF8(const char **in);
 		static uint32 FromUTF8(const char *in);
 
+		static size_t UTF8StringLength(const char *str);
+		static size_t UTF8StringLength(const char *str, size_t maxLength);
+
 	private:
 		BUnicodeChar();
 };
