@@ -838,28 +838,19 @@ AttributeView::InitStrings(const Model *model)
 
 			// If the BPath is initialized, then check the file for existence
 			if (traversedPath.InitCheck() == B_OK) {
-				const char *pathString = traversedPath.Path();
-				fLinkToStr = pathString;
-				
-				BFile bFile(pathString, B_READ_ONLY);
-				if (B_OK != bFile.InitCheck()) {
-					// the file does not exist. So show the link, but annotate it
-					// with the word (broken)
-					fLinkToStr += " (broken)";
-				}
-				linked = true;
+				BEntry entry(traversedPath.Path(), false);	// look at the target itself
+				if (entry.InitCheck() == B_OK && entry.Exists())
+					linked = true;
 			}	
 		}
 		
-		if (!linked) {
-			// since the link was not resolved, it must be broken, so get its
-			// target and again annotate with (broken). It may be absolute or relative.
-			BSymLink symLink(model->EntryRef());
-			char linkToPath[B_PATH_NAME_LENGTH];
-			symLink.ReadLink(linkToPath, B_PATH_NAME_LENGTH);
-			fLinkToStr = linkToPath;
-			fLinkToStr += " (broken)";	// link points to missing file
-		}
+		// always show the target as it is: absolute or relative!
+		BSymLink symLink(model->EntryRef());
+		char linkToPath[B_PATH_NAME_LENGTH];
+		symLink.ReadLink(linkToPath, B_PATH_NAME_LENGTH);
+		fLinkToStr = linkToPath;
+		if (!linked)
+			fLinkToStr += " (broken)";	// link points to missing object
 	}
 
 	if (mime.SetType(model->MimeType()) == B_OK
@@ -979,6 +970,8 @@ AttributeView::ModelChanged(Model *model, BMessage *message)
 			fIconModel = model;
 			delete resolvedModel;
 		}
+		InitStrings(model);
+		Invalidate();
 	}
 
 	drawBounds.left = fDivider;
