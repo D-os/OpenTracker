@@ -1,6 +1,9 @@
 /* 
-** Copyright 2003, Axel Dörfler, axeld@pinc-software.de. All rights reserved.
 ** Distributed under the terms of the OpenBeOS License.
+** Copyright 2003-2004. All rights reserved.
+**
+** Authors:	Axel Dörfler, axeld@pinc-software.de
+**			Oliver Tappe, zooey@hirschkaefer.de
 */
 
 
@@ -19,16 +22,14 @@ BCatalog::BCatalog(const char *signature, const char *language)
 
 BCatalog::~BCatalog()
 {
-	be_locale_roster->UnloadCatalog( fCatalog);
+	be_locale_roster->UnloadCatalog(fCatalog);
 }
 
 
 const char *
-BCatalog::GetString(const char *string,
-						  const char *context,
-						  const char *comment)
+BCatalog::GetString(const char *string, const char *context, const char *comment)
 {
-	return fCatalog->GetString(string,context,comment);
+	return fCatalog->GetString(string, context, comment);
 }
 
 
@@ -56,19 +57,21 @@ BCatalog::GetData(uint32 id, BMessage *msg)
 //	#pragma mark -
 
 
-BCatalogAddOn::BCatalogAddOn(const char *signature, 
-									  const char *language,
-									  BCatalogAddOnInfo* info)
-	:	fSignature( signature)
-	,	fLanguageName( language)
-	,	fAddOnInfo( info)
-	,	fNext( NULL)
+BCatalogAddOn::BCatalogAddOn(const char *signature, const char *language,
+	BCatalogAddOnInfo *info)
+	:
+	fSignature(signature),
+	fLanguageName(language),
+	fAddOnInfo(info),
+	fNext(NULL)
 {
 }
+
 
 BCatalogAddOn::~BCatalogAddOn()
 {
 }
+
 
 bool 
 BCatalogAddOn::CanHaveData() const
@@ -86,7 +89,7 @@ BCatalogAddOn::CanWriteData() const
 
 status_t 
 BCatalogAddOn::SetString(const char *string, const char *translated,
-								 const char *context, const char *comment)
+	const char *context, const char *comment)
 {
 	return EOPNOTSUPP;
 }
