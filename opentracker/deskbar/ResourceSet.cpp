@@ -268,7 +268,9 @@ namespace TResourcePrivate {
 
 using namespace TResourcePrivate;
 
+//	#pragma mark -
 // ----------------------------- TStringBlock -----------------------------
+
 
 TStringBlock::TStringBlock(BDataIO *data)
 	:	fNumEntries(0),
@@ -291,11 +293,13 @@ TStringBlock::TStringBlock(BDataIO *data)
 	MakeIndex(fStrings, amount, fNumEntries, fIndex);
 }
 
+
 TStringBlock::TStringBlock(const void *block, size_t size)
-	:	fNumEntries(0),
-		fIndex(0),
-		fStrings(NULL),
-		fOwnData(false)
+	:
+	fNumEntries(0),
+	fIndex(0),
+	fStrings(NULL),
+	fOwnData(false)
 {
 	fIndex = (size_t *)const_cast<void *>(block);
 	fStrings = (char *)const_cast<void *>(block);
@@ -308,6 +312,7 @@ TStringBlock::TStringBlock(const void *block, size_t size)
 	}
 }
 
+
 TStringBlock::~TStringBlock()
 {
 	if (fOwnData) {
@@ -318,6 +323,7 @@ TStringBlock::~TStringBlock()
 	fStrings = NULL;
 }
 
+
 const char *
 TStringBlock::String(size_t index) const
 {
@@ -326,6 +332,7 @@ TStringBlock::String(size_t index) const
 
 	return fStrings + fIndex[index];
 }
+
 
 size_t
 TStringBlock::PreIndex(char *strings, ssize_t len)
@@ -390,6 +397,7 @@ TStringBlock::PreIndex(char *strings, ssize_t len)
 	return count;
 }
 
+
 void
 TStringBlock::MakeIndex(const char *strings, ssize_t len,
 	size_t indexLength, size_t *resultingIndex)
@@ -407,11 +415,9 @@ TStringBlock::MakeIndex(const char *strings, ssize_t len,
 	}
 }
 
-// ----------------------------- TResourceSet -----------------------------
 
-TResourceSet::TResourceSet()
-{
-}
+//	#pragma mark -
+
 
 #if USE_RESOURCES
 static bool
@@ -422,6 +428,7 @@ FreeResourcesFunc(void *item)
 }
 #endif
 
+
 static bool
 FreePathFunc(void *item)
 {
@@ -429,12 +436,23 @@ FreePathFunc(void *item)
 	return false;
 }
 
+
 static bool
 FreeTypeFunc(void *item)
 {
 	delete reinterpret_cast<TypeList*>(item);
 	return false;
 }
+
+
+//	#pragma mark -
+// ----------------------------- TResourceSet -----------------------------
+
+
+TResourceSet::TResourceSet()
+{
+}
+
 
 TResourceSet::~TResourceSet()
 {
@@ -448,6 +466,7 @@ TResourceSet::~TResourceSet()
 	fTypes.DoForEach(FreeTypeFunc);
 	fTypes.MakeEmpty();
 }
+
 
 status_t
 TResourceSet::AddResources(BResources *RESOURCES_ONLY(resources))
@@ -465,6 +484,7 @@ TResourceSet::AddResources(BResources *RESOURCES_ONLY(resources))
 	return B_ERROR;
 #endif
 }
+
 
 status_t
 TResourceSet::AddDirectory(const char *fullPath)
@@ -487,6 +507,7 @@ TResourceSet::AddDirectory(const char *fullPath)
 	return err;
 }
 
+
 status_t
 TResourceSet::AddEnvDirectory(const char *in, const char *defaultValue)
 {
@@ -501,6 +522,7 @@ TResourceSet::AddEnvDirectory(const char *in, const char *defaultValue)
 	
 	return AddDirectory(buf.String());
 }
+
 
 status_t
 TResourceSet::ExpandString(BString *out, const char *in)
@@ -556,6 +578,7 @@ TResourceSet::ExpandString(BString *out, const char *in)
 	return B_OK;
 }
 
+
 const void *
 TResourceSet::FindResource(type_code type, int32 id, size_t *outSize)
 {
@@ -566,6 +589,7 @@ TResourceSet::FindResource(type_code type, int32 id, size_t *outSize)
 
 	return item ? item->Data() : NULL;
 }
+
 
 const void *
 TResourceSet::FindResource(type_code type, const char *name, size_t *outSize)
@@ -578,11 +602,13 @@ TResourceSet::FindResource(type_code type, const char *name, size_t *outSize)
 	return item ? item->Data() : NULL;
 }
 
+
 const BBitmap *
 TResourceSet::FindBitmap(type_code type, int32 id)
 {
 	return ReturnBitmapItem(type, FindItemID(type, id));
 }
+
 
 const BBitmap *
 TResourceSet::FindBitmap(type_code type, const char *name)
@@ -590,17 +616,20 @@ TResourceSet::FindBitmap(type_code type, const char *name)
 	return ReturnBitmapItem(type, FindItemName(type, name));
 }
 
+
 const TStringBlock *
 TResourceSet::FindStringBlock(type_code type, int32 id)
 {
 	return ReturnStringBlockItem(FindItemID(type, id));
 }
 
+
 const TStringBlock *
 TResourceSet::FindStringBlock(type_code type, const char *name)
 {
 	return ReturnStringBlockItem(FindItemName(type, name));
 }
+
 	
 const char *
 TResourceSet::FindString(type_code type, int32 id, uint32 index)
@@ -612,6 +641,7 @@ TResourceSet::FindString(type_code type, int32 id, uint32 index)
 	return stringBlock->String(index);
 }
 
+
 const char *
 TResourceSet::FindString(type_code type, const char *name, uint32 index)
 {
@@ -621,6 +651,7 @@ TResourceSet::FindString(type_code type, const char *name, uint32 index)
 
 	return stringBlock->String(index);
 }
+
 	
 TypeList *
 TResourceSet::FindTypeList(type_code type)
@@ -637,6 +668,7 @@ TResourceSet::FindTypeList(type_code type)
 	return NULL;
 }
 
+
 TypeItem *
 TResourceSet::FindItemID(type_code type, int32 id)
 {
@@ -650,6 +682,7 @@ TResourceSet::FindItemID(type_code type, int32 id)
 	
 	return item;
 }
+
 
 TypeItem *
 TResourceSet::FindItemName(type_code type, const char *name)
@@ -665,6 +698,7 @@ TResourceSet::FindItemName(type_code type, const char *name)
 	
 	return item;
 }
+
 
 TypeItem *
 TResourceSet::LoadResource(type_code type, int32 id, const char *name,
@@ -728,9 +762,9 @@ TResourceSet::LoadResource(type_code type, int32 id, const char *name,
 			// already one.
 			list = FindTypeList(type);
 		}
-		
+
 		BAutolock lock(&fLock);
-		
+
 		if (!list) {
 			// Need to make a new list for this type.
 			list = new TypeList(type);
@@ -738,12 +772,13 @@ TResourceSet::LoadResource(type_code type, int32 id, const char *name,
 		}
 		if (inOutList)
 			*inOutList = list;
-		
+
 		list->AddItem(item);
 	}
-	
+
 	return item;
 }
+
 
 BBitmap *
 TResourceSet::ReturnBitmapItem(type_code, TypeItem *from)
@@ -755,37 +790,40 @@ TResourceSet::ReturnBitmapItem(type_code, TypeItem *from)
 	BitmapTypeItem *bitmap = dynamic_cast<BitmapTypeItem *>(obj);
 	if (bitmap)
 		return bitmap;
-	
+
 	// Can't change an existing object.
 	if (obj)
 		return NULL;
-	
+
 	// Don't have a bitmap in the item -- we'll try to create one.
 	BMemoryIO stream(from->Data(), from->Size());
-	
+
 	// Try to read as an archived bitmap.
 	stream.Seek(0, SEEK_SET);
 	BMessage archive;
 	if (archive.Unflatten(&stream) == B_OK ) {
 		bitmap = new BitmapTypeItem(&archive);
 		if (bitmap && bitmap->InitCheck() != B_OK) {
+			bitmap->Delete();	// allows us to delete this bitmap...
 			delete bitmap;
 			bitmap = NULL;
 		}
 	}
-	
+
 	if (bitmap) {
 		BAutolock lock(&fLock);
 		if (from->Object() != NULL) {
 			// Whoops!  Someone snuck in under us.
+			bitmap->Delete();
 			delete bitmap;
 			bitmap = dynamic_cast<BitmapTypeItem *>(from->Object());
 		} else 
 			from->SetObject(bitmap);
 	}
-	
+
 	return bitmap;
 }
+
 
 TStringBlock *
 TResourceSet::ReturnStringBlockItem(TypeItem *from)
@@ -822,12 +860,17 @@ TResourceSet::ReturnStringBlockItem(TypeItem *from)
 	return stringBlock;
 }
 
+
+//	#pragma mark -
+
+
 namespace TResourcePrivate {
 
 	TResourceSet *gResources = NULL;
 	BLocker gResourceLocker;
 	
 }
+
 
 TResourceSet *
 AppResSet()
