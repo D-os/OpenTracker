@@ -72,7 +72,7 @@ All rights reserved.
 #include <Node.h>
 #include <OS.h>
 
-class Bitmap;
+class BBitmap;
 
 enum {
 	P_UNKNOWN = 0, 
