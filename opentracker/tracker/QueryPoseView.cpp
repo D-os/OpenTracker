@@ -336,6 +336,7 @@ BQueryPoseView::SearchForType() const
 	return fSearchForMimeType.String();
 }
 
+
 bool 
 BQueryPoseView::ActiveOnDevice(dev_t device) const
 {
@@ -347,6 +348,10 @@ BQueryPoseView::ActiveOnDevice(dev_t device) const
 	return false;
 }
 
+
+//	#pragma mark -
+
+
 QueryEntryListCollection::QueryEntryListCollection(Model *model, BHandler *target,
 	PoseList *oldPoseList)
 	:	fQueryListRep(new QueryListRep(new BObjectList<BQuery>(5, true)))
@@ -354,7 +359,7 @@ QueryEntryListCollection::QueryEntryListCollection(Model *model, BHandler *targe
 	Rewind();
 	attr_info info;
 	BQuery query;
-	
+
 	if (!model->Node()) {
 		fStatus = B_ERROR;
 		return;
@@ -414,19 +419,21 @@ QueryEntryListCollection::QueryEntryListCollection(Model *model, BHandler *targe
 
 	// get volumes to perform query on
 	if (model->Node()->GetAttrInfo(kAttrQueryVolume, &info) == B_OK) {
-		BString buffer;
-		if (model->Node()->ReadAttr(kAttrQueryVolume, B_MESSAGE_TYPE, 0,
-			buffer.LockBuffer((int32)info.size), (size_t)info.size) == info.size) {
-			buffer.UnlockBuffer();
+		char *buffer = NULL;
+
+		if ((buffer = (char *)malloc(info.size)) != NULL
+			&& model->Node()->ReadAttr(kAttrQueryVolume, B_MESSAGE_TYPE, 0, buffer,
+					(size_t)info.size) == info.size) {
+
 			BMessage message;
-			if (message.Unflatten(buffer.String()) == B_OK) {
+			if (message.Unflatten(buffer) == B_OK) {
 				for (int32 index = 0; ;index++) {
 					ASSERT(index < 100);
 					BVolume volume;
 						// match a volume with the info embedded in the message
 					result = MatchArchivedVolume(&volume, &message, index);
 					if (result == B_OK) {
-						// send the querry off on this volume
+						// start the query on this volume
 						result = FetchOneQuery(&query, target,
 							fQueryListRep->fQueryList, &volume); 
 						if (result != B_OK)
@@ -441,13 +448,15 @@ QueryEntryListCollection::QueryEntryListCollection(Model *model, BHandler *targe
 				}
 			}
 		}
+
+		free(buffer);
 	}
 
 	if (searchAllVolumes) {
 		// no specific volumes embedded in query, search everything
 		BVolumeRoster roster;
 		BVolume volume;
-	
+
 		roster.Rewind();
 		while (roster.GetNextVolume(&volume) == B_OK)
 			if (volume.IsPersistent() && volume.KnowsQuery()) {
