@@ -35,6 +35,8 @@ const char *kStrings[] = {
 	"pêché",
 	"peché",
 	"peche",
+	"PECHE",
+	"PÊCHE",
 	"pecher",
 	"eñe",
 	"ene",
@@ -46,6 +48,9 @@ const char *kStrings[] = {
 const uint32 kNumStrings = sizeof(kStrings) / sizeof(kStrings[0]);
 
 BCollator *gCollator;
+
+bool gTestKeyGeneration = true;
+bool gShowKeys = false;
 
 
 int
@@ -76,16 +81,25 @@ printArray(const char *label, const char **strings, size_t size)
 
 			// Test sort key generation
 
-			BString a, b;
-			gCollator->GetSortKey(strings[i - 1], &a);
-			gCollator->GetSortKey(strings[i], &b);
+			if (gTestKeyGeneration) {
+				BString a, b;
+				gCollator->GetSortKey(strings[i - 1], &a);
+				gCollator->GetSortKey(strings[i], &b);
 
-			int keyCompare = strcmp(a.String(), b.String());
-			if (keyCompare > 0 || (keyCompare == 0 && compare != 0))
-				printf(" (*** \"%s\" wrong keys \"%s\" ***) ", a.String(), b.String());
+				int keyCompare = strcmp(a.String(), b.String());
+				if (keyCompare > 0 || (keyCompare == 0 && compare != 0))
+					printf(" (*** \"%s\" wrong keys \"%s\" ***) ", a.String(), b.String());
+			}
 		} else
 			printf("% 2u)", bucket++);
+
 		printf("\t%s", strings[i]);
+		
+		if (gShowKeys) {
+			BString key;
+			gCollator->GetSortKey(strings[i], &key);
+			printf(" (%s)", key.String());
+		}
 	}
 	putchar('\n');
 }
@@ -95,8 +109,10 @@ void
 usage()
 {
 	fprintf(stderr,
-		"usage: collatorTest [-i] [<add-on path>]\n"
-		"  -i\tignore punctuation (defaults to: punctuation matters)\n");
+		"usage: collatorTest [-ick] [<add-on path>]\n"
+		"  -i\tignore punctuation (defaults to: punctuation matters)\n"
+		"  -c\tcomparison only, no sort key test\n"
+		"  -k\tshows the sort keys along the strings (sort keys doesn't have to be visually correct)\n");
 	exit(-1);
 }
 
@@ -111,18 +127,26 @@ main(int argc, char **argv)
 	char *addon = NULL;
 
 	while ((++argv)[0]) {
-		if (argv[0][0] == '-') {
-			if (!strcmp(argv[0], "-i"))
-				ignorePunctuation = true;
-			else if (!strcmp(argv[0], "--help"))
-				usage();
-			else if (isdigit(argv[0][1])) {
-				int strength = isdigit(argv[0][1]);
-				if (strength < B_COLLATE_PRIMARY)
-					strength = B_COLLATE_PRIMARY;
-				else if (strength > B_COLLATE_IDENTICAL)
-					strength = B_COLLATE_IDENTICAL;
+		if (argv[0][0] == '-' && argv[0][1] != '-') {
+			char *arg = argv[0] + 1;
+			char c;
+			while (c = *arg++) {
+				if (c == 'i')
+					ignorePunctuation = true;
+				else if (c == 'c')
+					gTestKeyGeneration = false;
+				else if (c == 'k')
+					gShowKeys = true;
+				else if (isdigit(c)) {
+					int strength = c - '0';
+					if (strength < B_COLLATE_PRIMARY)
+						strength = B_COLLATE_PRIMARY;
+					else if (strength > B_COLLATE_IDENTICAL)
+						strength = B_COLLATE_IDENTICAL;
+				}
 			}
+		} else if (!strcmp(argv[0], "--help")) {
+			usage();
 		} else {
 			// this will be the add-on to be loaded
 			addon = argv[0];
