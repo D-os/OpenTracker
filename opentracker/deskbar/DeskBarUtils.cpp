@@ -37,6 +37,7 @@ All rights reserved.
 #include <string.h>
 
 #include <Debug.h>
+#include <Window.h>
 #include <AppFileInfo.h>
 #include <Directory.h>
 #include <FilePanel.h>

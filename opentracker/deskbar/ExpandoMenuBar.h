@@ -31,15 +31,16 @@ of Be Incorporated in the United States and other countries. Other brand product
 names are registered trademarks or trademarks of their respective holders.
 All rights reserved.
 */
+#ifndef EXPANDOMENUBAR_H
+#define EXPANDOMENUBAR_H
 
 //	application list
 //	top level at window
 //	in expanded mode horizontal and vertical
 
-#ifndef EXPANDOMENUBAR_H
-#define EXPANDOMENUBAR_H
 
 #include <MenuBar.h>
+#include <Locker.h>
 
 class BBitmap;
 class TBarView;

@@ -32,19 +32,19 @@ names are registered trademarks or trademarks of their respective holders.
 All rights reserved.
 */
 
+
+#include "TimeView.h"
+
 #include <Debug.h>
 #include <MenuItem.h>
 #include <PopUpMenu.h>
 #include <Roster.h>
+#include <Window.h>
 
 #include <string.h>
 
-#include "BarApp.h"
-#include "TimeView.h"
-#include "StatusView.h"
 
-
-const char * const kMinString = "99:99 AM";
+static const char * const kMinString = "99:99 AM";
 
 
 static float

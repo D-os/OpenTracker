@@ -69,11 +69,11 @@ TBeMenu *TBarWindow::sBeMenu = NULL;
 
 
 TBarWindow::TBarWindow()
-	:	BWindow(BRect(-1000.0f, -1000.0f, -1000.0f, -1000.0f), "Deskbar",
-			B_BORDERED_WINDOW,
-			B_WILL_ACCEPT_FIRST_CLICK | B_NOT_ZOOMABLE | B_NOT_CLOSABLE
-				| B_NOT_MOVABLE | B_AVOID_FRONT | B_ASYNCHRONOUS_CONTROLS,
-			B_ALL_WORKSPACES)
+	: BWindow(BRect(-1000.0f, -1000.0f, -1000.0f, -1000.0f), "Deskbar",
+		B_BORDERED_WINDOW,
+		B_WILL_ACCEPT_FIRST_CLICK | B_NOT_ZOOMABLE | B_NOT_CLOSABLE
+			| B_NOT_MOVABLE | B_AVOID_FRONT | B_ASYNCHRONOUS_CONTROLS,
+		B_ALL_WORKSPACES)
 {
 	desk_settings *settings = ((TBarApp *)be_app)->Settings();
 	if (settings->alwaysOnTop) 
@@ -155,12 +155,12 @@ TBarWindow::MessageReceived(BMessage *message)
 {
 	switch (message->what) {
 		case kFindButton:
-			{
-				BMessenger tracker(kTrackerSignature);
-				tracker.SendMessage(message);
-				break;
-			}
-				
+		{
+			BMessenger tracker(kTrackerSignature);
+			tracker.SendMessage(message);
+			break;
+		}
+
 #if SA_CLOCK
 		case 'clok':
 			fBarView->ToggleClock();
@@ -174,7 +174,7 @@ TBarWindow::MessageReceived(BMessage *message)
 		case 'sloc':
 			SetLocation(message);
 			break;
-			
+
 		case 'gexp':
 			IsExpanded(message);
 			break;
@@ -182,7 +182,7 @@ TBarWindow::MessageReceived(BMessage *message)
 		case 'sexp':
 			Expand(message);
 			break;
-		
+
 		case 'info':
 			ItemInfo(message);
 			break;
@@ -203,11 +203,11 @@ TBarWindow::MessageReceived(BMessage *message)
 		case 'remv':
 			RemoveItem(message);
 			break;
-			
+
 		case 'iloc':
 			GetIconFrame(message);
 			break;
-					
+
 		default:
 			BWindow::MessageReceived(message);
 			break;
@@ -276,7 +276,7 @@ TBarWindow::ShowBeMenu()
 	BMenuBar *menuBar = fBarView->BarMenuBar();
 	if (menuBar == NULL)
 		menuBar = KeyMenuBar();
-	
+
 	if (menuBar == NULL)
 		return;
 
@@ -294,7 +294,7 @@ TBarWindow::ShowTeamMenu()
 	int32 index = 0;
 	if (fBarView->BarMenuBar() == NULL)
 		index = 2;
-	
+
 	if (KeyMenuBar() == NULL)
 		return;
 
@@ -306,7 +306,8 @@ TBarWindow::ShowTeamMenu()
 }
 
 
-//	determines the actual location of the window
+/**	determines the actual location of the window */
+
 deskbar_location
 TBarWindow::DeskbarLocation() const
 {
@@ -315,10 +316,10 @@ TBarWindow::DeskbarLocation() const
 
 	if (fBarView->AcrossTop())
 		return B_DESKBAR_TOP;
-	
+
 	if (fBarView->AcrossBottom())
 		return B_DESKBAR_BOTTOM;
-		
+
 	if (left && top)
 		return B_DESKBAR_LEFT_TOP;
 
@@ -331,6 +332,7 @@ TBarWindow::DeskbarLocation() const
 	return B_DESKBAR_RIGHT_BOTTOM;
 }
 
+
 void
 TBarWindow::GetLocation(BMessage *message)
 {
@@ -341,11 +343,13 @@ TBarWindow::GetLocation(BMessage *message)
 	message->SendReply(&reply);
 }
 
-// left top and right top are the only two that
-// currently pay attention to expand, ignore for all others
+
 void
 TBarWindow::SetDeskbarLocation(deskbar_location location, bool newExpandState)
 {
+	// left top and right top are the only two that
+	// currently pay attention to expand, ignore for all others
+
 	bool left = false, top = true, vertical, expand;
 
 	switch (location) {
@@ -355,7 +359,7 @@ TBarWindow::SetDeskbarLocation(deskbar_location location, bool newExpandState)
 			vertical = false;
 			expand = true;
 			break;
-			
+
 		case B_DESKBAR_BOTTOM:
 			left = true;
 			top = false;
@@ -376,14 +380,14 @@ TBarWindow::SetDeskbarLocation(deskbar_location location, bool newExpandState)
 			vertical = true;
 			expand = newExpandState;
 			break;
-			
+
 		case B_DESKBAR_LEFT_BOTTOM:
 			left = true;
 			top = false;
 			vertical = true;
 			expand = false;
 			break;
-			
+
 		case B_DESKBAR_RIGHT_BOTTOM:
 			left = false;
 			top = false;
@@ -457,7 +461,7 @@ TBarWindow::ItemInfo(BMessage *message)
 #endif
 		}
 	}
-		
+
 	message->SendReply(&replyMsg);
 }
 
@@ -469,18 +473,18 @@ TBarWindow::ItemExists(BMessage *message)
 	const char *name;
 	int32 id;
 	DeskbarShelf shelf;
+
 #if SHELF_AWARE
-	
 	if (message->FindInt32("shelf", (int32 *)&shelf) != B_OK)
 #endif
 		shelf = B_DESKBAR_TRAY;
-	
+
 	bool exists = false;	
 	if (message->FindInt32("id", &id) == B_OK) 
 		exists = fBarView->ItemExists(id, shelf);
 	else if (message->FindString("name", &name) == B_OK) 
 		exists = fBarView->ItemExists(name, shelf);
-	
+
 	replyMsg.AddBool("exists", exists);	
 	message->SendReply(&replyMsg);
 }
@@ -495,7 +499,7 @@ TBarWindow::CountItems(BMessage *message)
 	if (message->FindInt32("shelf", (int32 *)&shelf) != B_OK)
 #endif
 		shelf = B_DESKBAR_TRAY;
-	
+
 	BMessage reply('rply');
 	reply.AddInt32("count", fBarView->CountItems(shelf));
 	message->SendReply(&reply);
@@ -513,12 +517,11 @@ TBarWindow::AddItem(BMessage *message)
 
 	BMessage archivedView;
 	if (message->FindMessage("view", &archivedView) == B_OK) {
-		
 #if SHELF_AWARE
 		if (message->FindInt32("shelf", (int32 *)&shelf) != B_OK)
 #endif
 			shelf = B_DESKBAR_TRAY;
-			
+
 		err = fBarView->AddItem(new BMessage(archivedView), shelf, &id);
 	} else if (message->FindRef("addon", &ref) == B_OK) {
 		//
@@ -531,7 +534,7 @@ TBarWindow::AddItem(BMessage *message)
 			err = tray->LoadAddOn(&entry, &id, true);
 		}
 	}
-	
+
 	if (err == B_OK)
 		reply.AddInt32("id", id);
 	else
@@ -551,7 +554,6 @@ TBarWindow::RemoveItem(BMessage *message)
 	//	that sometime in the future there may be more than one
 #if SHELF_AWARE
 	if (message->FindInt32("shelf", (int32 *)&shelf) == B_OK) {
-		
 		if (message->FindString("name", &name) == B_OK)
 			fBarView->RemoveItem(name, shelf);
 	} else {
@@ -572,14 +574,15 @@ TBarWindow::RemoveItem(BMessage *message)
 void
 TBarWindow::GetIconFrame(BMessage *message)
 {
-	int32 id;
+	BRect frame(0, 0, 0, 0);
+
 	const char *name;
-	BRect frame(0,0,0,0);
+	int32 id;
 	if (message->FindInt32("id", &id) == B_OK)
 		frame = fBarView->IconFrame(id);
 	else if (message->FindString("name", &name) == B_OK)
 		frame = fBarView->IconFrame(name);
-		
+
 	BMessage reply('rply');
 	reply.AddRect("frame", frame);
 	message->SendReply(&reply);

@@ -31,13 +31,12 @@ of Be Incorporated in the United States and other countries. Other brand product
 names are registered trademarks or trademarks of their respective holders.
 All rights reserved.
 */
-
 #ifndef TIME_VIEW_H
 #define TIME_VIEW_H
 
-#include <time.h>
+
 #include <OS.h>
-#include <Window.h>
+#include <View.h>
 
 
 const uint32 kMsgShowSeconds = 'ShSc';

@@ -289,7 +289,7 @@ TBarApp::MessageReceived(BMessage *message)
 		case 'icon':
 		case 'remv':
 		case 'adon':
-			// pass any add-on message on to the window
+			// pass any BDeskbar originating messages on to the window
 			fBarWindow->PostMessage(message);
 			break;
 
