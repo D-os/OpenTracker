@@ -488,6 +488,14 @@ BNavMenu::AddNextItem()
 		return true;
 	}
 
+	QueryEntryListCollection *queryContainer
+		= dynamic_cast<QueryEntryListCollection*>(fContainer);
+	if (queryContainer && !queryContainer->ShowResultsFromTrash()
+		&& FSInTrashDir(model.EntryRef())) {
+		// query entry is in trash and shall not be shown
+		return true;
+	}
+
 	ssize_t size = -1;
 	PoseInfo poseInfo;
 
