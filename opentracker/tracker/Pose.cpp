@@ -76,6 +76,7 @@ CalcFreeSpace(dev_t device)
 	return -1;
 }
 
+
 // SymLink handling:
 // symlink pose uses the resolved model to retrieve the icon, if not broken
 // everything else, like the attributes, etc. is retrieved directly from the
@@ -213,6 +214,7 @@ BPose::UpdateAllWidgets(int32, BPoint poseLoc, BPoseView *poseView)
 	EachTextWidget(this, poseView, OneCheckAndUpdate, poseLoc);
 }
 
+
 void
 BPose::UpdateWidgetAndModel(Model *resolvedModel, const char *attrName,
 	uint32 attrType, int32, BPoint poseLoc, BPoseView *poseView)
@@ -262,6 +264,7 @@ BPose::UpdateWidgetAndModel(Model *resolvedModel, const char *attrName,
 	}
 }
 
+
 bool
 BPose::UpdateVolumeSpaceBar(bool enabled)
 {
@@ -286,6 +289,7 @@ BPose::UpdateVolumeSpaceBar(bool enabled)
 	}
 	return false;		
 }
+
 
 void
 BPose::UpdateIcon(BPoint poseLoc, BPoseView *poseView)
@@ -322,6 +326,7 @@ BPose::UpdateBrokenSymLink(BPoint poseLoc, BPoseView *poseView)
 	UpdateIcon(poseLoc, poseView);
 }
 
+
 void 
 BPose::UpdateWasBrokenSymlink(BPoint poseLoc, BPoseView *poseView)
 {
@@ -344,19 +349,24 @@ void
 BPose::EditFirstWidget(BPoint poseLoc, BPoseView *poseView)
 {
 	// find first editable widget
-	BColumn *column = poseView->FirstColumn();
-	BTextWidget *widget = WidgetFor(column->AttrHash());
-	if (widget && widget->IsEditable()) {
-		BRect bounds;
-		// ToDo:
-		// fold the three StartEdit code sequences into a cover call
-		if (poseView->ViewMode() == kListMode)
-			bounds = widget->CalcRect(poseLoc, column, poseView);
-		else
-			bounds = widget->CalcRect(fLocation, NULL, poseView);
-		widget->StartEdit(bounds, poseView, this);
+	BColumn *column;
+	for (int32 i = 0;(column = poseView->ColumnAt(i)) != NULL;i++) {
+		BTextWidget *widget = WidgetFor(column->AttrHash());
+
+		if (widget && widget->IsEditable()) {
+			BRect bounds;
+			// ToDo:
+			// fold the three StartEdit code sequences into a cover call
+			if (poseView->ViewMode() == kListMode)
+				bounds = widget->CalcRect(poseLoc, column, poseView);
+			else
+				bounds = widget->CalcRect(fLocation, NULL, poseView);
+			widget->StartEdit(bounds, poseView, this);
+			break;
+		}
 	}
 }
+
 
 void
 BPose::EditPreviousNextWidgetCommon(BPoseView *poseView, bool next)
@@ -390,17 +400,20 @@ BPose::EditPreviousNextWidgetCommon(BPoseView *poseView, bool next)
 	}
 }
 
+
 void
 BPose::EditNextWidget(BPoseView *poseView)
 {
 	EditPreviousNextWidgetCommon(poseView, true);
 }
 
+
 void
 BPose::EditPreviousWidget(BPoseView *poseView)
 {
 	EditPreviousNextWidgetCommon(poseView, false);
 }
+
 
 bool
 BPose::PointInPose(const BPoseView *poseView, BPoint where) const 
@@ -440,6 +453,7 @@ BPose::PointInPose(const BPoseView *poseView, BPoint where) const
 	return rect.Contains(where);
 }
 
+
 bool
 BPose::PointInPose(BPoint loc, const BPoseView *poseView, BPoint where,
 	BTextWidget **hitWidget) const
@@ -470,6 +484,7 @@ BPose::PointInPose(BPoint loc, const BPoseView *poseView, BPoint where,
 
 	return false;
 }
+
 
 void
 BPose::Draw(BRect rect, BPoseView *poseView, BView *drawView, bool fullDraw,
@@ -584,6 +599,7 @@ BPose::Draw(BRect rect, BPoseView *poseView, BView *drawView, bool fullDraw,
 	}
 }
 
+
 void
 BPose::DeselectWithoutErasingBackground(BRect, BPoseView *poseView)
 {
@@ -609,6 +625,7 @@ BPose::DeselectWithoutErasingBackground(BRect, BPoseView *poseView)
 	// just invalidate the background, don't draw anything
 	poseView->Invalidate(widget->CalcRect(fLocation, 0, poseView));
 }
+
 
 void
 BPose::MoveTo(BPoint point, BPoseView *poseView, bool inval)
@@ -642,6 +659,7 @@ BPose::MoveTo(BPoint point, BPoseView *poseView, bool inval)
 	}
 }
 
+
 BTextWidget *
 BPose::ActiveWidget() const
 {
@@ -652,6 +670,7 @@ BPose::ActiveWidget() const
 	}
 	return NULL;
 }
+
 
 BTextWidget *
 BPose::WidgetFor(uint32 attr, int32 *index) const 
@@ -668,6 +687,7 @@ BPose::WidgetFor(uint32 attr, int32 *index) const
 
 	return 0;
 }
+
 
 BTextWidget *
 BPose::WidgetFor(BColumn *column, BPoseView *poseView, ModelNodeLazyOpener &opener,
@@ -688,6 +708,7 @@ BPose::TestLargeIconPixel(BPoint point) const
 		kNormalIcon, B_LARGE_ICON);
 }
 
+
 void
 BPose::DrawIcon(BPoint where, BView *view, icon_size kind, bool direct, bool drawUnselected)
 {
@@ -700,6 +721,7 @@ BPose::DrawIcon(BPoint where, BView *view, icon_size kind, bool direct, bool dra
 	if (fPercent != -1)
 		DrawBar(where, view, kind);
 }
+
 
 void 
 BPose::DrawBar(BPoint where,BView *view,icon_size kind)
@@ -788,6 +810,7 @@ BPose::CalcRect(BPoint loc, const BPoseView *poseView, bool minimalRect)
 
 	return rect;
 }
+
 
 BRect
 BPose::CalcRect(const BPoseView *poseView)
