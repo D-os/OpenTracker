@@ -18,6 +18,8 @@ enum {
 
 
 class BLocaleRoster {
+		friend class BCatalog;
+
 	public:
 		BLocaleRoster();
 		~BLocaleRoster();
@@ -38,14 +40,11 @@ class BLocaleRoster {
 //		status_t GetDefaultLanguage(BLanguage *);
 //		status_t SetDefaultLanguage(BLanguage *);
 
+	private:
 		BCatalogAddOn* LoadCatalog(const char* signature, 
-											const char* language = NULL);
+								const char* language = NULL);
 		status_t UnloadCatalog(BCatalogAddOn* addOn);
 
-		static const char *kPriorityAttr;
-
-
-	private:
 		void InitializeCatalogAddOns();
 		void CleanupCatalogAddOns();
 
