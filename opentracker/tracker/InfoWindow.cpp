@@ -426,19 +426,21 @@ BInfoWindow::MessageReceived(BMessage *message)
 				}
 			}
 			break;
-		
+
 		case kDelete:
 		{
+			// ToDo: this could probably be removed completely!
 			BEntry entry(fModel->EntryRef());
-			if (entry.InitCheck())
+			if (entry.InitCheck() && ConfirmChangeIfWellKnownDirectory(&entry, "delete"))
 				FSDelete(new entry_ref(*fModel->EntryRef()), true);
 			break;
 		}
-			
+
 		case kMoveToTrash:
 		{
 			BEntry entry(fModel->EntryRef());
-			if (entry.InitCheck() == B_OK) {
+			if (entry.InitCheck() == B_OK
+				&& ConfirmChangeIfWellKnownDirectory(&entry, "remove")) {
 				if (modifiers() & B_SHIFT_KEY)
 					FSDelete(new entry_ref(*fModel->EntryRef()), true);
 				else
@@ -463,15 +465,18 @@ BInfoWindow::MessageReceived(BMessage *message)
 							Close();
 						break;
 					}
-	
+
 				case B_ENTRY_MOVED:
 				case B_STAT_CHANGED:
 				case B_ATTR_CHANGED: 
+					fAttributeView->ModelChanged(TargetModel(), message);
+						// must be called before the FilePermissionView::ModelChanged()
+						// call, because it changes the model... (bad style!)
+
 					if (fPermissionsView != NULL)
 						fPermissionsView->ModelChanged(TargetModel());
-					fAttributeView->ModelChanged(TargetModel(), message);
 					break;
-				
+
 				case B_DEVICE_UNMOUNTED:
 					{
 						// We were watching a volume that is no longer mounted,
@@ -484,19 +489,19 @@ BInfoWindow::MessageReceived(BMessage *message)
 
 						break;
 					}
-					
+
 				default: 
 					break;
 			}
 			break;
-	
+
 		case kPermissionsSelected:
 			if (fPermissionsView == NULL) {
 				// Only true on first call.
 				fPermissionsView = new FilePermissionsView(BRect(kBorderWidth + 1,
 					fAttributeView->Bounds().bottom, fAttributeView->Bounds().right,
 					fAttributeView->Bounds().bottom+80), fModel);	
-			
+
 				ResizeBy(0, fPermissionsView->Bounds().Height());
 				fAttributeView->AddChild(fPermissionsView);
 				fAttributeView->SetPermissionsSwitchState(kPaneSwitchOpen);
@@ -953,7 +958,15 @@ AttributeView::ModelChanged(Model *model, BMessage *message)
 				return;
 
 			// ensure notification is for us
-			if (*model->NodeRef() == itemNode) {
+			if (*model->NodeRef() == itemNode
+				// For volumes, the device ID is obviously not handled in a
+				// consistent way; the node monitor sends us the ID of the parent
+				// device, while the model is set to the device of the volume
+				// directly - this hack works for volumes that are mounted in
+				// the root directory
+				|| model->IsVolume()
+					&& itemNode.device == 1
+					&& itemNode.node == model->NodeRef()->node) {
 				model->UpdateEntryRef(&dirNode, name);
 				BString title;
 				title << name << " info";
@@ -962,7 +975,7 @@ AttributeView::ModelChanged(Model *model, BMessage *message)
 			}
 			break;
 		}
-		
+
 		case B_STAT_CHANGED: 
 			if (model->OpenNode() == B_OK) {
 				WidgetAttributeText::AttrAsString(model, &fCreatedStr,
@@ -998,11 +1011,11 @@ AttributeView::ModelChanged(Model *model, BMessage *message)
 			}
 			break;
 		}
-		
+
 		default:
 			break;
 	}
-	
+
 	// Update the icon stuff
 	if (fIconModel != fModel) {
 		delete fIconModel;
@@ -1414,7 +1427,7 @@ AttributeView::CheckAndSetSize()
 		fSizeStr = buffer;
 	} else if (fModel->IsFile()) {
 		// poll for size changes because they do not get node monitored
-		// untill a file gets closed
+		// until a file gets closed (with the old BFS)
 		StatStruct statBuf;
 		BModelOpener opener(fModel);
 
@@ -1455,25 +1468,25 @@ AttributeView::MessageReceived(BMessage *message)
 		{
 			BNode node(fModel->EntryRef());
 			BNodeInfo nodeInfo(&node);
-			
+
 			const char *newSignature;
 			if (message->FindString("signature", &newSignature) != B_OK)
 				newSignature = NULL;
 
 			fModel->SetPreferredAppSignature(newSignature);
 			nodeInfo.SetPreferredApp(newSignature);
-				
+
 			break;
 		}
-		
+
 		case kOpenLinkSource:
 			OpenLinkSource();
 			break;
-			
+
 		case kOpenLinkTarget:
 			OpenLinkTarget();
 			break;
-			
+
 		default:
 			_inherited::MessageReceived(message);
 	}
@@ -1489,18 +1502,18 @@ AttributeView::Draw(BRect)
 	// Clear the old contents
 	SetHighColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 	FillRect(Bounds());
-	
+
 	// Draw the dark grey area on the left
 	BRect drawBounds(Bounds());
 	drawBounds.right = kBorderWidth;
 	SetHighColor(kDarkBorderColor);
 	FillRect(drawBounds);
-		
+
 	// Draw the icon, straddling the border
 	SetDrawingMode(B_OP_OVER);
 	IconCache::iconCache->Draw(fIconModel, this, fIconRect.LeftTop(),
 		kNormalIcon, B_LARGE_ICON, true);
-		
+
 	// Font information
 	font_height fontMetrics;
 	BFont currentFont;
@@ -1516,7 +1529,7 @@ AttributeView::Draw(BRect)
 		lineBase = fTitleRect.bottom - fontMetrics.descent;
 		SetHighColor(kAttrValueColor);
 		MovePenTo(BPoint(fIconRect.right + 6, lineBase));
-	
+
 		// Recalculate the rect width
 		fTitleRect.right = min_c(fTitleRect.left + currentFont.StringWidth(fModel->Name()),
 			Bounds().Width() - 5);
@@ -1529,7 +1542,7 @@ AttributeView::Draw(BRect)
 		} else
 			DrawString(fModel->Name());
 	}
-			
+
 	// Draw the attribute font stuff
 	SetFont(be_plain_font);
 	SetFontSize(kAttribFontHeight);
@@ -1698,7 +1711,7 @@ AttributeView::BeginEditingTitle()
 	fTitleEditView->SetWordWrap(false);
 	// Add filter for catching B_RETURN and B_ESCAPE key's
 	fTitleEditView->AddFilter(new BMessageFilter(B_KEY_DOWN, AttributeView::TextViewFilter));
-	
+
 	BScrollView *scrollView = new BScrollView("BorderView",
 		fTitleEditView, 0, 0, false, false, B_PLAIN_BORDER);
 	AddChild(scrollView);	 
@@ -1716,9 +1729,10 @@ AttributeView::FinishEditingTitle(bool commit)
 		return;
 
 	bool reopen = false;
-	
+
 	const char *text = fTitleEditView->Text();
-	if (commit && strcmp(text, fModel->Name()) != 0) {
+	int32 length = strlen(text);
+	if (commit && strcmp(text, fModel->Name()) != 0 && length < B_FILE_NAME_LENGTH) {
 		BEntry entry(fModel->EntryRef());
 		BDirectory parent;
 		if (entry.InitCheck() == B_OK
@@ -1730,9 +1744,9 @@ AttributeView::FinishEditingTitle(bool commit)
 				reopen = true;
 			} else {
 				if (fModel->IsVolume()) {
-					BVolume	vol(fModel->NodeRef()->device);
-					if (vol.InitCheck() == B_OK)
-						vol.SetName(text);
+					BVolume	volume(fModel->NodeRef()->device);
+					if (volume.InitCheck() == B_OK)
+						volume.SetName(text);
 				} else
 					entry.Rename(text);
 
@@ -1744,8 +1758,13 @@ AttributeView::FinishEditingTitle(bool commit)
 					+ currentFont.StringWidth(fTitleEditView->Text()), Bounds().Width() - 5);
 			}
 		}
+	} else if (length >= B_FILE_NAME_LENGTH) {
+		(new BAlert("", "That name is too long. "
+			"Please type another one.", "OK", 0, 0,
+			B_WIDTH_AS_USUAL, B_WARNING_ALERT))->Go();
+		reopen = true;
 	}
-	
+
 	// Remove view
 	BView *scrollView = fTitleEditView->Parent();
 	RemoveChild(scrollView);
