@@ -556,7 +556,7 @@ BClipboardRefsWatcher::Clear()
 	if (Lock()) {
 		int32 items = fNotifyList.CountItems();
 		for (int32 i = 0;i < items;i++) {
-			BMessenger((BView*)fNotifyList.ItemAt(i)).SendMessage(message);
+			BMessenger((BView*)fNotifyList.ItemAt(i)).SendMessage(&message);
 		}
 		Unlock();
 	}
