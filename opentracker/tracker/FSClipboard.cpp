@@ -94,7 +94,7 @@ MakeNodeFromName(node_ref *node, char *name)
 {
 	char *nodeString = strchr(name,'_');
 	if (nodeString != NULL) {
-		node->node = (ino_t)atoll(nodeString + 1);
+		node->node = strtoull(nodeString + 1, (char **)NULL, 10);
 		node->device = atoi(name + 1);
 	}
 }
@@ -274,7 +274,7 @@ FSClipboardPaste(Model *model)
 
 			uint32 index = 0;
 			char *refname;
-			uint32 type;
+			type_code type;
 			int32 count;
 			while (clip->GetInfo(B_REF_TYPE, index,
 #ifdef B_BEOS_VERSION_DANO
@@ -497,7 +497,7 @@ BClipboardRefsWatcher::RemoveNodesByDevice(dev_t device)
 
 		uint32 index = 0;
 		char *refName;
-		uint32 type;
+		type_code type;
 		int32 count;
 		while (clip->GetInfo(B_REF_TYPE, index,
 #ifdef B_BEOS_VERSION_DANO
