@@ -409,7 +409,7 @@ DraggableContainerIcon::MouseMoved(BPoint point, uint32 /*transit*/, const BMess
 	view->Sync();
 	dragBitmap->Unlock();
 
-	BMessage message(B_REFS_RECEIVED);
+	BMessage message(B_SIMPLE_DATA);
 	message.AddRef("refs", model->EntryRef());
 	message.AddPoint("click_pt", fClickPoint);
 
