@@ -20,9 +20,10 @@ $(OBJ_DIR)/BarView.o : BarView.cpp icons.h BarApp.h BarWindow.h BarView.h \
  ../tracker/IconCache.h ../shared/AutoLock.h \
  ../tracker/OpenHashTable.h ../tracker/Utilities.h ResourceSet.h \
  StatusView.h TeamMenuItem.h
-$(OBJ_DIR)/BarWindow.o : BarWindow.cpp BarWindow.h BarApp.h BarView.h \
+$(OBJ_DIR)/BarWindow.o : BarWindow.cpp BarWindow.h BarApp.h BarMenuBar.h BarView.h \
  ../shared/NavMenu.h ../tracker/SlowMenu.h ../shared/ObjectList.h \
- BeMenu.h ../tracker/PublicCommands.h StatusView.h TimeView.h
+ BarMenuTitle.h TimeView.h BeMenu.h ../tracker/PublicCommands.h \
+ StatusView.h
 $(OBJ_DIR)/BeMenu.o : BeMenu.cpp BeMenu.h ../shared/NavMenu.h \
  ../tracker/SlowMenu.h BarApp.h BarWindow.h BarView.h \
  ../shared/ObjectList.h DeskBarUtils.h ../tracker/PublicCommands.h \

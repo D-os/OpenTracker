@@ -137,7 +137,6 @@ class BNavMenu : public BSlowMenu {
 
 		// menu building state
 		uint8		fFlags;
-		//bool fVolsOnly;
 		BObjectList<BMenuItem> *fItemList;
 		EntryListBase *fContainer;
 		bool		fIteratingDesktop;
