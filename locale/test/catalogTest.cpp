@@ -16,9 +16,13 @@ main(int argc, char **argv)
 {
 	BApplication* testApp 
 		= new BApplication("application/x-vnd.otlocale.test-catalog");
-	BCatalog catalog("Test");
-	if (catalog.InitCheck() == B_OK) {
-		printf("translating %s yields %s\n", "test", catalog.GetString( "test"));
+	BCatalog cat1("Test");
+	if (cat1.InitCheck() == B_OK) {
+		printf("translating %s in cat1 yields %s\n", "test", cat1.GetString( "test"));
+	}
+	BCatalog cat2("Test2");
+	if (cat2.InitCheck() == B_OK) {
+		printf("translating %s in cat2 yields %s\n", "test", cat2.GetString( "test"));
 	}
 	delete testApp;
 }
