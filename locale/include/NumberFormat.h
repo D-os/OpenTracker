@@ -6,14 +6,14 @@
 
 class BNumberFormatImpl;
 
-class BNumberFormat : public BFormat, public BNumberFormatParameters {
-	public:
+class BNumberFormat : public BFormat {
+	protected:
 		BNumberFormat(const BNumberFormat &other);
 		~BNumberFormat();
 
 		BNumberFormat &operator=(const BNumberFormat &other);
 
-		BNumberFormat(BNumberFormatImpl *impl);		// conceptually private
+		BNumberFormat(BNumberFormatImpl *impl);
 
 	private:
 		inline BNumberFormatImpl *NumberFormatImpl() const;

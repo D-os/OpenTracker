@@ -1,7 +1,7 @@
 #ifndef _B_NUMBER_FORMAT_PARAMETERS_H_
 #define _B_NUMBER_FORMAT_PARAMETERS_H_
 
-#include <SupportDefs.h>
+#include <FormatParameters.h>
 
 enum number_format_sign_policy {
 	B_USE_NEGATIVE_SIGN_ONLY,
@@ -10,6 +10,8 @@ enum number_format_sign_policy {
 };
 
 enum number_format_base {
+	B_DEFAULT_BASE			= -1,	// locale default, usually decimal, but
+									// may be something like roman as well
 	B_FLEXIBLE_DECIMAL_BASE	= 0,	// same as B_DECIMAL_BASE when formatting,
 									// but recognizes octal and hexadecimal
 									// numbers by prefix when parsing
@@ -18,7 +20,7 @@ enum number_format_base {
 	B_HEXADECIMAL_BASE		= 16,
 };
 
-class BNumberFormatParameters {
+class BNumberFormatParameters : public BFormatParameters {
 	public:
 		BNumberFormatParameters(const BNumberFormatParameters *parent = NULL);
 		BNumberFormatParameters(const BNumberFormatParameters &other);
