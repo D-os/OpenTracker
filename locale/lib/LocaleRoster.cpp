@@ -24,6 +24,8 @@ BLocaleRoster::~BLocaleRoster()
 status_t 
 BLocaleRoster::GetDefaultCollator(BCollator **collator)
 {
+	// It should just use the archived collator from the locale settings;
+	// if that is not available, just return the standard collator
 	*collator = new BCollator();
 	return B_OK;
 }
