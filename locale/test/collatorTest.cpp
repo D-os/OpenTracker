@@ -9,7 +9,9 @@
 #include <Message.h>
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 
 const char *kStrings[] = {
@@ -93,7 +95,7 @@ void
 usage()
 {
 	fprintf(stderr,
-		"usage: collatorTest [-i]\n" // [addon-name]\n"
+		"usage: collatorTest [-i] [<add-on path>]\n"
 		"  -i\tignore punctuation (defaults to: punctuation matters)\n");
 	exit(-1);
 }
@@ -102,20 +104,57 @@ usage()
 int
 main(int argc, char **argv)
 {
-	// ToDo: get collator asked for in the command line arguments
+	// Parse command line arguments
 
+	int strength = B_COLLATE_SECONDARY;
 	bool ignorePunctuation = false;
+	char *addon = NULL;
 
 	while ((++argv)[0]) {
-		if (!strcmp(argv[0], "-i"))
-			ignorePunctuation = true;
-		else if (!strcmp(argv[0], "--help"))
-			usage();
+		if (argv[0][0] == '-') {
+			if (!strcmp(argv[0], "-i"))
+				ignorePunctuation = true;
+			else if (!strcmp(argv[0], "--help"))
+				usage();
+			else if (isdigit(argv[0][1])) {
+				int strength = isdigit(argv[0][1]);
+				if (strength < B_COLLATE_PRIMARY)
+					strength = B_COLLATE_PRIMARY;
+				else if (strength > B_COLLATE_IDENTICAL)
+					strength = B_COLLATE_IDENTICAL;
+			}
+		} else {
+			// this will be the add-on to be loaded
+			addon = argv[0];
+		}
+	}
+
+	// load the collator add-on if necessary
+
+	if (addon != NULL) {
+		image_id image = load_add_on(addon);
+		if (image < B_OK)
+			fprintf(stderr, "could not load add-on at \"%s\": %s.\n", addon, strerror(image));
+
+		BCollatorAddOn *(*instantiate)(void);
+		if (get_image_symbol(image, "instantiate_collator",
+				B_SYMBOL_TYPE_TEXT, (void **)&instantiate) == B_OK) {
+			BCollatorAddOn *collator = instantiate();
+			if (collator != NULL)
+				gCollator = new BCollator(collator, strength, true);
+		} else if (image >= B_OK) {
+			fprintf(stderr, "could not find instantiate_collator() function in add-on!\n");
+			unload_add_on(image);
+		}
+	}
+
+	if (gCollator == NULL) {
+		printf("--------- Use standard collator! -----------\n");
+		gCollator = be_locale->Collator();
 	}
 
 	// test archiving/unarchiving collator
 
-	gCollator = be_locale->Collator();
 	BMessage archive;
 	if (gCollator->Archive(&archive, true) != B_OK)
 		fprintf(stderr, "Archiving failed!\n");
