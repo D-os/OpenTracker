@@ -1583,15 +1583,15 @@ BContainerWindow::AddWindowMenu(BMenu *menu)
 {
 	BMenuItem *item;
 
-	item = new BMenuItem("Icon View", new BMessage(kIconMode));
+	item = new BMenuItem("Icon View", new BMessage(kIconMode), '1');
 	item->SetTarget(PoseView());
 	menu->AddItem(item);
 
-	item = new BMenuItem("Mini Icon View", new BMessage(kMiniIconMode));
+	item = new BMenuItem("Mini Icon View", new BMessage(kMiniIconMode), '2');
 	item->SetTarget(PoseView());
 	menu->AddItem(item);
 
-	item = new BMenuItem("List View", new BMessage(kListMode));
+	item = new BMenuItem("List View", new BMessage(kListMode), '3');
 	item->SetTarget(PoseView());
 	menu->AddItem(item);
 
@@ -2305,9 +2305,9 @@ BContainerWindow::AddWindowContextMenus(BMenu *menu)
 	if (needSeparator)
 		menu->AddSeparatorItem();
 
-	menu->AddItem(new BMenuItem("Icon View", new BMessage(kIconMode)));
-	menu->AddItem(new BMenuItem("Mini Icon View", new BMessage(kMiniIconMode)));
-	menu->AddItem(new BMenuItem("List View", new BMessage(kListMode)));
+	menu->AddItem(new BMenuItem("Icon View", new BMessage(kIconMode), '1'));
+	menu->AddItem(new BMenuItem("Mini Icon View", new BMessage(kMiniIconMode), '2'));
+	menu->AddItem(new BMenuItem("List View", new BMessage(kListMode), '3'));
 	menu->AddSeparatorItem();
 	BMenuItem *pasteItem = new BMenuItem("Paste", new BMessage(B_PASTE), 'V');
 	menu->AddItem(pasteItem);
