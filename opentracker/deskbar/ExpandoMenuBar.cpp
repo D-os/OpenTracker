@@ -473,7 +473,7 @@ TExpandoMenuBar::AddTeam(BList *team, BBitmap *icon, char *name, char *sig)
 		}
 
 		int32 count = CountItems(), i;
-		for (i = firstApp; i <= count; i++) {
+		for (i = firstApp; i < count; i++) {
 			if (strcasecmp(static_cast<TTeamMenuItem *>(ItemAt(i))->Name(), name) > 0) {
 				AddItem(item, i);
 				break;
