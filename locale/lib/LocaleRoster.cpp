@@ -6,9 +6,12 @@
 **			Oliver Tappe, zooey@hirschkaefer.de
 */
 
+#include <stdio.h>		// for debug only
+
 #include <Catalog.h>
 #include <Collator.h>
 #include <Country.h>
+#include <DefaultCatalog.h>
 #include <Directory.h>
 #include <Entry.h>
 #include <FindDirectory.h>
@@ -19,11 +22,10 @@
 #include <Path.h>
 #include <String.h>
 
-const char *BLocaleRoster::kPriorityAttr = "LOCALE:priority";
+static const char *kPriorityAttr = "ADDON:priority";
 
 typedef BCatalogAddOn* (*InstantiateCatalogFunc)(const char *name, 
-																 const char *language,
-																 BCatalogAddOnInfo *info);
+	const char *language, BCatalogAddOnInfo *info);
 
 struct BCatalogAddOnInfo {
 	BString fName;
@@ -32,20 +34,23 @@ struct BCatalogAddOnInfo {
 	InstantiateCatalogFunc fInstantiateFunc;
 	uint8 fPriority;
 	uint8 fUsedCount;
+	bool fIsEmbedded;
 
-	BCatalogAddOnInfo( const BString& name, const BString& path, uint8 priority)
-		:	fName( name)
-		,	fPath( path)
-		,	fAddOnImage( B_NO_INIT)
-		,	fInstantiateFunc( NULL)
-		,	fPriority( priority)
-		,	fUsedCount( 0)
+	BCatalogAddOnInfo(const BString& name, const BString& path, uint8 priority)
+		:	
+		fName(name),	
+		fPath(path),
+		fAddOnImage(B_NO_INIT),
+		fInstantiateFunc(NULL),
+		fPriority(priority),
+		fUsedCount(0),
+		fIsEmbedded(path.Length()==0)
 	{
 	}
 
 	~BCatalogAddOnInfo() {
 		if (fAddOnImage >= B_OK)
-			unload_add_on( fAddOnImage);
+			unload_add_on(fAddOnImage);
 	}
 	
 	bool operator< (const BCatalogAddOnInfo& right) const {
@@ -53,9 +58,9 @@ struct BCatalogAddOnInfo {
 	}
 };
 
-
 BLocaleRoster::BLocaleRoster()
 {
+	InitializeCatalogAddOns();
 	// ToDo: change this to fetch preferred languages from prefs
 	fPreferredLanguages.AddItem(const_cast<char *>("Deutsch"));
 	fPreferredLanguages.AddItem(const_cast<char *>("English"));
@@ -105,14 +110,14 @@ BLocaleRoster::GetPreferredLanguages(BList *languages)
 	if (!languages)
 		return B_BAD_VALUE;
 	languages->MakeEmpty();
-	languages->AddList( &fPreferredLanguages);
+	languages->AddList(&fPreferredLanguages);
 	return B_OK;
 }
 
-static int CompareInfos( const void* left, const void* right)
+static int CompareInfos(const void* left, const void* right)
 {
 	return ((BCatalogAddOnInfo*)right)->fPriority 
-				- ((BCatalogAddOnInfo*)left)->fPriority;
+		- ((BCatalogAddOnInfo*)left)->fPriority;
 }
 
 void 
@@ -127,17 +132,24 @@ BLocaleRoster::InitializeCatalogAddOns()
 	int32 count;
 	int32 priority;
 
+	// add info about embedded default catalog:
+	BCatalogAddOnInfo* defaultCatalogAddOnInfo
+		= new BCatalogAddOnInfo("Default", "", 
+			 DefaultCatalog::gDefaultCatalogAddOnPriority);
+	defaultCatalogAddOnInfo->fInstantiateFunc = DefaultCatalog::Instantiate;
+	fCatalogAddOnInfos.AddItem((void*)defaultCatalogAddOnInfo);
+
 	directory_which folders[] = {
 		B_COMMON_ADDONS_DIRECTORY,
 		B_BEOS_ADDONS_DIRECTORY,
-		static_cast< directory_which>( -1)
+		static_cast<directory_which>(-1)
 	};
 	BPath addOnPath;
-	for( int f=0; folders[f]>=0; ++f) {
-		find_directory( folders[f], &addOnPath);
-		BString addOnFolderName( addOnPath.Path());
+	for (int f=0; folders[f]>=0; ++f) {
+		find_directory(folders[f], &addOnPath);
+		BString addOnFolderName(addOnPath.Path());
 		addOnFolderName << "/locale/catalogs";
-		err = addOnFolder.SetTo( addOnFolderName.String());
+		err = addOnFolder.SetTo(addOnFolderName.String());
 		if (err != B_OK)
 			continue;
 		// scan through all the folder's entries for catalog add-ons:
@@ -148,32 +160,56 @@ BLocaleRoster::InitializeCatalogAddOns()
 					// we have found (what should be) a catalog-add-on:
 					eref.device = dent->d_pdev;
 					eref.directory = dent->d_pino;
-					eref.set_name( dent->d_name);
-					node.SetTo( &eref);
-					priority = 100;
-						// default priority is very low
-					node.ReadAttr( kPriorityAttr, B_UINT8_TYPE, 0, 
-										&priority, sizeof( int32));
-					fCatalogAddOnInfos.AddItem(
-						(void*)new BCatalogAddOnInfo( dent->d_name, 
-																addOnFolderName, 
-																priority)
-					);
+					eref.set_name(dent->d_name);
+					node.SetTo(&eref);
+					priority = -1;
+					if (node.ReadAttr(kPriorityAttr, B_UINT8_TYPE, 0, 
+						&priority, sizeof(int32)) != B_OK) {
+						// add-on has no priority-attribute yet, so we load it to
+						// fetch the priority from the corresponding symbol...
+						BString fullAddOnPath(addOnFolderName);
+						fullAddOnPath << "/" << dent->d_name;
+						image_id image = load_add_on(fullAddOnPath.String());
+						if (image >= B_OK) {
+							uint8 *prioPtr;
+							if (get_image_symbol(image, "gCatalogAddOnPriority",
+								B_SYMBOL_TYPE_TEXT, 
+								(void **)&prioPtr) == B_OK) {
+								priority = *prioPtr;
+								node.WriteAttr(kPriorityAttr, B_UINT8_TYPE, 0, 
+									&priority, sizeof(int32));
+							}
+						}
+#ifdef DEBUG
+						else
+							printf("Could not load add-on %s, error: %s\n", 
+								fullAddOnPath.String(), strerror(image));
+#endif
+					}
+					if (priority >= 0) {
+						// add-ons with priority<0 will be ignored
+						fCatalogAddOnInfos.AddItem(
+							(void*)new BCatalogAddOnInfo(dent->d_name, 
+								addOnFolderName, priority)
+						);
+					}
 				}
 				// Bump the dirent-pointer by length of the dirent just handled:
 				dent = (dirent* )((char* )dent + dent->d_reclen);
 			}
 		}
 	}
-	fCatalogAddOnInfos.SortItems( CompareInfos);
+	fCatalogAddOnInfos.SortItems(CompareInfos);
 }
 
 void
 BLocaleRoster::CleanupCatalogAddOns() 
 {
 	int32 count = fCatalogAddOnInfos.CountItems();
-	for( int32 i=0; i<count; ++i) {
-		BCatalogAddOnInfo* info = (BCatalogAddOnInfo*)fCatalogAddOnInfos.ItemAt( i);
+	for (int32 i=0; i<count; ++i) {
+		BCatalogAddOnInfo* info = (BCatalogAddOnInfo*)fCatalogAddOnInfos.ItemAt(i);
+		if (!info->fIsEmbedded && info->fAddOnImage >= B_OK)
+			unload_add_on(info->fAddOnImage);
 		delete info;
 	}
 	fCatalogAddOnInfos.MakeEmpty();
@@ -186,43 +222,43 @@ BLocaleRoster::LoadCatalog(const char* signature, const char* language)
 		return NULL;
 
 	int32 count = fCatalogAddOnInfos.CountItems();
-	for( int32 i=0; i<count; ++i) {
-		BCatalogAddOnInfo* info = (BCatalogAddOnInfo*)fCatalogAddOnInfos.ItemAt( i);
+	for (int32 i=0; i<count; ++i) {
+		BCatalogAddOnInfo* info = (BCatalogAddOnInfo*)fCatalogAddOnInfos.ItemAt(i);
 
-		if (info->fAddOnImage < B_OK) {
+		if (!info->fIsEmbedded && info->fAddOnImage < B_OK) {
 			// add-on has not been loaded yet, so we try to load it:
-			BString fullAddOnPath( info->fPath);
+			BString fullAddOnPath(info->fPath);
 			fullAddOnPath << "/" << info->fName;
-			info->fAddOnImage = load_add_on( fullAddOnPath.String());
+			info->fAddOnImage = load_add_on(fullAddOnPath.String());
 			if (info->fAddOnImage < B_OK)
 				continue;
 					// add-on couldn't be loaded, try next one
 		}
 
 		BCatalogAddOn *catalog = NULL;
-		if (get_image_symbol(info->fAddOnImage, "instantiate_catalog",
-									B_SYMBOL_TYPE_TEXT, 
-									(void **)&info->fInstantiateFunc) == B_OK) {
+		if (info->fInstantiateFunc != NULL
+			|| get_image_symbol(info->fAddOnImage, "instantiate_catalog",
+				B_SYMBOL_TYPE_TEXT, (void **)&info->fInstantiateFunc) == B_OK) {
 			BList languages;
 			if (language)
 				// try to load language with given name:
-				languages.AddItem( (void*)language);
+				languages.AddItem((void*)language);
 			else
 				// try to load one of the preferred languages:
-				languages.AddList( &fPreferredLanguages);
+				languages.AddList(&fPreferredLanguages);
 
 			int32 langCount = languages.CountItems();
-			for( int32 l=0; l<langCount; ++l) {
-				BString lang = (const char*)languages.ItemAt( l);
+			for (int32 l=0; l<langCount; ++l) {
+				BString lang = (const char*)languages.ItemAt(l);
 				catalog = info->fInstantiateFunc(signature, lang.String(), info);
 				if (catalog != NULL) {
 					catalog->fAddOnInfo = info;
 					info->fUsedCount++;
 					int32 pos;
 					BCatalogAddOn *currCatalog=catalog, *nextCatalog;
-					while( (pos = lang.FindLast( '-')) > B_OK) {
+					while ((pos = lang.FindLast('-')) > B_OK) {
 						// language is based on parent, so we load that, too:
-						lang.Truncate( pos);
+						lang.Truncate(pos);
 						nextCatalog = info->fInstantiateFunc(signature, lang.String(), info);
 						if (nextCatalog) {
 							currCatalog->fNext = nextCatalog;
@@ -233,7 +269,7 @@ BLocaleRoster::LoadCatalog(const char* signature, const char* language)
 				}
 			}
 		} 
-		if (!catalog) {
+		if (!catalog && !info->fIsEmbedded && info->fUsedCount==0) {
 			unload_add_on(info->fAddOnImage);
 			info->fAddOnImage = B_NO_INIT;
 			info->fInstantiateFunc = NULL;
@@ -249,13 +285,13 @@ BLocaleRoster::UnloadCatalog(BCatalogAddOn* catalog)
 	if (!catalog)
 		return B_BAD_VALUE;
 	int32 count = fCatalogAddOnInfos.CountItems();
-	for( int32 i=0; i<count; ++i) {
-		BCatalogAddOnInfo* info = (BCatalogAddOnInfo*)fCatalogAddOnInfos.ItemAt( i);
+	for (int32 i=0; i<count; ++i) {
+		BCatalogAddOnInfo* info = (BCatalogAddOnInfo*)fCatalogAddOnInfos.ItemAt(i);
 		if (info == catalog->fAddOnInfo) {
 			delete catalog;
 			info->fUsedCount--;
-			if (!info->fUsedCount) {
-				unload_add_on( info->fAddOnImage);
+			if (!info->fIsEmbedded && !info->fUsedCount) {
+				unload_add_on(info->fAddOnImage);
 				info->fAddOnImage = B_NO_INIT;
 				info->fInstantiateFunc = NULL;
 			}
