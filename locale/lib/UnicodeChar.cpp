@@ -30,6 +30,11 @@
 #include <string.h>
 
 
+#ifndef B_BAD_DATA
+// B_BAD_DATA was introduced with DANO, so we define it for R5:
+#define B_BAD_DATA -2147483632L
+#endif
+
 static const uint16 *gPropsTable = NULL;
 #define gProps32Table ((uint32 *)gPropsTable)
 static uint16 *gIndices;

@@ -10,7 +10,7 @@
 #include <Path.h>
 #include <FindDirectory.h>
 
-#ifndef B_BEOS_VERSION_DANO
+#ifndef B_BAD_DATA
 // B_BAD_DATA was introduced with DANO, so we define it for R5:
 #define B_BAD_DATA -2147483632L
 #endif
