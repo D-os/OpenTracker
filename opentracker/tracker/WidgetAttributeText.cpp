@@ -350,13 +350,15 @@ TimeFormat(BString &string, int32 index, FormatSeparator separator,
 	return B_OK;
 }
 
+
 template <class View>
 float
 TruncTimeBase(BString *result, int64 value, const View *view, float width)
 {
-	FormatSeparator separator = TTracker::TimeFormatSeparator();
-	DateOrder order = TTracker::DateOrderFormat();
-	bool clockIs24hr = TTracker::ClockIs24Hr();
+	TrackerSettings settings;
+	FormatSeparator separator = settings.TimeFormatSeparator();
+	DateOrder order = settings.DateOrderFormat();
+	bool clockIs24hr = settings.ClockIs24Hr();
 
 	float resultWidth = 0;
 	char buffer[256];

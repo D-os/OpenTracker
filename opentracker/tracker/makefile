@@ -4,7 +4,7 @@
 NAME= Tracker
 LIB_NAME= libtracker.so
 
-DEBUGGER= FALSE
+DEBUGGER= TRUE
 
 ROOT_DIR = ..
 
@@ -103,6 +103,7 @@ sources_src := \
 	RecentItems.cpp \
 	RegExp.cpp \
 	SelectionWindow.cpp \
+	Settings.cpp \
 	SettingsHandler.cpp \
 	SettingsViews.cpp \
 	SlowContextPopup.cpp \

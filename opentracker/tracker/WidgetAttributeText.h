@@ -37,7 +37,7 @@ All rights reserved.
 
 #include <String.h>
 
-#include "Tracker.h"
+#include "TrackerSettings.h"
 
 namespace BPrivate {
 
