@@ -109,6 +109,7 @@ class TExpandoMenuBar : public BMenuBar {
 
 		static bool			sDoMonitor;
 		static thread_id	sMonThread;
+		static BLocker		sMonLocker;
 };
 
 #endif /* EXPANDOMENUBAR_H */

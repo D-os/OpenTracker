@@ -38,6 +38,7 @@ All rights reserved.
 #include <Roster.h>
 #include <Screen.h>
 #include <Bitmap.h>
+#include <Autolock.h>
 
 #include "icons.h"
 #include "icons_logo.h"
@@ -63,6 +64,7 @@ const uint32 M_BRING_TEAM_TO_FRONT = 'bftm';
 
 bool TExpandoMenuBar::sDoMonitor = false;
 thread_id TExpandoMenuBar::sMonThread = B_ERROR;
+BLocker TExpandoMenuBar::sMonLocker("expando monitor");
 
 
 TExpandoMenuBar::TExpandoMenuBar(TBarView *bar, BRect frame, const char *name,
@@ -169,22 +171,23 @@ void
 TExpandoMenuBar::DetachedFromWindow()
 {
 	BMenuBar::DetachedFromWindow();
-	
+
 	if (sMonThread != B_ERROR) {
-		status_t err = B_OK;
-		
 		sDoMonitor = false;
-		wait_for_thread(sMonThread, &err);
+
+		status_t returnCode;
+		wait_for_thread(sMonThread, &returnCode);
+
 		sMonThread = B_ERROR;
 	}
-	
+
 	BMessenger self(this);
 	BMessage message(msg_Unsubscribe);
 	message.AddMessenger("messenger", self);
 	be_app->PostMessage(&message);
 
 	BMenuItem *item = NULL;
-	while ((item = RemoveItem((int32)0)) != NULL)
+	while ((item = RemoveItem(0L)) != NULL)
 		delete item;
 }
 
@@ -377,30 +380,16 @@ TExpandoMenuBar::MouseDown(BPoint where)
 	// Check the bounds of the expand Team icon
 	if (fShowTeamExpander && fVertical && !fBarView->Dragging()) {
 		TTeamMenuItem *item = ItemAtPoint(where);
-		if (item->Submenu()){
+		if (item->Submenu()) {
 			BRect expanderRect = item->ExpanderBounds();
 			if (expanderRect.Contains(where)) {
-				// Stop the update thread...
-				// ToDo: solve this using a semaphore or just suspend the thread for a while
-				if (sMonThread != B_ERROR) {
-					status_t err = B_OK;
-					sDoMonitor = false;
-					wait_for_thread(sMonThread, &err);
-					sMonThread = B_ERROR;
-				}
-				
+				// Let the update thread wait...
+				BAutolock locker(sMonLocker);
+
 				// Toggle the item
 				item->ToggleExpandState(true);
 				item->Draw();
-				
-				// Start the thread again.
-				if (sMonThread == B_ERROR) {
-					sDoMonitor = true;
-					sMonThread = spawn_thread(monitor_team_windows,
-							"Expando Window Watcher", B_LOW_PRIORITY, this);
-					resume_thread(sMonThread);
-				}
-				
+
 				// Absorb the message.
 				return; 
 			}
@@ -716,6 +705,8 @@ TExpandoMenuBar::monitor_team_windows(void *arg)
 	int32 *tokens = NULL;
 
 	while (teamMenu->sDoMonitor) {
+		sMonLocker.Lock();
+
 		totalItems = teamMenu->CountItems();
 
 		// Set all WindowMenuItems to require an update.
@@ -741,12 +732,12 @@ TExpandoMenuBar::monitor_team_windows(void *arg)
 						team_id	theTeam = (team_id)teamItem->Teams()->ItemAt(j);
 						int32 count = 0;
 						tokens = get_token_list(theTeam, &count);
-						
+
 						for (int32 k = 0; k < count; k++) {
 							window_info *wInfo = get_window_info(tokens[k]);
 							if (wInfo == NULL)
 								continue;
-							
+
 							if (TWindowMenu::WindowShouldBeListed(wInfo->w_type)
 								&& (wInfo->show_hide_level <= 0 || wInfo->is_mini)) {
 								// Check if we have a matching window item...
@@ -804,6 +795,8 @@ TExpandoMenuBar::monitor_team_windows(void *arg)
 			teamMenu->Invalidate();
 			teamMenu->Window()->Unlock();
 		}
+
+		sMonLocker.Unlock();
 
 		// sleep for a bit...
 		snooze(150000);
