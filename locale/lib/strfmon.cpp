@@ -6,6 +6,8 @@
 
 #include <SupportDefs.h>
 
+#include <errno.h>
+
 #include <monetary.h>
 #include <locale.h>
 #include <ctype.h>
