@@ -151,7 +151,11 @@ FindWindow::FindWindow(const entry_ref *newRef, bool editIfTemplateOnly)
 		else {
 			// no default query template yet
 			fFile = new BFile(&entry, O_RDWR | O_CREAT);
-			SaveQueryAttributes(fFile, true);
+			if (fFile->InitCheck() < B_OK) {
+				delete fFile;
+				fFile = NULL;
+			} else
+				SaveQueryAttributes(fFile, true);
 		}
 	}
 	
