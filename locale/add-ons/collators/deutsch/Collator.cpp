@@ -7,12 +7,15 @@
 #include <Collator.h>
 #include <UnicodeChar.h>
 #include <String.h>
+#include <Message.h>
 
 #include <ctype.h>
 
 
+static const char *kSignature = "application/x-vnd.locale-collator.deutsch-din2";
+
 // conversion array for character ranges 192 - 223 & 224 - 255
-static uint8 gNoDiacrits[] = {
+static const uint8 kNoDiacrits[] = {
 	'a','a','a','a','a','a','a',
 	'c',
 	'e','e','e','e',
@@ -36,11 +39,11 @@ getPrimaryChar(uint32 c)
 		return tolower(c);
 
 	if (c >= 192 && c < 223)
-		return gNoDiacrits[c - 192];
+		return kNoDiacrits[c - 192];
 	if (c == 223)
 		return 's';
 	if (c >= 224 && c < 256)
-		return gNoDiacrits[c - 224];
+		return kNoDiacrits[c - 224];
 
 	return BUnicodeChar::ToLower(c);
 }
@@ -61,16 +64,27 @@ getPrimaryChar(uint32 c)
 class CollatorDeutsch : public BCollatorAddOn {
 	public:
 		CollatorDeutsch();
+		CollatorDeutsch(BMessage *archive);
 		~CollatorDeutsch();
 		
 		virtual void GetSortKey(const char *string, BString *key, int8 strength,
 							bool ignorePunctuation);
 		virtual int Compare(const char *a, const char *b, int32 length, int8 strength,
 							bool ignorePunctuation);
+
+		// (un-)archiving API
+		virtual status_t Archive(BMessage *archive, bool deep);
+		static BArchivable *Instantiate(BMessage *archive);
 };
 
 
 CollatorDeutsch::CollatorDeutsch()
+{
+}
+
+
+CollatorDeutsch::CollatorDeutsch(BMessage *archive)
+	: BCollatorAddOn(archive)
 {
 }
 
@@ -126,7 +140,6 @@ CollatorDeutsch::Compare(const char *a, const char *b, int32 length, int8 streng
 
 	// ToDo: this is actually a very slow implementation, and should be
 	// realized without calling the GetSortKey() method at all...
-
 	BString keyA, keyB;
 	GetSortKey(a, &keyA, B_COLLATE_PRIMARY, ignorePunctuation);
 	GetSortKey(b, &keyB, B_COLLATE_PRIMARY, ignorePunctuation);
@@ -148,3 +161,36 @@ CollatorDeutsch::Compare(const char *a, const char *b, int32 length, int8 streng
 	return 0;
 }
 
+
+status_t 
+CollatorDeutsch::Archive(BMessage *archive, bool deep)
+{
+	status_t status = BArchivable::Archive(archive, deep);
+
+	// add the add-on signature, so that the roster can load
+	// us on demand!
+	if (status == B_OK)
+		status = archive->AddString("add_on", kSignature);
+
+	return status;
+}
+
+
+BArchivable *
+CollatorDeutsch::Instantiate(BMessage *archive)
+{
+	if (validate_instantiation(archive, "CollatorDeutsch"))
+		return new CollatorDeutsch(archive);
+
+	return NULL;
+}
+
+
+//	#pragma mark -
+
+
+extern "C" BCollatorAddOn *
+instantiate_collator(void)
+{
+	return new CollatorDeutsch();
+}
