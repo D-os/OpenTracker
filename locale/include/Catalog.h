@@ -44,35 +44,43 @@ class BCatalog {
 		friend class CatalogSpeed;
 		friend class CatalogTest;
 		friend class CatalogTestAddOn;
-		friend status_t get_add_on_catalog(BCatalog*, const char*, int32);
+		friend status_t get_add_on_catalog(BCatalog*, const char *);
 };
 
 
 extern BCatalog* be_catalog;
+extern BCatalog* be_app_catalog;
 
 
 #ifndef B_AVOID_TRANSLATION_MACROS
 #include <typeinfo>
 // macros for easy catalog-access, define B_AVOID_TRANSLATION_MACROS if
-// you don't want these
-//
-// N.B.: these are only valid in class-scope (i.e. you can only use them
-//       in methods, not in functions, as they make use of RTTI!
+// you don't want these:
+
+#undef TR_CONTEXT
+	// In a single application, several strings mightAs it is possible thatThe translators to easily find out
+	//		what the context means.
+	// define this with the context you'd like to use in a source file.
+	// example:
+	//		#define TR_CONTEXT "Folder-Window"
+	// Tip: Use a descriptive name of the class implemented in that 
+	//		source-file. 
+
 #undef TR
 #define TR(str) \
-	(be_catalog->GetString((str), typeid(*this).name()))
+	be_catalog->GetString((str), TR_CONTEXT)
 
 #undef TR_CMT
 #define TR_CMT(str,cmt) \
-	(be_catalog->GetString((str), typeid(*this).name(), (cmt)))
+	be_catalog->GetString((str), TR_CONTEXT, (cmt))
 
 #undef TR_ALL
 #define TR_ALL(str,ctx,cmt) \
-	(be_catalog->GetString((str), (ctx), (cmt)))
+	be_catalog->GetString((str), (ctx), (cmt))
 
 #undef TR_ID
 #define TR_ID(id) \
-	(be_catalog->GetString((id)))
+	be_catalog->GetString((id))
 
 #endif	/* B_AVOID_TRANSLATION_MACROS */
 
@@ -113,13 +121,14 @@ class BCatalogAddOn {
 	protected:
 		virtual void UpdateFingerprint();
 
+		status_t 			fInitCheck;
 		BString 			fSignature;
 		BString 			fLanguageName;
 		int32				fFingerprint;
 		BCatalogAddOn 		*fNext;
-		status_t 			fInitCheck;
 		
 		friend class BCatalog;
+		friend status_t get_add_on_catalog(BCatalog*, const char *);
 };
 
 // every catalog-add-on should export these symbols...
@@ -136,46 +145,6 @@ extern uint8 gCatalogAddOnPriority;
 /*
  * BCatalog - inlines for trivial accessors:
  */
-inline const char *
-BCatalog::GetString(const char *string, const char *context, const char *comment)
-{
-	if (fCatalog)
-		return fCatalog->GetString(string, context, comment);
-	else
-		return string;
-}
-
-
-inline const char *
-BCatalog::GetString(uint32 id)
-{
-	if (fCatalog)
-		return fCatalog->GetString(id);
-	else
-		return "";
-}
-
-
-inline status_t 
-BCatalog::GetData(const char *name, BMessage *msg)
-{
-	if (fCatalog)
-		return fCatalog->GetData(name, msg);
-	else
-		return B_NO_INIT;
-}
-
-
-inline status_t 
-BCatalog::GetData(uint32 id, BMessage *msg)
-{
-	if (fCatalog)
-		return fCatalog->GetData(id, msg);
-	else
-		return B_NO_INIT;
-}
-
-
 inline status_t
 BCatalog::GetSignature(BString *sig) {
 	if (!sig)

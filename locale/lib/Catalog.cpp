@@ -15,6 +15,10 @@
 
 
 BCatalog* be_catalog = NULL;
+	// catalog used by translation macros
+BCatalog* be_app_catalog = NULL;
+	// app-catalog (useful for accessing app's catalog from inside and add-on,
+	// since in an add-on, be_catalog will hold the add-on's catalog.
 
 BCatalog::BCatalog()
 	:
@@ -40,8 +44,62 @@ BCatalog::BCatalog(const char *type, const char *signature,
 BCatalog::~BCatalog()
 {
 	if (be_catalog == this)
-		be_catalog = NULL;
+		be_app_catalog = be_catalog = NULL;
 	be_locale_roster->UnloadCatalog(fCatalog);
+}
+
+
+const char *
+BCatalog::GetString(const char *string, const char *context, const char *comment)
+{
+	const char *translated;
+	for (BCatalogAddOn* cat = fCatalog; cat != NULL; cat = cat->fNext) {
+		translated = cat->GetString(string, context, comment);
+		if (translated)
+			return translated;
+	}
+	return string;
+}
+
+
+const char *
+BCatalog::GetString(uint32 id)
+{
+	const char *translated;
+	for (BCatalogAddOn* cat = fCatalog; cat != NULL; cat = cat->fNext) {
+		translated = cat->GetString(id);
+		if (translated)
+			return translated;
+	}
+	return "";
+}
+
+
+status_t 
+BCatalog::GetData(const char *name, BMessage *msg)
+{
+	status_t res;
+	for (BCatalogAddOn* cat = fCatalog; cat != NULL; cat = cat->fNext) {
+		res = cat->GetData(name, msg);
+		if (res != B_NAME_NOT_FOUND)
+			return res;	
+				// return B_OK if found, or specific error-code
+	}
+	return B_NO_INIT;
+}
+
+
+status_t 
+BCatalog::GetData(uint32 id, BMessage *msg)
+{
+	status_t res;
+	for (BCatalogAddOn* cat = fCatalog; cat != NULL; cat = cat->fNext) {
+		res = cat->GetData(id, msg);
+		if (res != B_NAME_NOT_FOUND)
+			return res;	
+				// return B_OK if found, or specific error-code
+	}
+	return B_NO_INIT;
 }
 
 
@@ -57,12 +115,34 @@ BCatalog::GetAppCatalog(BCatalog* catalog) {
 	if (pos >= 0)
 		sig.Remove(0, pos+1);
 
+	// try to fetch fingerprint from app-file (attribute):
 	int32 fingerprint = 0;
-		// ToDo: try to fetch fingerprint from app-file (attribute)!
-	catalog->fCatalog 
+	BNode appNode(&appInfo.ref);
+	appNode.ReadAttr(BLocaleRoster::kCatFingerprintAttr, B_INT32_TYPE, 0, 
+		&fingerprint, sizeof(int32));
+	// try to load catalog (with given fingerprint):
+	catalog->fCatalog
 		= be_locale_roster->LoadCatalog(sig.String(), NULL,	fingerprint);
 
-	be_catalog = catalog;
+	// load native embedded id-based catalog. If such a catalog exists, 
+	// we can fall back to native strings for id-based access, too.
+	BCatalogAddOn *embeddedCatalog 
+		= be_locale_roster->LoadEmbeddedCatalog(&appInfo.ref);
+	if (embeddedCatalog) {
+		if (!catalog->fCatalog)
+			// embedded catalog is the only catalog that was found:
+			catalog->fCatalog = embeddedCatalog;
+		else {
+			// append embedded catalog to list of loaded catalogs:
+			BCatalogAddOn *currCat = catalog->fCatalog;
+			while (currCat->fNext)
+				currCat = currCat->fNext;
+			currCat->fNext = embeddedCatalog;
+		}
+	}
+
+	// make app-catalog the current catalog for translation-macros:
+	be_app_catalog = be_catalog = catalog;
 
 	return catalog->InitCheck();
 }
@@ -74,11 +154,11 @@ BCatalog::GetAppCatalog(BCatalog* catalog) {
 BCatalogAddOn::BCatalogAddOn(const char *signature, const char *language,
 	int32 fingerprint)
 	:
+	fInitCheck(B_NO_INIT),
 	fSignature(signature),
 	fLanguageName(language),
 	fFingerprint(fingerprint),
-	fNext(NULL),
-	fInitCheck(B_NO_INIT)
+	fNext(NULL)
 {
 	fLanguageName.ToLower();
 		// canonicalize language-name to lowercase
