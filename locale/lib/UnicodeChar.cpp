@@ -35,10 +35,10 @@
 #define B_BAD_DATA -2147483632L
 #endif
 
-static const uint16 *gPropsTable = NULL;
-#define gProps32Table ((uint32 *)gPropsTable)
-static uint16 *gIndices;
-static vint32 gHavePropsData = 0;
+static const uint16 *sPropsTable = NULL;
+#define sProps32Table ((uint32 *)sPropsTable)
+static uint16 *sIndices;
+static vint32 sHavePropsData = 0;
 
 #define FLAG(n) ((uint32)1 << (n))
 enum {
@@ -151,13 +151,13 @@ static uint8 gFlagsOffset[256] = {
 #ifdef UCHAR_VARIABLE_TRIE_BITS
 	// access values calculated from indices
 	static uint16_t stage23Bits, stage2Mask, stage3Mask;
-#	define gStage3Bits   indexes[INDEX_STAGE_3_BITS]
+#	define sStage3Bits   indexes[INDEX_STAGE_3_BITS]
 #else
     // Use hardcoded bit distribution for the trie table access
-#	define gStage23Bits  10
-#	define gStage2Mask   0x3f
-#	define gStage3Mask   0xf
-#	define gStage3Bits   4
+#	define sStage23Bits  10
+#	define sStage2Mask   0x3f
+#	define sStage3Mask   0xf
+#	define sStage3Bits   4
 #endif
 
 
@@ -179,11 +179,11 @@ getProperties(uint32 c)
 	if (c > 0x10ffff)
 		return 0;
 
-	if (gHavePropsData > 0)
-		return gProps32Table[gPropsTable[
-					gPropsTable[gPropsTable[8 + (c >> gStage23Bits)]
-						+ ((c >> gStage3Bits) & gStage2Mask)]
-					+ (c & gStage3Mask)]];
+	if (sHavePropsData > 0)
+		return sProps32Table[sPropsTable[
+					sPropsTable[sPropsTable[8 + (c >> sStage23Bits)]
+						+ ((c >> sStage3Bits) & sStage2Mask)]
+					+ (c & sStage3Mask)]];
 
 	return c > 0x9f ? 0 : gStaticProps32Table[c];
 }
@@ -220,7 +220,7 @@ getSignedValue(uint32 properties)
 static inline uint32 *
 getExceptions(uint32 properties)
 {
-	return gProps32Table + gIndices[INDEX_EXCEPTIONS] + getUnsignedValue(properties);
+	return sProps32Table + sIndices[INDEX_EXCEPTIONS] + getUnsignedValue(properties);
 }
 
 
@@ -232,7 +232,7 @@ haveExceptionValue(uint32 flags,int16 index)
 
 
 static inline void
-addExceptionOffset(uint32 &flags,int16 &index,uint32 **offset)
+addExceptionOffset(uint32 &flags, int16 &index, uint32 **offset)
 {
 	if (index >= EXC_GROUP) {
 		*offset += gFlagsOffset[flags & ((1 << EXC_GROUP) - 1)];
@@ -269,15 +269,15 @@ loadPropsData()
 		return B_BAD_DATA;
 	}
 
-	gIndices = table;
+	sIndices = table;
 #ifdef UCHAR_VARIABLE_TRIE_BITS
-	gStage23Bits = uint16(gIndices[INDEX_STAGE_2_BITS] + gIndices[INDEX_STAGE_3_BITS]);
-	gStage2Mask = uint16((1 << gIndices[INDEX_STAGE_2_BITS]) - 1);
-	gStage3Mask = uint16((1 << gIndices[INDEX_STAGE_3_BITS]) - 1);
+	sStage23Bits = uint16(sIndices[INDEX_STAGE_2_BITS] + sIndices[INDEX_STAGE_3_BITS]);
+	sStage2Mask = uint16((1 << sIndices[INDEX_STAGE_2_BITS]) - 1);
+	sStage3Mask = uint16((1 << sIndices[INDEX_STAGE_3_BITS]) - 1);
 #endif
 
-	gPropsTable = table;
-	gHavePropsData = 1;
+	sPropsTable = table;
+	sHavePropsData = 1;
 
 	return B_OK;
 }
@@ -288,8 +288,8 @@ loadPropsData()
 
 /**	If the constructor is used for the first time, the property
  *	file gets loaded from disk.
- *	It makes sure that this will only happen once througout the
- *	application lifetime.
+ *	It makes sure that this will only happen once throughout the
+ *	application's lifetime.
  */
 
 BUnicodeChar::BUnicodeChar()
@@ -297,13 +297,13 @@ BUnicodeChar::BUnicodeChar()
 	static int32 lock = 0;
 
 	if (atomic_add(&lock, 1) > 0) {
-		while (gHavePropsData == 0)
+		while (sHavePropsData == 0)
 			snooze(10000);
 
 		return;
 	}
 	if (loadPropsData() < B_OK)
-		gHavePropsData = -1;
+		sHavePropsData = -1;
 }
 
 
