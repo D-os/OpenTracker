@@ -1,0 +1,162 @@
+# DownloadRules.
+#
+# Rules for downloading files and extracting files from archives.
+
+rule Download
+{
+	# Download <target> : <url> ;
+	#
+	# Downloads a file from a given URL.
+	#
+	# <target>: The target file, the URL contents shall be written to.
+	# <url>: The URL.
+	#
+	local target = $(1) ;
+	local url = $(2) ;
+
+	URL on $(target) = $(url) ;
+	Download1 $(target) ;
+	LocalDepends downloads : $(target) ;
+	LocalClean clean-downloads : $(target) ;
+}
+
+actions Download1
+{
+	wget $(URL) -O $(1) ;
+}
+
+rule UnarchiveFiles
+{
+	# UnarchiveFiles <archive> : <files to extract> : <dir> : <grist>
+	#                [ : <first component> [ : <dependant> ] ] ;
+	#
+	# Extracts files from an archive. The paths in <files to extract> will
+	# be decomposed. The last component will be used as name for the extracted
+	# target. The other components starting from the one with index
+	# <first component> are appended to <dir> and <grist> respectively to
+	# construct the path for the target directory and the grist for the target.
+	#
+	# <archive>: The archive from which the files shall be extracted.
+	# <files to extract>: The names of the files to be extracted.
+	# <dir>: The target dir the extracted files shall be placed in.
+	# <grist>: The grist to be used for the extracted targets.
+	# <first component>: The index of the first path component of the files
+	#                    in <files to extract> which shall be used for
+	#                    constructing the directory path and grist for the
+	#                    extracted targets. Defaults to 1.
+	# <dependant>: A target that will be made dependent on all extracted
+	#              targets. Defaults to none.
+	#
+	local archive = $(1) ;
+	local files = $(2) ;
+	local dir = $(3) ;
+	local grist = $(4) ;
+	local firstComponent = $(5) ;
+	if ! $(firstComponent) {
+		firstComponent = 1 ;
+	}
+	local dependant = $(6) ;
+
+	local file ;
+	for file in $(files) {
+		# Decompose the file path into components and compute a grist.
+		local components = [ SplitPath $(file) ] ;
+		components = [ FReverse $(components[$(firstComponent)-]) ] ;
+		if ! $(components) {
+			Exit ERROR: ExtractAll: Stripped all path components off $(file)! ;
+		}
+		local target = $(components[1]) ;
+		components = [ FReverse $(components[2-]) ] ;
+		local fileGrist ;
+		if $(components) {
+			fileGrist = [ FGrist $(components) ] ;
+			fileGrist = $(grist)!$(fileGrist) ;
+		} else {
+			fileGrist = $(grist) ;
+		}
+		target = $(target:G=$(fileGrist)) ;
+
+		# Locate and extract the target.
+		MakeLocate $(target) : [ FDirName $(dir) $(components) ] ;
+		UnarchiveFile $(target) : $(archive) : $(file) ;
+		if $(dependant) {
+			Depends $(dependant) : $(target) ;
+		}
+	}
+}
+
+rule UnarchiveFile
+{
+	# UnarchiveFile <target> : <archive> [ : <file to extract> ] ;
+	#
+	# Extracts a single file from an archive.
+	#
+	# <target>: The target file the extracted contents shall be written to.
+	# <archive>: The archive from which the file shall be extracted.
+	# <file to extract>: The name of the file to be extracted. Ignored for
+	#                    .gz and .bz2 files.
+	#
+	local target = $(1) ;
+	local archive = $(2) ;
+	local fileToExtract = $(3) ;
+
+	FILE_TO_EXCTRACT on $(target) = $(fileToExtract) ;
+	Depends $(target) : $(archive) ;
+	LocalDepends downloads : $(target) ;
+	LocalClean clean-downloads : $(target) ;
+
+	# Choose the extraction rule depending on the archive's suffix.
+	switch $(archive:S)
+	{
+		case .zip :	UnZip $(target) : $(archive) ;
+		case .tgz :	UnTarGZ $(target) : $(archive) ;
+		case .gz :
+		{
+			local a = $(archive:S=) ;
+			if $(a:S) = .tar {
+				UnTarGZ $(target) : $(archive) ;
+			} else if ! $(a:S) {
+				UnGZ $(target) : $(archive) ;
+			} else {
+				Echo "Extract: Unknown suffix on archive" $(archive) ;
+			}
+		}
+		case .bz2 :
+		{
+			local a = $(archive:S=) ;
+			if $(a:S) = .tar {
+				UnTarBZ2 $(target) : $(archive) ;
+			} else if ! $(a:S) {
+				UnBZ2 $(target) : $(archive) ;
+			} else {
+				Echo "Extract: Unknown suffix on archive" $(archive) ;
+			}
+		}
+		case * :	ECHO "Extract: Unknown suffix on archive" $(archive) ;
+	}
+}
+
+actions UnZip
+{
+	unzip -p $(2) $(FILE_TO_EXCTRACT) > $(1)
+}
+
+actions UnTarGZ
+{
+	tar -xvzOf $(2) $(FILE_TO_EXCTRACT) > $(1)
+}
+
+actions UnTarBZ2
+{
+	bunzip2 -c $(2) | tar -xvzO $(FILE_TO_EXCTRACT) > $(1)
+}
+
+actions UnGZ
+{
+	zcat $(2) > $(1)
+}
+
+actions UnBZ2
+{
+	bunzip2 -c $(2) > $(1)
+}
