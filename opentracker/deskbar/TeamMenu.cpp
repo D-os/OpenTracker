@@ -51,6 +51,7 @@ TTeamMenu::TTeamMenu()
 	SetFont(be_plain_font);
 }
 
+
 int
 TTeamMenu::CompareByName( const void *first, const void *second)
 {
@@ -58,6 +59,7 @@ TTeamMenu::CompareByName( const void *first, const void *second)
 		(*(static_cast<BarTeamInfo * const*>(first )))->name,
 		(*(static_cast<BarTeamInfo * const*>(second)))->name);
 }
+
 
 void
 TTeamMenu::AttachedToWindow()
@@ -74,10 +76,9 @@ TTeamMenu::AttachedToWindow()
 	bool dragging = barview && barview->Dragging();
 
 	desk_settings *settings = ((TBarApp *)be_app)->Settings();
-	
-	if (settings->sortRunningApps) {
+
+	if (settings->sortRunningApps)
 		teamList.SortItems(CompareByName);
-	}
 
 	int32 count = teamList.CountItems();
 	for (int32 i = 0; i < count; i++) {
@@ -89,18 +90,17 @@ TTeamMenu::AttachedToWindow()
 				barInfo->name, barInfo->sig, -1, -1, true, true);
 
 			if ((settings->trackerAlwaysFirst)
-				&& (strcmp(barInfo->sig, kTrackerSignature) == 0)) {
+				&& (strcmp(barInfo->sig, kTrackerSignature) == 0))
 				AddItem(item, 0);
-			} else {
+			else
 				AddItem(item);
-			}
-			
+
 			if (dragging && item) {
 				bool canhandle = (dynamic_cast<TBarApp *>(be_app))->BarView()->
 					AppCanHandleTypes(item->Signature());
 				if (item->IsEnabled() != canhandle)
 					item->SetEnabled(canhandle);
-				
+
 				BMenu *menu = item->Submenu();
 				if (menu)
 					menu->SetTrackingHook(barview->MenuTrackingHook,
@@ -120,30 +120,31 @@ TTeamMenu::AttachedToWindow()
 		barview->DragStart();				
 		barview->UnlockLooper();
 	}
-	
+
 	BMenu::AttachedToWindow();
 }
+
 
 void
 TTeamMenu::DetachedFromWindow()
 {
-	TBarView *barview = (dynamic_cast<TBarApp *>(be_app))->BarView();
-	if (barview) {
-		BLooper *looper = barview->Looper();
+	TBarView *barView = (dynamic_cast<TBarApp *>(be_app))->BarView();
+	if (barView) {
+		BLooper *looper = barView->Looper();
 		if (looper->Lock()) {
-			barview->DragStop();
+			barView->DragStop();
 			looper->Unlock();
 		}
 	}
-	
+
 	BMenu::DetachedFromWindow();
 
 	BMessenger self(this);
 	TBarApp::Unsubscribe(self);
 }
 
+
 void
 TTeamMenu::DrawBackground(BRect)
 {
-
 }

@@ -44,16 +44,15 @@ All rights reserved.
 #include "TeamMenuItem.h"
 
 class TTeamMenu : public BMenu {
-public:					
-						TTeamMenu();
+	public:					
+		TTeamMenu();
 
-		void			AttachedToWindow();
-		void			DetachedFromWindow();
-		void			DrawBackground(BRect update);
+		void	AttachedToWindow();
+		void	DetachedFromWindow();
+		void	DrawBackground(BRect update);
 
-private:
+	private:
 		static int CompareByName( const void *first, const void *second);
 };
 
 #endif /* TEAMMENU_H */
-
