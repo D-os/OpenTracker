@@ -3741,10 +3741,14 @@ BPoseView::HandleMessageDropped(BMessage *message)
 	if (!dynamic_cast<BContainerWindow*>(Window()))
 		return false;
 
- 	if (message->HasData("RGBColor", 'RGBC')
- 		&& dynamic_cast<BDeskWindow *>(Window()))
+ 	if (message->HasData("RGBColor", 'RGBC')) {
  		// do not handle roColor-style drops here, pass them on to the desktop
+ 		if (dynamic_cast<BDeskWindow *>(Window())) {
+ 			BMessenger((BHandler *)Window()).SendMessage(message);
+ 			return true;
+ 		}
  		return false;
+ 	}
 
 	if (fDropTarget)
 		HiliteDropTarget(false);
