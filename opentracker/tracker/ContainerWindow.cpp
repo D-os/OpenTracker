@@ -75,6 +75,7 @@ All rights reserved.
 #include "SelectionWindow.h"
 #include "TitleView.h"
 #include "Tracker.h"
+#include "TrackerSettings.h"
 #include "Thread.h"
 #include "TemplatesMenu.h"
 
@@ -95,6 +96,7 @@ const int32 kContainerWindowHeightLimit = 85;
 const int32 kWindowStaggerBy = 17;
 
 BRect BContainerWindow::fNewWindRect(85, 50, 415, 280);
+
 
 BContainerWindow::BContainerWindow(LockingList<BWindow> *list,
 		uint32 containerWindowFlags,
@@ -133,8 +135,8 @@ BContainerWindow::BContainerWindow(LockingList<BWindow> *list,
 		fSaveStateIsEnabled(true),
 		fIsWatchingPath(false)
 {
-	TTrackerState::InitIfNeeded();
-	
+	InitIconPreloader();
+
 	if (list) {
 		ASSERT(list->IsLocked());
 		list->AddItem(this);
@@ -151,6 +153,7 @@ BContainerWindow::BContainerWindow(LockingList<BWindow> *list,
 	StartWatching(be_app, kDontMoveFilesToTrashChanged);
 }
 
+
 BContainerWindow::~BContainerWindow()
 {
 	ASSERT(IsLocked());
@@ -164,6 +167,7 @@ BContainerWindow::~BContainerWindow()
 	
 }
 
+
 BRect 
 BContainerWindow::InitialWindowRect(window_feel feel)
 {
@@ -176,6 +180,7 @@ BContainerWindow::InitialWindowRect(window_feel feel)
 	return result;
 }
 
+
 void
 BContainerWindow::Minimize(bool minimize)
 {
@@ -184,6 +189,7 @@ BContainerWindow::Minimize(bool minimize)
 	else
 		_inherited::Minimize(minimize);
 }
+
 
 bool
 BContainerWindow::QuitRequested()
@@ -198,6 +204,7 @@ BContainerWindow::QuitRequested()
 
 	return true;
 }
+
 
 void
 BContainerWindow::Quit()
@@ -268,11 +275,13 @@ BContainerWindow::Quit()
 	_inherited::Quit();
 }
 
+
 BPoseView *
 BContainerWindow::NewPoseView(Model *model, BRect rect, uint32 viewMode)
 {
 	return new BPoseView(model, rect, viewMode);
 }
+
 
 void
 BContainerWindow::UpdateIfTrash(Model *model)
@@ -286,13 +295,16 @@ BContainerWindow::UpdateIfTrash(Model *model)
 	}
 }
 
+
 void
 BContainerWindow::CreatePoseView(Model *model)
 {
 	UpdateIfTrash(model);
 	BRect rect(Bounds());
-	if (TTracker::SingleWindowBrowse()
-		&& TTracker::ShowNavigator()
+	
+	TrackerSettings settings;
+	if (settings.SingleWindowBrowse()
+		&& settings.ShowNavigator()
 		&& model->IsDirectory())
 		rect.top += BNavigator::CalcNavigatorHeight() + 1;
 
@@ -301,7 +313,7 @@ BContainerWindow::CreatePoseView(Model *model)
 	fPoseView = NewPoseView(model, rect, kListMode);
 	AddChild(fPoseView);
 
-	if (TTracker::SingleWindowBrowse()
+	if (settings.SingleWindowBrowse()
 		&& model->IsDirectory()
 		&& !fPoseView->IsFilePanel()) {
 		BRect rect(Bounds());
@@ -309,11 +321,11 @@ BContainerWindow::CreatePoseView(Model *model)
 			// The KeyMenuBar isn't attached yet, otherwise we'd use that to get the offset.
 		rect.bottom = BNavigator::CalcNavigatorHeight();
 		fNavigator = new BNavigator(model, rect);
-		if (!TTracker::ShowNavigator())
+		if (!settings.ShowNavigator())
 			fNavigator->Hide();
 		AddChild(fNavigator);
 	}
-	SetPathWatchingEnabled(TTracker::ShowNavigator() || TTracker::ShowFullPathInTitleBar());
+	SetPathWatchingEnabled(settings.ShowNavigator() || settings.ShowFullPathInTitleBar());
 }
 
 
@@ -340,6 +352,7 @@ BContainerWindow::AddContextMenus()
 	fDragContextMenu = new BSlowContextMenu("DragContext");
 		//	will get added and built dynamically in ShowContextMenu
 }
+
 
 void
 BContainerWindow::RepopulateMenus()
@@ -428,6 +441,8 @@ BContainerWindow::Init(const BMessage *message)
 	fCreateLinkItem = new BMenuItem(new BNavMenu("Create Link", kCreateLink, this),
 		new BMessage(kCreateLink));
 
+	TrackerSettings settings;
+
 	if (ShouldAddMenus()) {
 		// add menu bar, menus and resize poseview to fit
 		fMenuBar = new BMenuBar(BRect(0, 0, Bounds().Width() + 1, 1), "MenuBar");
@@ -439,7 +454,7 @@ BContainerWindow::Init(const BMessage *message)
 
 		float navigatorDelta = 0;
 
-		if (Navigator() && TTracker::ShowNavigator()) {
+		if (Navigator() && settings.ShowNavigator()) {
 			Navigator()->MoveTo(BPoint(0, y_delta));
 			navigatorDelta = BNavigator::CalcNavigatorHeight() + 1;
 		}
@@ -465,7 +480,7 @@ BContainerWindow::Init(const BMessage *message)
 	AddShortcut(B_DOWN_ARROW, B_COMMAND_KEY, new BMessage(kOpenSelection),
 		PoseView());
 
-	SetSingleWindowBrowseShortcuts(TTracker::SingleWindowBrowse());
+	SetSingleWindowBrowseShortcuts(settings.SingleWindowBrowse());
 
 #if DEBUG
 	// add some debugging shortcuts
@@ -501,6 +516,7 @@ BContainerWindow::Init(const BMessage *message)
 	SetFlags(Flags() & ~B_NO_WORKSPACE_ACTIVATION);
 }
 
+
 void
 BContainerWindow::RestoreState()
 {
@@ -515,6 +531,7 @@ BContainerWindow::RestoreState()
 	RestoreStateCommon();
 }
 
+
 void
 BContainerWindow::RestoreState(const BMessage &message)
 {
@@ -527,6 +544,7 @@ BContainerWindow::RestoreState(const BMessage &message)
 	
 	RestoreStateCommon();
 }
+
 
 void
 BContainerWindow::RestoreStateCommon()
@@ -555,11 +573,12 @@ BContainerWindow::RestoreStateCommon()
 		fBackgroundImage = BackgroundImage::GetBackgroundImage(&defaultingNode, isDesktop);
 }
 
+
 void
 BContainerWindow::UpdateTitle()
 {
 	// set title to full path, if necessary
-	if (TTracker::ShowFullPathInTitleBar()) {
+	if (TrackerSettings().ShowFullPathInTitleBar()) {
 		// use the Entry's full path
 		BPath path; 
 		TargetModel()->GetPath(&path); 
@@ -571,6 +590,7 @@ BContainerWindow::UpdateTitle()
 	if (Navigator())
 		Navigator()->UpdateLocation(PoseView()->TargetModel(), kActionUpdatePath);	
 }
+
 
 void
 BContainerWindow::UpdateBackgroundImage()
@@ -594,6 +614,7 @@ BContainerWindow::UpdateBackgroundImage()
 			&defaultingNode, isDesktop, PoseView());
 }
 
+
 void
 BContainerWindow::FrameResized(float, float)
 {
@@ -605,11 +626,13 @@ BContainerWindow::FrameResized(float, float)
 	fStateNeedsSaving = true;
 }
 
+
 void
 BContainerWindow::FrameMoved(BPoint)
 {
 	fStateNeedsSaving = true;
 }
+
 
 void
 BContainerWindow::WorkspacesChanged(uint32, uint32)
@@ -648,6 +671,7 @@ BContainerWindow::CheckScreenIntersect()
 		MoveTo(fNewWindRect.LeftTop());
 }
 
+
 void
 BContainerWindow::SaveState(bool hide)
 {
@@ -665,6 +689,7 @@ BContainerWindow::SaveState(bool hide)
 	}
 }
 
+
 void
 BContainerWindow::SaveState(BMessage &message) const
 {
@@ -680,6 +705,7 @@ BContainerWindow::StateNeedsSaving() const
 {
 	return fStateNeedsSaving || PoseView()->StateNeedsSaving();	
 }
+
 
 status_t 
 BContainerWindow::GetLayoutState(BNode *node, BMessage *message)
@@ -714,6 +740,7 @@ BContainerWindow::GetLayoutState(BNode *node, BMessage *message)
 	}
 	return B_OK;
 }
+
 
 status_t 
 BContainerWindow::SetLayoutState(BNode *node, const BMessage *message)
@@ -754,17 +781,20 @@ BContainerWindow::SetLayoutState(BNode *node, const BMessage *message)
 	return B_OK;
 }
 
+
 bool
 BContainerWindow::ShouldAddMenus() const
 {
 	return true;
 }
 
+
 bool
 BContainerWindow::ShouldAddScrollBars() const
 {
 	return true;
 }
+
 
 bool
 BContainerWindow::ShouldAddCountView() const
@@ -779,10 +809,12 @@ BContainerWindow::TargetModel() const
 	return fPoseView->TargetModel();
 }
 
+
 void
 BContainerWindow::SelectionChanged()
 {
 }
+
 
 void
 BContainerWindow::Zoom(BPoint, float, float)
@@ -795,6 +827,7 @@ BContainerWindow::Zoom(BPoint, float, float)
 		if (oldZoomRect.IsValid())
 			ResizeTo(oldZoomRect.Width(), oldZoomRect.Height());
 }
+
 
 void
 BContainerWindow::ResizeToFit()
@@ -827,13 +860,14 @@ BContainerWindow::ResizeToFit()
 	if (PoseView()->ViewMode() == kListMode)
 		frame.bottom += kTitleViewHeight + 1;  // account for list titles
 	
-	if (TTracker::SingleWindowBrowse()
-		&& TTracker::ShowNavigator()
+	TrackerSettings settings;
+	if (settings.SingleWindowBrowse()
+		&& settings.ShowNavigator()
 		&& Navigator())
 		frame.bottom += fNavigator->Bounds().bottom + 1;
 
-// ToDo:
-// clean this up, move each special case to respective class
+	// ToDo:
+	// clean this up, move each special case to respective class
 
 	if (!TargetModel())
 		frame.bottom += 60;						// Open with window
@@ -850,6 +884,7 @@ BContainerWindow::ResizeToFit()
 	PoseView()->UpdateScrollRange();
 	PoseView()->EnableScrollBars();
 }
+
 
 void
 BContainerWindow::MessageReceived(BMessage *message)
@@ -992,8 +1027,9 @@ BContainerWindow::MessageReceived(BMessage *message)
 							
 							Navigator()->UpdateLocation(PoseView()->TargetModel(), action);
 						}
-					
-						if (TTracker::ShowNavigator() || TTracker::ShowFullPathInTitleBar())
+
+						TrackerSettings settings;
+						if (settings.ShowNavigator() || settings.ShowFullPathInTitleBar())
 							SetPathWatchingEnabled(true);
 
 						// Update window title
@@ -1002,7 +1038,7 @@ BContainerWindow::MessageReceived(BMessage *message)
 				}
 			}
 			break;
-			
+
 		case B_REFS_RECEIVED:
 			if (Dragging()) {
 				//
@@ -1053,22 +1089,23 @@ BContainerWindow::MessageReceived(BMessage *message)
 				DragStop();
 			}
 			break;
-		
+
 		case B_OBSERVER_NOTICE_CHANGE:
 			{
 				int32 observerWhat;
 				if (message->FindInt32("be:observe_change_what", &observerWhat) == B_OK) {
+					TrackerSettings settings;
 					switch (observerWhat) {
 						case kWindowsShowFullPathChanged:
 							UpdateTitle();
-							if (!IsPathWatchingEnabled() && TTracker::ShowFullPathInTitleBar())
+							if (!IsPathWatchingEnabled() && settings.ShowFullPathInTitleBar())
 								SetPathWatchingEnabled(true);
-							if (IsPathWatchingEnabled() && !(TTracker::ShowNavigator() || TTracker::ShowFullPathInTitleBar()))
+							if (IsPathWatchingEnabled() && !(settings.ShowNavigator() || settings.ShowFullPathInTitleBar()))
 								SetPathWatchingEnabled(false);
 							break;
 
 						case kSingleWindowBrowseChanged:
-							if (TTracker::SingleWindowBrowse()
+							if (settings.SingleWindowBrowse()
 								&& !Navigator()
 								&& TargetModel()->IsDirectory()
 								&& !PoseView()->IsFilePanel()
@@ -1079,27 +1116,23 @@ BContainerWindow::MessageReceived(BMessage *message)
 								fNavigator = new BNavigator(TargetModel(), rect);
 								fNavigator->Hide();
 								AddChild(fNavigator);
-								SetPathWatchingEnabled(TTracker::ShowNavigator() || TTracker::ShowFullPathInTitleBar());
+								SetPathWatchingEnabled(settings.ShowNavigator() || settings.ShowFullPathInTitleBar());
 							}
-							SetSingleWindowBrowseShortcuts(TTracker::SingleWindowBrowse());
+							SetSingleWindowBrowseShortcuts(settings.SingleWindowBrowse());
 							break;
 
 						case kShowNavigatorChanged:
-							ShowNavigator(TTracker::ShowNavigator());
-							if (!IsPathWatchingEnabled() && TTracker::ShowNavigator())
+							ShowNavigator(settings.ShowNavigator());
+							if (!IsPathWatchingEnabled() && settings.ShowNavigator())
 								SetPathWatchingEnabled(true);
-							if (IsPathWatchingEnabled() && !(TTracker::ShowNavigator() || TTracker::ShowFullPathInTitleBar()))
+							if (IsPathWatchingEnabled() && !(settings.ShowNavigator() || settings.ShowFullPathInTitleBar()))
 								SetPathWatchingEnabled(false);
 							break;
 							
 						case kDontMoveFilesToTrashChanged:
 							{
-								bool dontMoveToTrash = false;
-								TTracker *tracker = dynamic_cast<TTracker *>(be_app);
-								if (tracker) {
-									dontMoveToTrash = tracker->DontMoveFilesToTrash();
-								}
-								
+								bool dontMoveToTrash = settings.DontMoveFilesToTrash();
+
 								BMenuItem *item = fFileContextMenu->FindItem(kMoveToTrash);
 								if (item)
 									item->SetLabel(dontMoveToTrash ? "Delete" : "Move To Trash");
@@ -1130,6 +1163,7 @@ BContainerWindow::MessageReceived(BMessage *message)
 	}
 }
 
+
 void
 BContainerWindow::SetCleanUpItem(BMenu *menu)
 {
@@ -1151,6 +1185,7 @@ BContainerWindow::SetCleanUpItem(BMenu *menu)
 		}
 	}
 }
+
 
 void
 BContainerWindow::SetCloseItem(BMenu *menu)
@@ -1175,17 +1210,20 @@ BContainerWindow::SetCloseItem(BMenu *menu)
 	}
 }
 
+
 bool
 BContainerWindow::IsShowing(const node_ref *node) const
 {
 	return PoseView()->Represents(node);
 }
 
+
 bool
 BContainerWindow::IsShowing(const entry_ref *entry) const
 {
 	return PoseView()->Represents(entry);
 }
+
 
 void
 BContainerWindow::AddMenus()
@@ -1200,6 +1238,7 @@ BContainerWindow::AddMenus()
 	fAttrMenu = new BMenu("Attributes");
 	NewAttributeMenu(fAttrMenu);
 }
+
 
 void
 BContainerWindow::AddFileMenu(BMenu *menu)
@@ -1239,11 +1278,8 @@ BContainerWindow::AddFileMenu(BMenu *menu)
 	} else {
 		menu->AddItem(new BMenuItem("Duplicate",new BMessage(kDuplicateSelection), 'D'));
 
-		bool dontMoveToTrash = false;
-		if (TTracker *tracker = dynamic_cast<TTracker *>(be_app))
-			dontMoveToTrash = tracker->DontMoveFilesToTrash();
-
-		menu->AddItem(new BMenuItem(dontMoveToTrash ? "Delete" : "Move to Trash",
+		menu->AddItem(new BMenuItem(TrackerSettings().DontMoveFilesToTrash() ?
+				"Delete" : "Move to Trash",
 				new BMessage(kMoveToTrash), 'T'));
 
 		menu->AddSeparatorItem();
@@ -1256,6 +1292,7 @@ BContainerWindow::AddFileMenu(BMenu *menu)
 	}
 	menu->SetTargetForItems(PoseView());
 }
+
 
 void
 BContainerWindow::AddWindowMenu(BMenu *menu)
@@ -1311,6 +1348,7 @@ BContainerWindow::AddWindowMenu(BMenu *menu)
 	menu->AddItem(item);
 }
 
+
 void
 BContainerWindow::AddShortcuts()
 {
@@ -1338,6 +1376,7 @@ BContainerWindow::AddShortcuts()
 		PoseView());
 }
 
+
 void
 BContainerWindow::MenusBeginning()
 {
@@ -1364,6 +1403,7 @@ BContainerWindow::MenusBeginning()
 		EnableNamedMenuItem(fFileMenu, "Make Active Printer", selectCount == 1);
 }
 
+
 void
 BContainerWindow::MenusEnded()
 {
@@ -1374,6 +1414,7 @@ BContainerWindow::MenusEnded()
 	DeleteSubmenu(fCreateLinkItem);
 	DeleteSubmenu(fOpenWithItem);
 }
+
 
 void
 BContainerWindow::SetupNavigationMenu(const entry_ref *ref, BMenu *parent)
@@ -1441,6 +1482,7 @@ BContainerWindow::SetupNavigationMenu(const entry_ref *ref, BMenu *parent)
 		parent->SetTrackingHook(NULL, NULL);
 }
 
+
 void
 BContainerWindow::SetUpEditQueryItem(BMenu *menu)
 {
@@ -1486,6 +1528,7 @@ BContainerWindow::SetUpEditQueryItem(BMenu *menu)
 		}
 	}
 }
+
 
 void
 BContainerWindow::SetupOpenWithMenu(BMenu *parent)
@@ -1538,6 +1581,7 @@ BContainerWindow::SetupOpenWithMenu(BMenu *parent)
 
 	item->Menu()->AddItem(fOpenWithItem, index + 1);
 }
+
 
 void
 BContainerWindow::PopulateMoveCopyNavMenu(BNavMenu *navMenu, uint32 what,
@@ -1601,6 +1645,7 @@ BContainerWindow::PopulateMoveCopyNavMenu(BNavMenu *navMenu, uint32 what,
 		}
 	}
 }
+
 
 void
 BContainerWindow::SetupMoveCopyMenus(const entry_ref *item_ref, BMenu *parent)
@@ -1685,6 +1730,7 @@ BContainerWindow::SetupMoveCopyMenus(const entry_ref *item_ref, BMenu *parent)
 	fCreateLinkItem->SetEnabled(true);
 }
 
+
 uint32
 BContainerWindow::ShowDropContextMenu(BPoint loc)
 {
@@ -1713,6 +1759,7 @@ BContainerWindow::ShowDropContextMenu(BPoint loc)
 
 	return 0;
 }
+
 
 void
 BContainerWindow::ShowContextMenu(BPoint loc, const entry_ref *ref, BView *)
@@ -1840,6 +1887,7 @@ BContainerWindow::ShowContextMenu(BPoint loc, const entry_ref *ref, BView *)
 	fContextMenu = NULL;
 }
 
+
 void 
 BContainerWindow::AddFileContextMenus(BMenu *menu)
 {
@@ -1852,11 +1900,8 @@ BContainerWindow::AddFileContextMenus(BMenu *menu)
 			new BMessage(kDuplicateSelection), 'D'));
 
 	if (!IsTrash() && !InTrash()) {
-		bool dontMoveToTrash = false;
-		if (TTracker *tracker = dynamic_cast<TTracker *>(be_app))
-			dontMoveToTrash = tracker->DontMoveFilesToTrash();
-
-		menu->AddItem(new BMenuItem(dontMoveToTrash ? "Delete" : "Move to Trash",
+		menu->AddItem(new BMenuItem(TrackerSettings().DontMoveFilesToTrash() ?
+				"Delete" : "Move to Trash",
 				new BMessage(kMoveToTrash), 'T'));
 
 		// add separator for copy to/move to items (navigation items)
@@ -1873,6 +1918,7 @@ BContainerWindow::AddFileContextMenus(BMenu *menu)
 	menu->AddItem(addOnMenuItem);
 	menu->SetTargetForItems(PoseView());
 }
+
 
 void 
 BContainerWindow::AddVolumeContextMenus(BMenu *menu)
@@ -1953,6 +1999,7 @@ BContainerWindow::AddWindowContextMenus(BMenu *menu)
 	closeItem->SetTarget(this);
 	resizeItem->SetTarget(this);
 }
+
 
 void 
 BContainerWindow::AddDropContextMenus(BMenu *menu)
