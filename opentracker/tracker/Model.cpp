@@ -405,6 +405,11 @@ Model::OpenNodeCommon(bool writable)
 		case kRootNode:
 			if (!IsNodeOpen())
 				fNode = new BDirectory(&fEntryRef);
+
+			if (static_cast<BDirectory *>(fNode)->IsRootDirectory()) {
+				// promote from directory to volume
+				fBaseType = kVolumeNode;
+			}
 			break;
 
 		case kLinkNode:
@@ -547,6 +552,7 @@ Model::FinishSettingUpType()
 	}
 
 	if (fBaseType != kDirectoryNode
+		&& fBaseType != kVolumeNode
 		&& fBaseType != kLinkNode
 		&& IsNodeOpen()) {
 		BNodeInfo info(fNode);
@@ -590,32 +596,34 @@ Model::FinishSettingUpType()
 					&& WellKnowEntryList::Match(NodeRef()) > (directory_which)-1)
 					// one of home, beos, system, boot, etc.
 					fIconFrom = kTrackerSupplied;
-
-				if (dynamic_cast<BDirectory *>(fNode)->IsRootDirectory()) {
-					// promote from directory to volume
-					fBaseType = kVolumeNode;
-
-					// volumes have to have a B_VOLUME_MIMETYPE type
-					fMimeType = B_VOLUME_MIMETYPE;
-					if (fIconFrom == kUnknownNotFromNode)
-						fIconFrom = kVolume;
-
-					char name[B_FILE_NAME_LENGTH];
-					BVolume	volume(NodeRef()->device);
-					if (volume.InitCheck() == B_OK && volume.GetName(name) == B_OK) {
-						if (fVolumeName)
-							DeletePreferredAppVolumeNameLinkTo();
-
-						fVolumeName = strdup(name);
-					}
-#if DEBUG
-					else
-						PRINT(("get volume name failed for %s\n", fEntryRef.name));
-#endif
-				} 
-
 			}
 			break;
+			
+		case kVolumeNode:
+		{
+			// volumes have to have a B_VOLUME_MIMETYPE type
+			fMimeType = B_VOLUME_MIMETYPE;
+			if (fIconFrom == kUnknownNotFromNode) {
+				if (WellKnowEntryList::Match(NodeRef()) > (directory_which)-1)
+					fIconFrom = kTrackerSupplied;
+				else
+					fIconFrom = kVolume;
+			}
+
+			char name[B_FILE_NAME_LENGTH];
+			BVolume	volume(NodeRef()->device);
+			if (volume.InitCheck() == B_OK && volume.GetName(name) == B_OK) {
+				if (fVolumeName)
+					DeletePreferredAppVolumeNameLinkTo();
+
+				fVolumeName = strdup(name);
+			}
+#if DEBUG
+			else
+				PRINT(("get volume name failed for %s\n", fEntryRef.name));
+#endif
+			break;
+		}
 
 		case kLinkNode:
 			fMimeType = B_LINK_MIMETYPE;	// should use a shared string here

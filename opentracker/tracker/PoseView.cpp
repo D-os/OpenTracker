@@ -4733,7 +4733,7 @@ BPoseView::FSNotification(const BMessage *message)
 			// no longer match the query, so we don't want to close the window
 			// but it's a node monitor notification then that means our query
 			// file has been deleted so we close the window
-				
+
 			if (message->what == B_NODE_MONITOR
 				&& TargetModel() && *(TargetModel()->NodeRef()) == itemNode) {
 				if (!TargetModel()->IsRoot()) {
@@ -4772,14 +4772,14 @@ BPoseView::FSNotification(const BMessage *message)
 			{
 				if (message->FindInt32("new device", &device) != B_OK)
 					break;
-	
+
 				if (TargetModel() && TargetModel()->IsRoot()) {
 					BVolume volume(device);
 					if (volume.InitCheck() == B_OK)
 						CreateVolumePose(&volume, false);
 				} else if (ContainerWindow()->IsTrash()) {
 					// add trash items from newly mounted volume
-	
+
 					BDirectory trashDir;
 					BEntry entry;
 					BVolume volume(device);
@@ -4810,9 +4810,8 @@ BPoseView::FSNotification(const BMessage *message)
 				} else if (TargetModel()) 
 					EachPoseAndModel(fPoseList, &PoseHandleDeviceUnmounted, this, device);
 			}
-
 			break;
-			
+
 		case B_STAT_CHANGED:
 		case B_ATTR_CHANGED:
 			return AttributeChanged(message);
@@ -5048,7 +5047,7 @@ BPoseView::AttributeChanged(const BMessage *message)
 			// change happened on symlink's target
 			model = model->ResolveIfLink();
 		ASSERT(model);
-		
+
 		status_t result = B_OK;
 		for (int32 count = 0; count < 100; count++) {
 			// if node is busy, wait a little, it may be in the
@@ -5060,6 +5059,7 @@ BPoseView::AttributeChanged(const BMessage *message)
 			PRINT(("model %s busy, retrying in a bit\n", model->Name()));
 			snooze(10000);
 		}
+
 		if (result == B_OK) {
 			if (attrName && model->Node()) {
 				model->Node()->GetAttrInfo(attrName, &info);

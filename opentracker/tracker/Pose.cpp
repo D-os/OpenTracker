@@ -255,7 +255,7 @@ BPose::UpdateWidgetAndModel(Model *resolvedModel, const char *attrName,
 		}
 	} else {
 		// no attr name means check all widgets for stat info changes
-		
+
 		// pick up stat changes
 		if (resolvedModel && resolvedModel->StatChanged()) {
 			if (resolvedModel->InitCheck() != B_OK)
@@ -263,7 +263,7 @@ BPose::UpdateWidgetAndModel(Model *resolvedModel, const char *attrName,
 
 			UpdateIcon(poseLoc, poseView);
 		}
-		
+
 		// distribute stat changes
 		for (int32 index = 0; ; index++) {
 			BColumn *column = poseView->ColumnAt(index);
