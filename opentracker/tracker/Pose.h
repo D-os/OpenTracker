@@ -80,6 +80,7 @@ public:
 	bool IsSelected() const;
 		// Rename to IsHighlighted
 
+	BTextWidget *ActiveWidget() const;
 	BTextWidget *WidgetFor(uint32 hashAttr, int32 *index = 0) const;
 	BTextWidget *WidgetFor(BColumn *column, BPoseView *poseView, ModelNodeLazyOpener &opener,
 		int32 *index = NULL);

@@ -1872,9 +1872,15 @@ BPoseView::MessageReceived(BMessage *message)
 			break;
 
 		case B_SELECT_ALL:
-			SelectAll();
+		{
+			// Select widget if there is an active one
+			BTextWidget *widget;
+			if (ActivePose() && (widget = ActivePose()->ActiveWidget()))
+				widget->SelectAll(this);
+			else
+				SelectAll();
 			break;
-
+		}
 		case kShowSelectionWindow:
 			ShowSelectionWindow();
 			break;

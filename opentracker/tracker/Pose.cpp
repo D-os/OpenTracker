@@ -400,7 +400,7 @@ BPose::PointInPose(BPoint loc, const BPoseView *poseView, BPoint where,
 
 void
 BPose::Draw(BRect rect, BPoseView *poseView, BView *drawView, bool fullDraw,
-	const BRegion *updateRgn, BPoint offset, bool selected, bool recaclulateText)
+	const BRegion *updateRgn, BPoint offset, bool selected, bool recalculateText)
 {
 	bool directDraw = (drawView == poseView);
 	bool windowActive = poseView->Window()->IsActive();
@@ -437,7 +437,7 @@ BPose::Draw(BRect rect, BPoseView *poseView, BView *drawView, bool fullDraw,
 					BRect widgetTextRect(widget->CalcRect(rect.LeftTop(), column,
 						poseView));
 					
-					if (recaclulateText)
+					if (recalculateText)
 						widget->RecalculateText(poseView);
 					
 					widget->Draw(widgetRect, widgetTextRect, column->Width(),
@@ -564,6 +564,17 @@ BPose::MoveTo(BPoint point, BPoseView *poseView, bool inval)
 		poseView->Invalidate(oldBounds);
 		poseView->Invalidate(CalcRect(poseView));
 	}
+}
+
+BTextWidget *
+BPose::ActiveWidget() const
+{
+	for (int32 i = fWidgetList.CountItems();i-- > 0;) {
+		BTextWidget *widget = fWidgetList.ItemAt(i);
+		if (widget->IsActive())
+			return widget;
+	}
+	return NULL;
 }
 
 BTextWidget *
