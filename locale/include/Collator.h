@@ -26,8 +26,11 @@ class BCollator {
 		BCollator();
 		~BCollator();
 
-		void SetDefaultStrength(int8 strength) { fStrength = strength; }
-		int8 DefaultStrength() const { return fStrength; }
+		void SetDefaultStrength(int8 strength);
+		int8 DefaultStrength() const;
+
+		void SetIgnorePunctuation(bool ignore);
+		bool IgnorePunctuation() const;
 
 		void GetSortKey(const char *string, BString *key, int8 strength = B_COLLATE_DEFAULT);
 
@@ -39,6 +42,7 @@ class BCollator {
 	private:
 		BCollatorAddOn	*fCollator;
 		int8			fStrength;
+		bool			fIgnorePunctuation;
 };
 
 
@@ -72,8 +76,8 @@ class BCollatorAddOn {
 		BCollatorAddOn();
 		virtual ~BCollatorAddOn();
 
-		virtual void GetSortKey(const char *string, BString *key, int8 strength);
-		virtual int Compare(const char *a, const char *b, int32 length, int8 strength);
+		virtual void GetSortKey(const char *string, BString *key, int8 strength, bool ignorePunctuation);
+		virtual int Compare(const char *a, const char *b, int32 length, int8 strength, bool ignorePunctuation);
 };
 
 #endif	/* _COLLATOR_H_ */
