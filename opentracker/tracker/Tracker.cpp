@@ -615,7 +615,7 @@ TTracker::OpenRef(const entry_ref *ref, const node_ref *nodeToClose,
 			if (brokenLinkPreferredApp.Length() && brokenLinkPreferredApp != kTrackerSignature)
 				brokenLinkWithSpecificHandler = true;
 		}
-		
+
 		if (!brokenLinkWithSpecificHandler) {
 			delete model;
 			(new BAlert("", "There was an error resolving the link.",
@@ -633,11 +633,11 @@ TTracker::OpenRef(const entry_ref *ref, const node_ref *nodeToClose,
 	}
 
 	bool openAsContainer = model->IsContainer();
-	
+
 	if (openAsContainer && selector != kOpenWith) {
 		// if folder or query has a preferred handler and it's not the
 		// Tracker, open it by sending refs to the handling app
-		
+
 		// if we are responding to the final open of OpenWith, just
 		// skip this and proceed to opening the container with Tracker
 		model->OpenNode();
@@ -696,7 +696,7 @@ TTracker::RefsReceived(BMessage *message)
 	OpenSelector selector = kOpen;
 	if (message->HasInt32("launchUsingSelector"))
 		selector = kRunOpenWithWindow;
-	
+
 	entry_ref handlingApp;
 	if (message->FindRef("handler", &handlingApp) == B_OK)
 		selector = kOpenWith;
@@ -704,7 +704,7 @@ TTracker::RefsReceived(BMessage *message)
 	int32 count;
 	uint32 type;
 	message->GetInfo("refs", &type, &count);
-	
+
 	switch (selector) {
 		case kRunOpenWithWindow:
 			OpenContainerWindow(0, message, selector);
@@ -716,7 +716,7 @@ TTracker::RefsReceived(BMessage *message)
 				// Open With resulted in passing refs and a handler, open the files
 				// with the handling app
 				message->RemoveName("handler");
-				
+
 				// have to find out if handling app is the Tracker
 				// if it is, just pass it to the active Tracker, no matter which Tracker
 				// was chosen to handle the refs
@@ -727,7 +727,7 @@ TTracker::RefsReceived(BMessage *message)
 					BAppFileInfo appInfo(&handlingNode);
 					appInfo.GetSignature(signature);
 				}
-	
+
 				if (strcasecmp(signature, kTrackerSignature) != 0) {
 					// handling app not Tracker, pass entries to the apps RefsReceived
 					TrackerLaunch(&handlingApp, message, true);
@@ -746,23 +746,23 @@ TTracker::RefsReceived(BMessage *message)
 					bundleThis = new BMessage();
 					bundleThis->AddMessenger("TrackerViewToken", messenger);
 				}
-	
+
 				for (int32 index = 0; index < count; index++) {
 					entry_ref ref;
 					message->FindRef("refs", index, &ref);
-			
+
 					const node_ref *nodeToClose = NULL;
 					const node_ref *nodeToSelect = NULL;
 					ssize_t numBytes;
-		
+
 					message->FindData("nodeRefsToClose", B_RAW_TYPE, index,
 						(const void **)&nodeToClose, &numBytes);
 					message->FindData("nodeRefToSelect", B_RAW_TYPE, index,
 						(const void **)&nodeToSelect, &numBytes);
-			
+
 					OpenRef(&ref, nodeToClose, nodeToSelect, selector, bundleThis);
 				}
-	
+
 				delete bundleThis;
 				break;
 			}
