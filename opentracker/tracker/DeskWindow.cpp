@@ -259,6 +259,9 @@ BDeskWindow::AddWindowContextMenus(BMenu *menu)
 	menu->AddItem(new BMenuItem("Icon View", new BMessage(kIconMode)));
 	menu->AddItem(new BMenuItem("Mini Icon View", new BMessage(kMiniIconMode)));
 	menu->AddSeparatorItem();
+	BMenuItem *pasteItem;
+	menu->AddItem(pasteItem = new BMenuItem("Paste", new BMessage(B_PASTE), 'V'));
+	menu->AddSeparatorItem();
 	menu->AddItem(new BMenuItem("Clean Up", new BMessage(kCleanup), 'K'));
 	menu->AddItem(new BMenuItem("Select"B_UTF8_ELLIPSIS,
 		new BMessage(kShowSelectionWindow), 'A', B_SHIFT_KEY));
@@ -273,6 +276,7 @@ BDeskWindow::AddWindowContextMenus(BMenu *menu)
 
 	// target items as needed
 	menu->SetTargetForItems(PoseView());
+	pasteItem->SetTarget(this);
 }
 
 

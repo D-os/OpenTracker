@@ -212,7 +212,10 @@ protected:
 	virtual	void AddDropContextMenus(BMenu *);
 	
 	virtual void RepopulateMenus();
-	
+
+	virtual	void SetCutItem(BMenu *);
+	virtual	void SetCopyItem(BMenu *);
+	virtual	void SetPasteItem(BMenu *);
 	virtual	void SetCleanUpItem(BMenu *);
 	virtual void SetCloseItem(BMenu *);
 	virtual	void SetupNavigationMenu(const entry_ref *, BMenu *);

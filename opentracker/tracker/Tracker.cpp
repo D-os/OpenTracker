@@ -62,6 +62,7 @@ All rights reserved.
 #include "ContainerWindow.h"
 #include "DeskWindow.h"
 #include "FindPanel.h"
+#include "FSClipboard.h"
 #include "FSUtils.h"
 #include "InfoWindow.h"
 #include "MimeTypes.h"
@@ -320,7 +321,10 @@ TTracker::Quit()
 	fAutoMounter->Lock();
 	fAutoMounter->QuitRequested();	// automounter does some stuff in QuitRequested
 	fAutoMounter->Quit();			// but we really don't care if it is cooperating or not
-
+	
+	fClipboardRefsWatcher->Lock();
+	fClipboardRefsWatcher->Quit();
+	
 	fTrashWatcher->Lock();
 	fTrashWatcher->Quit();
 
@@ -872,7 +876,6 @@ TTracker::EditQueries(const BMessage *message)
 		BEntry entry(&ref, true);
 		if (entry.InitCheck() == B_OK && entry.Exists()) 
 			(new FindWindow(&ref, editOnlyIfTemplate))->Show();
-
 	}
 }
 
@@ -905,7 +908,6 @@ TTracker::OpenInfoWindows(BMessage *message)
 				wind = new BInfoWindow(model, index, &fWindowList);
 				wind->PostMessage(kRestoreState);
 			}
-
 		}
 	}
 }
@@ -1165,6 +1167,9 @@ TTracker::ReadyToRun()
 	fTrashWatcher = new BTrashWatcher();
 	fTrashWatcher->Run();
 
+	fClipboardRefsWatcher = new BClipboardRefsWatcher();
+	fClipboardRefsWatcher->Run();
+	
 	fAutoMounter = new AutoMounter();
 	fAutoMounter->Run();
 	

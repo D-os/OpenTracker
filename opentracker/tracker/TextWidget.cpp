@@ -448,7 +448,7 @@ BTextWidget::SelectAll(BPoseView *view)
 
 void
 BTextWidget::Draw(BRect eraseRect, BRect textRect, float, BPoseView *view,
-	BView *drawView, bool selected, BPoint offset, bool direct)
+	BView *drawView, bool selected, uint32 clipboardMode, BPoint offset, bool direct)
 {
 	if (direct) {
 		// erase area we're going to draw in
@@ -457,7 +457,26 @@ BTextWidget::Draw(BRect eraseRect, BRect textRect, float, BPoseView *view,
 			eraseRect.OffsetBy(offset);
 			drawView->FillRect(eraseRect, B_SOLID_LOW);
 		} else
-			drawView->SetDrawingMode(B_OP_OVER);
+			drawView->SetDrawingMode(B_OP_OVER);	
+	
+		// set high color
+		rgb_color highColor;
+		if (view->IsDesktopWindow()) {
+			if (selected)
+				highColor = kWhite;
+			else
+				highColor = view->DeskTextColor();
+		} else if (selected && view->Window()->IsActive() && !view->EraseWidgetTextBackground()) {
+			highColor = kWhite;
+		} else
+			highColor = kBlack;
+
+		if (clipboardMode == kMoveSelectionTo && !selected) {
+			view->SetDrawingMode(B_OP_ALPHA);
+			view->SetBlendingMode(B_PIXEL_ALPHA, B_ALPHA_OVERLAY);
+			highColor.alpha = 64;
+		}
+		drawView->SetHighColor(highColor);
 	}
 
 	BPoint loc;
@@ -467,23 +486,6 @@ BTextWidget::Draw(BRect eraseRect, BRect textRect, float, BPoseView *view,
 	loc.x = textRect.left + 1;
 
 	drawView->MovePenTo(loc);
-
-	bool windowActive = view->Window()->IsActive();
-	if (direct) {
-		rgb_color highColor;
-		if (view->IsDesktopWindow()) {
-			if (selected)
-				highColor = kWhite;
-			else
-				highColor = view->DeskTextColor();
-		} else if (selected && windowActive && !view->EraseWidgetTextBackground()) {
-			highColor = kWhite;
-		} else {
-			highColor = kBlack;
-		}
-
-		drawView->SetHighColor(highColor);
-	}
 
 	drawView->DrawString(fText->FittingText(view));
 

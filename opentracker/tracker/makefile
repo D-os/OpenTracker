@@ -74,6 +74,7 @@ sources_src := \
 	DirMenu.cpp \
 	EntryIterator.cpp \
 	FBCPadding.cpp \
+	FSClipboard.cpp \
 	FSUtils.cpp \
 	FavoritesConfig.cpp \
 	FavoritesMenu.cpp \

@@ -48,6 +48,7 @@ All rights reserved.
 namespace BPrivate {
 
 class AutoMounter;
+class BClipboardRefsWatcher;
 class BContainerWindow;
 class BDeskWindow;
 class BInfoWindow;
@@ -142,7 +143,9 @@ public:
 	BContainerWindow *FindContainerWindow(const entry_ref *, int32 number = 0) const;
 	BContainerWindow *FindParentContainerWindow(const entry_ref *) const;
 		// right now works just on plain windows, not on query windows
-
+		
+	BClipboardRefsWatcher *ClipboardRefsWatcher() const;
+		
 protected:
 	// scripting
 	virtual BHandler *ResolveSpecifier(BMessage *, int32, BMessage *,
@@ -210,6 +213,7 @@ private:
 	
 	MimeTypeList *fMimeTypeList;	
 	WindowList fWindowList;
+	BClipboardRefsWatcher *fClipboardRefsWatcher;
 	BTrashWatcher *fTrashWatcher;
 	AutoMounter *fAutoMounter;
 	TaskLoop *fTaskLoop;
@@ -227,6 +231,12 @@ inline TaskLoop *
 TTracker::MainTaskLoop() const
 {
 	return fTaskLoop;
+}
+
+inline BClipboardRefsWatcher *
+TTracker::ClipboardRefsWatcher() const
+{
+	return fClipboardRefsWatcher;
 }
 
 } // namespace BPrivate

@@ -164,7 +164,7 @@ public:
 
 	// file change notification handler
 	virtual bool FSNotification(const BMessage *);
-	
+
 	// scrollbars
 	virtual void UpdateScrollRange();
 	virtual	void SetScrollBarsTo(BPoint);
@@ -302,6 +302,12 @@ public:
 		// target symlink should not be shown	
 	void ResetPosePlacementHint();
 	void PlaceFolder(const entry_ref *, const BMessage *);
+
+	// clipboard handling for poses
+	bool HasPosesInClipboard();
+	void SetHasPosesInClipboard(bool hasPoses);
+	void SetPosesClipboardMode(uint32 clipboardMode);
+	void UpdatePosesClipboardModeFromClipboard();
 
 	// filtering
 	void SetRefFilter(BRefFilter *);
@@ -643,6 +649,7 @@ protected:
 	bool fShouldAutoScroll : 1;
 	bool fIsDesktopWindow : 1;
 	bool fIsWatchingDateFormatChange : 1;
+	bool fHasPosesInClipboard : 1;
 
 	BRect fStartFrame;
 

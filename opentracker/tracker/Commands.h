@@ -55,6 +55,11 @@ const uint32 kCloseWindowAndChildren = 'Tcwc';
 
 const uint32 kRestoreState = 'Trst';
 
+const uint32 kCutMoreSelectionToClipboard = 'Tmvm';
+const uint32 kCopyMoreSelectionToClipboard = 'Tcpm';
+const uint32 kCancelSelectionToClipboard = 'Tesc';
+const uint32 kClipboardPosesChanged = 'Tcpc';
+
 const uint32 kEditItem = 'Tedt';
 const uint32 kEditQuery = 'Qedt';
 const uint32 kNewFolder = 'Tnwf';

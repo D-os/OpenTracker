@@ -41,10 +41,12 @@ All rights reserved.
 
 #include "Attributes.h"
 #include "Commands.h"
+#include "FSClipboard.h"
 #include "IconCache.h"
 #include "Utilities.h"
 #include "PoseView.h"
 #include "Pose.h"
+#include "Tracker.h"
 
 
 int32
@@ -92,6 +94,7 @@ BPose::BPose(Model *model, BPoseView *view, bool selected)
 		fListModeInited(false),
 		fWasAutoPlaced(false),
 		fBrokenSymLink(false),
+		fBackgroundClean(false),
 		fPercent(-1)
 {
 	CreateWidgets(view);
@@ -99,6 +102,18 @@ BPose::BPose(Model *model, BPoseView *view, bool selected)
 	if (model->IsVolume() && TrackerSettings().ShowVolumeSpaceBar()) {
 		dev_t device = model->NodeRef()->device;
 		fPercent = CalcFreeSpace(device);
+	}
+
+	if ((fClipboardMode = FSClipboardFindNodeMode(model,true)) != 0
+		&& !view->HasPosesInClipboard()) {
+		view->SetHasPosesInClipboard(true);
+		
+		BClipboardRefsWatcher *watcher = NULL;
+		if (dynamic_cast<TTracker *>(be_app) != NULL)
+			((TTracker *)be_app)->ClipboardRefsWatcher();
+
+		if (watcher)
+			watcher->AddNode(model->NodeRef());
 	}
 }
 
@@ -490,6 +505,17 @@ void
 BPose::Draw(BRect rect, BPoseView *poseView, BView *drawView, bool fullDraw,
 	const BRegion *updateRgn, BPoint offset, bool selected, bool recalculateText)
 {
+	if (fClipboardMode == kMoveSelectionTo) {
+		// If the background wasn't cleared and Draw() is not called after
+		// having edited a name or similar (with fullDraw)
+		if (!fBackgroundClean && !fullDraw) {
+			fBackgroundClean = true;
+			poseView->Invalidate(rect);
+			return;
+		} else
+			fBackgroundClean = false;
+	}
+
 	bool directDraw = (drawView == poseView);
 	bool windowActive = poseView->Window()->IsActive();
 	bool showSelectionWhenInactive = poseView->fShowSelectionWhenInactive;
@@ -498,7 +524,6 @@ BPose::Draw(BRect rect, BPoseView *poseView, BView *drawView, bool fullDraw,
 	ModelNodeLazyOpener modelOpener(fModel);
 
 	if (poseView->ViewMode() == kListMode) {
-
 		BRect iconRect(rect);
 		iconRect.OffsetBy(offset);
 		iconRect.left += kListOffset;
@@ -529,7 +554,7 @@ BPose::Draw(BRect rect, BPoseView *poseView, BView *drawView, bool fullDraw,
 						widget->RecalculateText(poseView);
 					
 					widget->Draw(widgetRect, widgetTextRect, column->Width(),
-						poseView, drawView, selected, offset, directDraw);
+						poseView, drawView, selected, fClipboardMode, offset, directDraw);
 
 					if (index == 0 && selected && (windowActive || isDrawingSelectionRect)) {
 						widgetTextRect.OffsetBy(offset);
@@ -582,7 +607,7 @@ BPose::Draw(BRect rect, BPoseView *poseView, BView *drawView, bool fullDraw,
 		}
 
 		widget->Draw(rect, rect, rect.Width(), poseView, drawView,
-			selected, offset, directDraw);
+			selected, fClipboardMode, offset, directDraw);
 
 		if (selectDuringDraw)
 			drawView->PopState();
@@ -712,7 +737,11 @@ BPose::TestLargeIconPixel(BPoint point) const
 void
 BPose::DrawIcon(BPoint where, BView *view, icon_size kind, bool direct, bool drawUnselected)
 {
-	if (direct)
+	if (fClipboardMode == kMoveSelectionTo) {
+		view->SetDrawingMode(B_OP_ALPHA);
+		view->SetHighColor(0,0,0,64);	// set the level of transparency
+		view->SetBlendingMode(B_CONSTANT_ALPHA, B_ALPHA_OVERLAY);
+	} else if (direct)
 		view->SetDrawingMode(B_OP_OVER);
 
 	IconCache::iconCache->Draw(ResolvedModel(), view, where,
@@ -848,6 +877,7 @@ BPose::CalcRect(const BPoseView *poseView)
 	return rect;
 }
 
+
 #if DEBUG
 
 void
@@ -855,6 +885,16 @@ BPose::PrintToStream()
 {
 	TargetModel()->PrintToStream();
 	PRINT(("%sselected\n", IsSelected() ? "" : "not "));
+	switch (fClipboardMode) {
+		case kMoveSelectionTo:
+			PRINT(("clipboardMode: Cut\n"));
+			break;
+		case kCopySelectionTo:
+			PRINT(("clipboardMode: Copy\n"));
+			break;
+		default:
+			PRINT(("clipboardMode: 0 - not in clipboard\n"));
+	}
 	PRINT(("location %s x:%f y:%f\n", HasLocation() ? "" : "unknown ",
 		HasLocation() ? Location().x : 0,
 		HasLocation() ? Location().y : 0));
