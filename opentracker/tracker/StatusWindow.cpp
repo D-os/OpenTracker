@@ -52,23 +52,31 @@ All rights reserved.
 
 
 const float	kStatusViewHeight = 50;
+const float kUpdateGrain = 100000;
+const BRect kStatusRect(200, 200, 550, 200);
+
 
 class TCustomButton : public BButton {
-public:
-	TCustomButton(BRect frame, uint32 command);
-	virtual	void Draw(BRect);
-private:
-	typedef BButton _inherited;
+	public:
+		TCustomButton(BRect frame, uint32 command);
+		virtual	void Draw(BRect);
+	private:
+		typedef BButton _inherited;
 };
 
 class BStatusMouseFilter : public BMessageFilter {
-public:
-	BStatusMouseFilter()
-		:	BMessageFilter(B_ANY_DELIVERY, B_ANY_SOURCE, B_MOUSE_DOWN)
-		{}
-
-	virtual	filter_result Filter(BMessage *message, BHandler **target);
+	public:
+		BStatusMouseFilter()
+			:	BMessageFilter(B_ANY_DELIVERY, B_ANY_SOURCE, B_MOUSE_DOWN)
+			{}
+	
+		virtual	filter_result Filter(BMessage *message, BHandler **target);
 };
+
+
+namespace BPrivate {
+BStatusWindow *gStatusWindow = NULL;
+}
 
 
 filter_result
@@ -92,6 +100,7 @@ TCustomButton::TCustomButton(BRect frame, uint32 what)
 			B_WILL_DRAW)
 {
 }
+
 
 void
 TCustomButton::Draw(BRect updateRect)
@@ -117,7 +126,6 @@ TCustomButton::Draw(BRect updateRect)
 	}
 }
 
-const BRect kStatusRect(200, 200, 550, 200);
 
 BStatusWindow::BStatusWindow()
 	:	BWindow(kStatusRect, "Tracker Status", B_TITLED_WINDOW,
@@ -138,9 +146,11 @@ BStatusWindow::BStatusWindow()
 	Run();
 }
 
+
 BStatusWindow::~BStatusWindow()
 {
 }
+
 
 bool
 BStatusWindow::CheckCanceledOrPaused(thread_id thread)
@@ -187,6 +197,7 @@ BStatusWindow::CheckCanceledOrPaused(thread_id thread)
 	return wasCanceled;
 }
 
+
 bool
 BStatusWindow::AttemptToQuit()
 {
@@ -204,6 +215,7 @@ BStatusWindow::AttemptToQuit()
 	// maybe next time everything will have been canceled
 	return false;
 }
+
 
 void
 BStatusWindow::CreateStatusItem(thread_id thread, StatusWindowState type)
@@ -245,6 +257,7 @@ BStatusWindow::CreateStatusItem(thread_id thread, StatusWindowState type)
 		fRetainDesktopFocus &= desktopActive;
 }
 
+
 void 
 BStatusWindow::WindowActivated(bool state)
 {
@@ -253,6 +266,7 @@ BStatusWindow::WindowActivated(bool state)
 
 	return _inherited::WindowActivated(state);
 }
+
 
 void
 BStatusWindow::RemoveStatusItem(thread_id thread)
@@ -301,6 +315,7 @@ BStatusWindow::RemoveStatusItem(thread_id thread)
 
 }
 
+
 bool
 BStatusWindow::HasStatus(thread_id thread)
 {
@@ -316,6 +331,7 @@ BStatusWindow::HasStatus(thread_id thread)
 
 	return false;
 }
+
 
 void
 BStatusWindow::UpdateStatus(thread_id thread, const char *curItem, off_t itemSize,
@@ -334,6 +350,7 @@ BStatusWindow::UpdateStatus(thread_id thread, const char *curItem, off_t itemSiz
 
 }
 
+
 void
 BStatusWindow::InitStatusItem(thread_id thread, int32 totalItems,  off_t totalSize,
 	const entry_ref *destDir, bool showCount)
@@ -350,6 +367,7 @@ BStatusWindow::InitStatusItem(thread_id thread, int32 totalItems,  off_t totalSi
 	}
 
 }
+
 
 BStatusView::BStatusView(BRect bounds, thread_id thread, StatusWindowState type)
 	:	BView(bounds, "StatusView", B_FOLLOW_NONE, B_WILL_DRAW),
@@ -442,10 +460,12 @@ BStatusView::BStatusView(BRect bounds, thread_id thread, StatusWindowState type)
 	AddChild(fStatusBar);
 }
 
+
 BStatusView::~BStatusView()
 {
 	delete fBitmap;
 }
+
 
 void
 BStatusView::Init()
@@ -459,12 +479,14 @@ BStatusView::Init()
 	fItemSize = 0;
 }
 
+
 void
 BStatusView::AttachedToWindow()
 {
 	fPauseButton->SetTarget(this);
 	fStopButton->SetTarget(this);
 }
+
 
 void
 BStatusView::InitStatus(int32 totalItems, off_t totalSize,
@@ -518,7 +540,6 @@ BStatusView::InitStatus(int32 totalItems, off_t totalSize,
 	Invalidate();
 }
 
-const float kUpdateGrain = 100000;
 
 void
 BStatusView::UpdateStatus(const char *curItem, off_t itemSize, bool optional)
@@ -567,6 +588,7 @@ BStatusView::UpdateStatus(const char *curItem, off_t itemSize, bool optional)
 	}
 }
 
+
 void
 BStatusView::MessageReceived(BMessage *message)
 {
@@ -603,6 +625,7 @@ BStatusView::MessageReceived(BMessage *message)
 	}
 }
 
+
 void
 BStatusView::Draw(BRect)
 {
@@ -636,8 +659,10 @@ BStatusView::Draw(BRect)
 	}
 }
 
+
 void
 BStatusView::SetWasCanceled()
 {
 	fWasCanceled = true;
 }
+
