@@ -958,7 +958,7 @@ CreateFileSystemCompatibleName(const BDirectory *destDir, char *destName)
 		}
 
 		char *invalid = destName;
-		while ((invalid = strpbrk(invalid, "?<>\\:\"")) != NULL) {
+		while ((invalid = strpbrk(invalid, "?<>\\:\"|*")) != NULL) {
 			invalid[0] = '_';
 			wasInvalid = true;
 		}
