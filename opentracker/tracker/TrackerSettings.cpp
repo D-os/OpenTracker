@@ -43,79 +43,12 @@ class TTrackerState : public Settings {
 		static TTrackerState *Get();
 		void Release();
 
-		bool ShowDisksIcon();
-		void SetShowDisksIcon(bool);
-
-		bool DesktopFilePanelRoot();
-		void SetDesktopFilePanelRoot(bool);
-
-		bool MountVolumesOntoDesktop();
-		void SetMountVolumesOntoDesktop(bool);
-
-		bool MountSharedVolumesOntoDesktop();
-		void SetMountSharedVolumesOntoDesktop(bool);
-
-		bool IntegrateNonBootBeOSDesktops();
-		void SetIntegrateNonBootBeOSDesktops(bool);
-
-		bool IntegrateAllNonBootDesktops();
-		void SetIntegrateAllNonBootDesktops(bool);
-
-		bool EjectWhenUnmounting();
-		void SetEjectWhenUnmounting(bool);
-
-		bool ShowVolumeSpaceBar();
-		void SetShowVolumeSpaceBar(bool);
-
-	 	rgb_color UsedSpaceColor();
-		void SetUsedSpaceColor(rgb_color color);
-
-	 	rgb_color FreeSpaceColor();
-		void SetFreeSpaceColor(rgb_color color);
-
-	 	rgb_color WarningSpaceColor();
-		void SetWarningSpaceColor(rgb_color color);
-
-		bool ShowFullPathInTitleBar();
-		void SetShowFullPathInTitleBar(bool);
-
-		bool SortFolderNamesFirst();
-		void SetSortFolderNamesFirst(bool);
-
-		bool ShowSelectionWhenInactive();
-		void SetShowSelectionWhenInactive(bool);
-
-		bool TransparentSelection();
-		void SetTransparentSelection(bool);
-
-		bool SingleWindowBrowse();
-		void SetSingleWindowBrowse(bool);
-
-		bool ShowNavigator();
-		void SetShowNavigator(bool);
-
-		void RecentCounts(int32 *applications, int32 *documents, int32 *folders);
-		void SetRecentApplicationsCount(int32);
-		void SetRecentDocumentsCount(int32);
-		void SetRecentFoldersCount(int32);
-
-		FormatSeparator TimeFormatSeparator();
-		void SetTimeFormatSeparator(FormatSeparator);
-		DateOrder DateOrderFormat();
-		void SetDateOrderFormat(DateOrder);
-		bool ClockIs24Hr();
-		void SetClockTo24Hr(bool);
-
-		bool DontMoveFilesToTrash();
-		void SetDontMoveFilesToTrash(bool);
-		bool AskBeforeDeleteFile();
-		void SetAskBeforeDeleteFile(bool);
-
 		void LoadSettingsIfNeeded();
 		void SaveSettings(bool onlyIfNonDefault = true);
 
 		TTrackerState();
 		~TTrackerState();
+
 	private:
 		friend TrackerSettings;
 
@@ -136,6 +69,7 @@ class TTrackerState : public Settings {
 		BooleanValueSetting *fShowSelectionWhenInactive;
 		BooleanValueSetting *fTransparentSelection;
 		BooleanValueSetting *fSortFolderNamesFirst;
+		BooleanValueSetting *fHideDotFiles;
 
 		BooleanValueSetting *f24HrClock;
 
@@ -242,15 +176,16 @@ TTrackerState::LoadSettingsIfNeeded()
 	Add(fIntegrateAllNonBootDesktops = new BooleanValueSetting
 		("IntegrateAllNonBootDesktops", false));
 	Add(fEjectWhenUnmounting = new BooleanValueSetting("EjectWhenUnmounting", true));
-	
+
 	Add(fDesktopFilePanelRoot = new BooleanValueSetting("DesktopFilePanelRoot", true));
 	Add(fShowFullPathInTitleBar = new BooleanValueSetting("ShowFullPathInTitleBar", false));
 	Add(fShowSelectionWhenInactive = new BooleanValueSetting("ShowSelectionWhenInactive", true));
 	Add(fTransparentSelection = new BooleanValueSetting("TransparentSelection", false));
 	Add(fSortFolderNamesFirst = new BooleanValueSetting("SortFolderNamesFirst", false));
+	Add(fHideDotFiles = new BooleanValueSetting("HideDotFiles", false));
  	Add(fSingleWindowBrowse = new BooleanValueSetting("SingleWindowBrowse", false));
 	Add(fShowNavigator = new BooleanValueSetting("ShowNavigator", false));
-	
+
 	Add(fRecentApplicationsCount = new ScalarValueSetting("RecentApplications", 10, "", ""));
 	Add(fRecentDocumentsCount = new ScalarValueSetting("RecentDocuments", 10, "", ""));
 	Add(fRecentFoldersCount = new ScalarValueSetting("RecentFolders", 10, "", ""));
@@ -470,6 +405,20 @@ TrackerSettings::SetSortFolderNamesFirst(bool enabled)
 {
 	gTrackerState.fSortFolderNamesFirst->SetValue(enabled);
 	NameAttributeText::SetSortFolderNamesFirst(enabled);
+}
+
+
+bool 
+TrackerSettings::HideDotFiles()
+{
+	return gTrackerState.fHideDotFiles->Value();
+}
+
+
+void 
+TrackerSettings::SetHideDotFiles(bool hide)
+{
+	gTrackerState.fHideDotFiles->SetValue(hide);
 }
 
 

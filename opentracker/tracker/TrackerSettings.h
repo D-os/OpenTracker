@@ -96,6 +96,9 @@ class TrackerSettings {
 		void SetShowFullPathInTitleBar(bool);
 		bool SortFolderNamesFirst();
 		void SetSortFolderNamesFirst(bool);
+		bool HideDotFiles();
+		void SetHideDotFiles(bool hide);
+
 		bool ShowSelectionWhenInactive();
 		void SetShowSelectionWhenInactive(bool);
 		bool TransparentSelection();

@@ -482,6 +482,12 @@ BNavMenu::AddNextItem()
 		return false;
 	}
 
+	if (TrackerSettings().HideDotFiles()) {
+		char name[B_FILE_NAME_LENGTH];
+		if (entry.GetName(name) == B_OK && name[0] == '.')
+			return true;
+	}
+
 	Model model(&entry, true);
 	if (model.InitCheck() != B_OK) {
 //		PRINT(("not showing hidden item %s, wouldn't open\n", model->Name()));

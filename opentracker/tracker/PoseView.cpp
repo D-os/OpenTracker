@@ -1211,6 +1211,8 @@ BPoseView::AddPosesTask(void *castToParams)
 	bigtime_t nextChunkTime = 0;
 	uint32 watchMask = view->WatchNewNodeMask();
 
+	bool hideDotFiles = TrackerSettings().HideDotFiles();
+
 #if DEBUG
 	for (int32 index = 0; index < kMaxAddPosesChunk; index++)
 		posesResult->fModels[index] = (Model *)0xdeadbeef;
@@ -1230,22 +1232,23 @@ BPoseView::AddPosesTask(void *castToParams)
 			posesResult->fModels[modelChunkIndex] = 0;
 				// ToDo - redo this so that modelChunkIndex increments right before
 				// a new model is added to the array; start with modelChunkIndex = -1
-					
+
 			int32 count = container->GetNextDirents(eptr, 1024, 1);
-			if (count <= 0  && !modelChunkIndex) 
+			if (count <= 0 && !modelChunkIndex) 
 				break;
 
 			if (count) {
 				ASSERT(count == 1);
-		
-				if (strcmp(eptr->d_name, ".") == 0 || strcmp(eptr->d_name, "..") == 0) 
+
+				if ((!hideDotFiles && (!strcmp(eptr->d_name, ".") || !strcmp(eptr->d_name, "..")))
+					|| (hideDotFiles && eptr->d_name[0] == '.'))
 					continue;
-			 
+
 				dirNode.device = eptr->d_pdev;
 				dirNode.node = eptr->d_pino;
 				itemNode.device = eptr->d_pdev;
 				itemNode.node = eptr->d_ino;
-		
+
 				BPoseView::WatchNewNode(&itemNode, watchMask, lock.Target());
 					// have to node monitor ahead of time because Model will
 					// cache up the file type and preferred app
