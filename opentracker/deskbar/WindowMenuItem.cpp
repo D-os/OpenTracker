@@ -208,6 +208,7 @@ TWindowMenuItem::DrawContent()
 		menu->SetDrawingMode(B_OP_COPY);
 	}
 	contLoc.y = frame.top + ((frame.Height() - fTitleAscent - fTitleDescent) / 2) + 1.0f;
+	menu->PopState();
 
 	menu->MovePenTo(contLoc);
 	// Set the pen color so that the label is always visible.
