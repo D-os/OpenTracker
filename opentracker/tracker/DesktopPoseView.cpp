@@ -174,43 +174,42 @@ DesktopPoseView::InitDirentIterator(const entry_ref *ref)
 bool 
 DesktopPoseView::FSNotification(const BMessage *message)
 {
-	dev_t device;
-
 	switch (message->FindInt32("opcode")) {
 		case B_DEVICE_MOUNTED:
-			{
-				if (message->FindInt32("new device", &device) != B_OK)
-					break;
-	
-				ASSERT(TargetModel());
-				TrackerSettings settings;
+		{
+			dev_t device;
+			if (message->FindInt32("new device", &device) != B_OK)
+				break;
 
-				if (settings.MountVolumesOntoDesktop()) {
-					// place an icon for the volume onto the desktop
-					BVolume volume(device);
-					if (volume.InitCheck() == B_OK
-						&& !volume.IsShared() || settings.MountSharedVolumesOntoDesktop())
-						CreateVolumePose(&volume, true);
-				}
+			ASSERT(TargetModel());
+			TrackerSettings settings;
 
-				if (!settings.IntegrateNonBootBeOSDesktops())
-					break;
+			BVolume volume(device);
+			if (volume.InitCheck() != B_OK || !ShouldIntegrateVolume(&volume))
+				break;
 
-				BDirectory remoteDesktop;
-				BEntry entry;
-				BVolume volume(device);
-
-				if (ShouldIntegrateVolume(&volume)
-					&& FSGetDeskDir(&remoteDesktop, volume.Device()) == B_OK
-					&& remoteDesktop.GetEntry(&entry) == B_OK) {
-					// place desktop items from the mounted volume onto the desktop
-					Model model(&entry);
-					if (model.InitCheck() == B_OK) 
-						AddPoses(&model);
-				}
+			if (settings.MountVolumesOntoDesktop()
+				&& (!volume.IsShared() || settings.MountSharedVolumesOntoDesktop())) {
+				// place an icon for the volume onto the desktop
+				CreateVolumePose(&volume, true);
 			}
-			break;
+
+			if (!settings.IntegrateNonBootBeOSDesktops())
+				break;
+
+			BDirectory otherDesktop;
+			BEntry entry;
+			if (FSGetDeskDir(&otherDesktop, volume.Device()) == B_OK
+				&& otherDesktop.GetEntry(&entry) == B_OK) {
+				// place desktop items from the mounted volume onto the desktop
+				Model model(&entry);
+				if (model.InitCheck() == B_OK) 
+					AddPoses(&model);
+			}
+		}
+		break;
 	}
+
 	return _inherited::FSNotification(message);
 }
 
