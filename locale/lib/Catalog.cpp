@@ -54,16 +54,25 @@ BCatalog::GetData(uint32 id, BMessage *msg)
 }
 
 
+status_t
+BCatalog::InitCheck() const
+{
+	return fCatalog 
+				? fCatalog->InitCheck() 
+				: B_NO_INIT;
+}
+
 //	#pragma mark -
 
 
 BCatalogAddOn::BCatalogAddOn(const char *signature, const char *language,
-	BCatalogAddOnInfo *info)
+	BCatalogAddOnInfo* info)
 	:
-	fSignature(signature),
-	fLanguageName(language),
-	fAddOnInfo(info),
-	fNext(NULL)
+	fSignature( signature),
+	fLanguageName( language),
+	fAddOnInfo( info),
+	fNext( NULL),
+	fInitCheck( B_NO_INIT)
 {
 }
 
