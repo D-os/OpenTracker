@@ -7,8 +7,8 @@
 #include <Country.h>
 
 
+class BCatalog;
 class BString;
-class BList;
 
 
 class BLocale {
@@ -41,6 +41,8 @@ class BLocale {
 		int StringCompare(const BString *, const BString *, int32 len = -1, int8 strength = B_COLLATE_DEFAULT) const;
 
 		void GetSortKey(const char *string, BString *key);
+		
+		status_t GetAppCatalog(BCatalog *);
 
 	protected:
 		BCollator	*fCollator;

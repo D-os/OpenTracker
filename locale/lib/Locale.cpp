@@ -4,9 +4,9 @@
 */
 
 
+#include <Catalog.h>
 #include <Locale.h>
 #include <LocaleRoster.h>
-#include <List.h>
 
 
 static BLocale gLocale;
@@ -44,3 +44,11 @@ BLocale::GetString(uint32 id)
 	return fCountry->GetString(id);
 }
 
+status_t 
+BLocale::GetAppCatalog(BCatalog *catalog) {
+	if (!catalog)
+		return B_BAD_VALUE;
+	if (be_catalog)
+		debugger( "GetAppCatalog() has been called while be_catalog != NULL");
+	return BCatalog::GetAppCatalog(catalog);
+}
