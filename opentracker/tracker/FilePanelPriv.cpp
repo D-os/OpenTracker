@@ -1576,40 +1576,39 @@ BFilePanelPoseView::FSNotification(const BMessage *message)
 		// if the code could be shared somehow.
 		switch (message->FindInt32("opcode")) {
 			case B_DEVICE_MOUNTED:
-				{
-					dev_t device;
+			{
+				dev_t device;
+				if (message->FindInt32("new device", &device) != B_OK)
+					break;
 
-					if (message->FindInt32("new device", &device) != B_OK)
-						break;
+				ASSERT(TargetModel());
+				TrackerSettings settings;
 
-					ASSERT(TargetModel());
-					TrackerSettings settings;
+				BVolume volume(device);
+				if (volume.InitCheck() != B_OK)
+					break;
 
-					if (settings.MountVolumesOntoDesktop()) {
-						// place an icon for the volume onto the desktop
-						BVolume volume(device);
-						if (volume.InitCheck() == B_OK
-							&& !volume.IsShared() || settings.MountSharedVolumesOntoDesktop())
-							CreateVolumePose(&volume, true);
-					}
-
-					if (!settings.IntegrateNonBootBeOSDesktops())
-						break;
-
-					BDirectory remoteDesktop;
-					BEntry entry;
-					BVolume volume(device);
-
-					if (ShouldIntegrateVolume(&volume)
-						&& FSGetDeskDir(&remoteDesktop, volume.Device()) == B_OK
-						&& remoteDesktop.GetEntry(&entry) == B_OK) {
-						// place desktop items from the mounted volume onto the desktop
-						Model model(&entry);
-						if (model.InitCheck() == B_OK) 
-							AddPoses(&model);
-					}
+				if (settings.MountVolumesOntoDesktop()
+					&& (!volume.IsShared() || settings.MountSharedVolumesOntoDesktop())) {
+					// place an icon for the volume onto the desktop
+					CreateVolumePose(&volume, true);
 				}
-				break;
+
+				if (!ShouldIntegrateDesktop(volume))
+					break;
+
+				BDirectory otherDesktop;
+				BEntry entry;
+
+				if (FSGetDeskDir(&otherDesktop, volume.Device()) == B_OK
+					&& otherDesktop.GetEntry(&entry) == B_OK) {
+					// place desktop items from the mounted volume onto the desktop
+					Model model(&entry);
+					if (model.InitCheck() == B_OK) 
+						AddPoses(&model);
+				}
+			}
+			break;
 		}
 	}
 	return _inherited::FSNotification(message);

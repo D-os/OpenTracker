@@ -129,7 +129,7 @@ DesktopPoseView::InitDesktopDirentIterator(BPoseView *nodeMonitoringTarget,
 			// got that already
 			continue;
 
-		if (!DesktopPoseView::ShouldIntegrateVolume(&volume))
+		if (!DesktopPoseView::ShouldIntegrateDesktop(volume))
 			continue;
 
 		BDirectory remoteDesktop;
@@ -171,7 +171,7 @@ DesktopPoseView::InitDirentIterator(const entry_ref *ref)
 }
 
 
-bool 
+bool
 DesktopPoseView::FSNotification(const BMessage *message)
 {
 	switch (message->FindInt32("opcode")) {
@@ -185,7 +185,7 @@ DesktopPoseView::FSNotification(const BMessage *message)
 			TrackerSettings settings;
 
 			BVolume volume(device);
-			if (volume.InitCheck() != B_OK || !ShouldIntegrateVolume(&volume))
+			if (volume.InitCheck() != B_OK)
 				break;
 
 			if (settings.MountVolumesOntoDesktop()
@@ -194,7 +194,7 @@ DesktopPoseView::FSNotification(const BMessage *message)
 				CreateVolumePose(&volume, true);
 			}
 
-			if (!settings.IntegrateNonBootBeOSDesktops())
+			if (!ShouldIntegrateDesktop(volume))
 				break;
 
 			BDirectory otherDesktop;
@@ -292,23 +292,20 @@ DesktopPoseView::AddNonBootItems()
 		return;
 
 	BVolumeRoster volumeRoster;
-
-	BVolume boot;
- 	BVolume volume;
  
+	BVolume boot;
 	volumeRoster.GetBootVolume(&boot);
-	BDirectory remoteDesktop;
-	BEntry entry;
 
-	
+ 	BVolume volume;
 	while (volumeRoster.GetNextVolume(&volume) == B_OK) {
-
-		if (volume == boot)
+		if (volume == boot || !ShouldIntegrateDesktop(volume))
 			continue;
 
-		if (ShouldIntegrateVolume(&volume)
-			&& FSGetDeskDir(&remoteDesktop, volume.Device()) == B_OK
-			&& remoteDesktop.GetEntry(&entry) == B_OK) {
+		BDirectory otherDesktop;
+		BEntry entry;
+
+		if (FSGetDeskDir(&otherDesktop, volume.Device()) == B_OK
+			&& otherDesktop.GetEntry(&entry) == B_OK) {
 			// place desktop items from the mounted volume onto the desktop
 			Model model(&entry);
 			if (model.InitCheck() == B_OK) 
@@ -412,15 +409,14 @@ DesktopPoseView::UpdateNonBootDesktopPoses(bool integrateNonBootBeOSDesktops)
 
 	BVolumeRoster volumeRoster;
 	BVolume	bootVolume;
-	
 	volumeRoster.GetBootVolume(&bootVolume);
-	
+
 	dev_t bootDevice = bootVolume.Device();
 
 	int32 poseCount = CountItems();
-	
+
 	if (!integrateNonBootBeOSDesktops) {
-		for(int32 index=0; index < poseCount; index++) {
+		for (int32 index = 0; index < poseCount; index++) {
 			Model *model = PoseAtIndex(index)->TargetModel();
 			if (!model->IsVolume() && model->NodeRef()->device != bootDevice){
 				DeletePose(model->NodeRef());
@@ -430,7 +426,7 @@ DesktopPoseView::UpdateNonBootDesktopPoses(bool integrateNonBootBeOSDesktops)
 		}
 		nonBootDesktopPosesAlreadyAdded = false;
 	} else if (!nonBootDesktopPosesAlreadyAdded) {
-		for(int32 index=0; index < poseCount; index++) {
+		for (int32 index = 0; index < poseCount; index++) {
 			Model *model = PoseAtIndex(index)->TargetModel();
 
 			if (model->IsVolume()) {
@@ -438,7 +434,7 @@ DesktopPoseView::UpdateNonBootDesktopPoses(bool integrateNonBootBeOSDesktops)
 				BEntry entry;
 				BVolume volume(model->NodeRef()->device);
 
-				if (ShouldIntegrateVolume(&volume)
+				if (ShouldIntegrateDesktop(volume)
 					&& FSGetDeskDir(&remoteDesktop, volume.Device()) == B_OK
 					&& remoteDesktop.GetEntry(&entry) == B_OK
 					&& volume != bootVolume) {

@@ -578,7 +578,8 @@ class BPoseView : public BView {
 		void Delete(BObjectList<entry_ref> *, bool selectNext, bool askUser);
 		void Delete(const entry_ref &ref, bool selectNext, bool askUser);
 		void RestoreItemsFromTrash(BObjectList<entry_ref> *, bool selectNext);
-		static bool ShouldIntegrateVolume(const BVolume *);
+
+		static bool ShouldIntegrateDesktop(const BVolume &volume);
 
 	private:
 		void DrawOpenAnimation(BRect);

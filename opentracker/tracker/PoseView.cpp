@@ -1494,10 +1494,14 @@ BPoseView::AddPosesCompleted()
 void
 BPoseView::CreateVolumePose(BVolume *volume, bool watchIndividually)
 {
+	if (volume->InitCheck() != B_OK || !volume->IsPersistent()) {
+		// We never want to create poses for those volumes; the file
+		// system root, /pipe, /dev, etc. are all non-persistent
+		return;
+	}
 
 	BDirectory root;
 	if (volume->GetRootDirectory(&root) == B_OK) {
-
 		node_ref itemNode;
 		root.GetNodeRef(&itemNode);
 
@@ -1512,7 +1516,7 @@ BPoseView::CreateVolumePose(BVolume *volume, bool watchIndividually)
 		dirNode.node = ref.directory;
 
 		BPose *pose = EntryCreated(&dirNode, &itemNode, ref.name, 0);
-		
+
 		if (pose && watchIndividually) {
 			// make sure volume names still get watched, even though
 			// they are on the desktop which is not their physical parent
@@ -4851,10 +4855,9 @@ BPoseView::FSNotification(const BMessage *message)
 				if (message->FindInt32("new device", &device) != B_OK)
 					break;
 
-				if (TargetModel() && TargetModel()->IsRoot()) {
+				if (TargetModel() != NULL && TargetModel()->IsRoot()) {
 					BVolume volume(device);
-					if (volume.InitCheck() == B_OK)
-						CreateVolumePose(&volume, false);
+					CreateVolumePose(&volume, false);
 				} else if (ContainerWindow()->IsTrash()) {
 					// add trash items from newly mounted volume
 
@@ -5114,7 +5117,7 @@ BPoseView::AttributeChanged(const BMessage *message)
 	if (pose) {
 		attr_info info;
 		BPoint loc(0, index * fListElemHeight);
-		
+
 		Model *model = pose->TargetModel();
 		if (model->IsSymLink() && *model->NodeRef() != itemNode)
 			// change happened on symlink's target
@@ -9157,24 +9160,25 @@ BPoseView::AdaptToDesktopIntegrationChange(BMessage *)
 }
 
 
-bool 
+bool
 BPoseView::EraseWidgetTextBackground() const
 {
 	return fEraseWidgetBackground;
 }
 
 
-void 
+void
 BPoseView::SetEraseWidgetTextBackground(bool on)
 {
 	fEraseWidgetBackground = on;
 }
 
 
-bool 
-BPoseView::ShouldIntegrateVolume(const BVolume *volume)
+/* static */
+bool
+BPoseView::ShouldIntegrateDesktop(const BVolume &volume)
 {
-	if (!volume->IsPersistent())
+	if (!volume.IsPersistent())
 		return false;
 
 	TrackerSettings settings;
@@ -9184,7 +9188,8 @@ BPoseView::ShouldIntegrateVolume(const BVolume *volume)
 	if (!settings.IntegrateNonBootBeOSDesktops())
 		return false;
 
-	return volume->KnowsQuery() && volume->KnowsAttr() && volume->KnowsMime();
+	// That's obviously what makes a BeOS desktop :-)
+	return volume.KnowsQuery() && volume.KnowsAttr() && volume.KnowsMime();
 }
 
 
