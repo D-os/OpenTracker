@@ -862,6 +862,8 @@ BPoseView::AttachedToWindow()
 		// us to have shortcuts without Command yet
 	AddFilter(new ShortcutFilter(B_ESCAPE, 0, B_CANCEL, this));
 		// Escape key, currently used only to abort an on-going clipboard cut
+	AddFilter(new ShortcutFilter(B_ESCAPE, B_SHIFT_KEY, kCancelSelectionToClipboard, this));
+		// Escape + SHIFT will remove current selection from clipboard, or all poses from current folder if 0 selected
 
 	fLastLeftTop = LeftTop();
 	BFont font(be_plain_font);
@@ -1973,23 +1975,19 @@ BPoseView::MessageReceived(BMessage *message)
 		}
 
 		case B_CUT:
-			if (FSClipboardAddPoses(TargetModel()->NodeRef(), fSelectionList, kMoveSelectionTo, true) > 0)
-				SetHasPosesInClipboard(true);
+			FSClipboardAddPoses(TargetModel()->NodeRef(), fSelectionList, kMoveSelectionTo, true);
 			break;
 
 		case kCutMoreSelectionToClipboard:
-			if (FSClipboardAddPoses(TargetModel()->NodeRef(), fSelectionList, kMoveSelectionTo, false) > 0)
-				SetHasPosesInClipboard(true);
+			FSClipboardAddPoses(TargetModel()->NodeRef(), fSelectionList, kMoveSelectionTo, false);
 			break;
 
 		case B_COPY:
-			if (FSClipboardAddPoses(TargetModel()->NodeRef(), fSelectionList, kCopySelectionTo, true) > 0)
-				SetHasPosesInClipboard(true);
+			FSClipboardAddPoses(TargetModel()->NodeRef(), fSelectionList, kCopySelectionTo, true);
 			break;
 
 		case kCopyMoreSelectionToClipboard:
-			if (FSClipboardAddPoses(TargetModel()->NodeRef(), fSelectionList, kCopySelectionTo, false) > 0)
-				SetHasPosesInClipboard(true);
+			FSClipboardAddPoses(TargetModel()->NodeRef(), fSelectionList, kCopySelectionTo, false);
 			break;
 
 		case B_PASTE:
@@ -2005,7 +2003,11 @@ BPoseView::MessageReceived(BMessage *message)
 				FSClipboardClear();
 			break;
 
-		case kClipboardPosesChanged:
+		case kCancelSelectionToClipboard:
+			FSClipboardRemovePoses(TargetModel()->NodeRef(), (fSelectionList->CountItems() > 0 ? fSelectionList : fPoseList));
+			break;
+
+		case kFSClipboardChanges:
 		{
 			node_ref node;
 			bool clearClipboard = false;
@@ -2015,14 +2017,13 @@ BPoseView::MessageReceived(BMessage *message)
 			
 			if (clearClipboard) {
 				if (*TargetModel()->NodeRef() == node)
-					UpdatePosesClipboardModeFromClipboard();
+					UpdatePosesClipboardModeFromClipboard(message);
 				else if (HasPosesInClipboard()) {
 					SetHasPosesInClipboard(false);
 					SetPosesClipboardMode(0);
 				}
 			} else if (*TargetModel()->NodeRef() == node)
-				UpdatePosesClipboardModeFromClipboard();
-
+				UpdatePosesClipboardModeFromClipboard(message);
 			break;
 		}
 			
@@ -2738,69 +2739,74 @@ BPoseView::SetPosesClipboardMode(uint32 clipboardMode)
 
 
 void
-BPoseView::UpdatePosesClipboardModeFromClipboard()
+BPoseView::UpdatePosesClipboardModeFromClipboard(BMessage *clipboardReport)
 {
 	CommitActivePose();
 	fSelectionPivotPose = NULL;
 	fRealPivotPose = NULL;
-	
-	// scan all visible poses first
-	BRect bounds(Bounds());
-	uint32 clipboardMode = 0;
-	bool hasPosesInClipboard = false;
+	bool fullInvalidateNeeded = false;
 
-	if (ViewMode() == kListMode) {
-		int32 startIndex = (int32)(bounds.top / fListElemHeight);
-		BPoint loc(0, startIndex * fListElemHeight);
+	node_ref node;
+	bool clearClipboard = false;
+	clipboardReport->FindInt32("device",&node.device);
+	clipboardReport->FindInt64("directory",&node.node);
+	clipboardReport->FindBool("clearClipboard",&clearClipboard);
+
+	if (clearClipboard && fHasPosesInClipboard) {
+		// clear all poses
 		int32 count = fPoseList->CountItems();
-		for (int32 index = startIndex; index < count; index++) {
+		for (int32 index = 0; index < count; index++) {
 			BPose *pose = fPoseList->ItemAt(index);
-			clipboardMode = FSClipboardFindNodeMode(pose->TargetModel(),true);
-			if (clipboardMode != pose->ClipboardMode() || pose->IsSelected()) {
-				pose->SetClipboardMode(clipboardMode);
-				pose->Select(false);
-				Invalidate(pose->CalcRect(loc, this, false));
-			}
-
-			loc.y += fListElemHeight;
-			if (loc.y > bounds.bottom)
-				break;
+			pose->Select(false);
+			pose->SetClipboardMode(0);
 		}
-	} else {
-		int32 startIndex = FirstIndexAtOrBelow((int32)(bounds.top - IconPoseHeight()), true);
-		int32 count = fVSPoseList->CountItems();
-		for (int32 index = startIndex; index < count; index++) {
-			BPose *pose = fVSPoseList->ItemAt(index);
-			if (pose) {
-				clipboardMode = FSClipboardFindNodeMode(pose->TargetModel(),true);
-				if (clipboardMode != pose->ClipboardMode() || pose->IsSelected()) {
-					pose->SetClipboardMode(clipboardMode);
-					pose->Select(false);
+		SetHasPosesInClipboard(false);
+		fullInvalidateNeeded = true;
+		fHasPosesInClipboard = false;
+	}
 
-					BRect poseRect(pose->CalcRect(this));
-					if (!EraseWidgetTextBackground() || clipboardMode == kMoveSelectionTo)
-						Invalidate(poseRect);
-					else
-						pose->Draw(poseRect, this, false);
+	BRect bounds(Bounds());
+	BPoint loc(0, 0);
+
+	bool hasPosesInClipboard = false;
+	int32 index = 0;
+	int32 foundNodeIndex = 0;
+	TClipboardNodeRef *tcnode = NULL;
+	ssize_t size;
+	while (clipboardReport->FindData("tcnode", T_CLIPBOARD_NODE, index, (const void**)&tcnode, &size) == B_OK) {
+		BPose *pose = fPoseList->FindPose(&tcnode->node, &foundNodeIndex);
+		if (pose != NULL && (tcnode->moveMode != pose->ClipboardMode() || pose->IsSelected())) {
+			pose->SetClipboardMode(tcnode->moveMode);
+			pose->Select(false);
+			if (!fullInvalidateNeeded) {
+				if (ViewMode() == kListMode) {
+					loc.y = foundNodeIndex * fListElemHeight;
+					if (loc.y <= bounds.bottom && loc.y >= bounds.top) {
+						Invalidate(pose->CalcRect(loc, this, false));
+					}
 				}
-				if (pose->Location().y > bounds.bottom)
-					break;
+				else {
+					BRect poseRect(pose->CalcRect(this));
+					if (bounds.Contains(poseRect.LeftTop()) || bounds.Contains(poseRect.LeftBottom()) || bounds.Contains(poseRect.RightBottom()) || bounds.Contains(poseRect.RightTop())) {
+						if (!EraseWidgetTextBackground() || tcnode->moveMode == kMoveSelectionTo)
+							Invalidate(poseRect);
+						else
+							pose->Draw(poseRect, this, false);
+					}
+				}
 			}
+			if (tcnode->moveMode) hasPosesInClipboard = true;
 		}
+		index++;
 	}
 
-	// clear selection state in all poses
-	int32 count = fPoseList->CountItems();
-	for (int32 index = 0; index < count; index++) {
-		BPose *pose = fPoseList->ItemAt(index);
-		pose->Select(false);
-		pose->SetClipboardMode(FSClipboardFindNodeMode(pose->TargetModel(),true));
-		if (pose->ClipboardMode()) hasPosesInClipboard = true;
-	}
 	fSelectionList->MakeEmpty();
 	fMimeTypesInSelectionCache.MakeEmpty();
 	
-	SetHasPosesInClipboard(hasPosesInClipboard);
+	SetHasPosesInClipboard(hasPosesInClipboard | fHasPosesInClipboard);
+
+	if (fullInvalidateNeeded)
+		Invalidate();
 }
 
 

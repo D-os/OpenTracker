@@ -477,6 +477,12 @@ TTracker::MessageReceived(BMessage *message)
 			break;
 		}
 
+		case kFSClipboardChanges:
+		{
+			fClipboardRefsWatcher->UpdatePoseViews(message);
+			break;
+		}
+
 		default:
 			_inherited::MessageReceived(message);
 			break;

@@ -107,13 +107,6 @@ BPose::BPose(Model *model, BPoseView *view, bool selected)
 	if ((fClipboardMode = FSClipboardFindNodeMode(model,true)) != 0
 		&& !view->HasPosesInClipboard()) {
 		view->SetHasPosesInClipboard(true);
-		
-		BClipboardRefsWatcher *watcher = NULL;
-		if (dynamic_cast<TTracker *>(be_app) != NULL)
-			((TTracker *)be_app)->ClipboardRefsWatcher();
-
-		if (watcher)
-			watcher->AddNode(model->NodeRef());
 	}
 }
 

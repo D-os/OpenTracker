@@ -307,7 +307,7 @@ class BPoseView : public BView {
 		bool HasPosesInClipboard();
 		void SetHasPosesInClipboard(bool hasPoses);
 		void SetPosesClipboardMode(uint32 clipboardMode);
-		void UpdatePosesClipboardModeFromClipboard();
+		void UpdatePosesClipboardModeFromClipboard(BMessage *clipboardReport = NULL);
 
 		// filtering
 		void SetRefFilter(BRefFilter *);
