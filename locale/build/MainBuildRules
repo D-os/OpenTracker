@@ -79,6 +79,34 @@ rule StaticLibrary
 	}
 }
 
+if $(OSPLAT) = X86 {
+rule UnitTest
+{
+	# UnitTest <name> : <sources> : <libraries> ;
+	#
+	# Builds a unittest add-on. The add-on is located in the respective
+	# unittest directory.
+	#
+	# <name>: Name of the unit test add-on. Grist is allowed.
+	# <sources>: List of source files. Grist will be set.
+	# <libraries>: List of libraries to link against.
+	#
+	local name = $(1) ;
+	local sources = $(2) ;
+	local objects = [ FGristFiles $(sources:S=$(SUFOBJ)) ] ;
+	local libs = $(3) ;
+
+	AddOn $(name) : $(sources) : libcppunit.so $(STDC++LIB) $(libs) ;
+	MakeLocate $(name) : [ FDirName $(LOCALE_UNITTESTS_DIR) lib ] ;
+	Depends tests : $(name) ;
+
+	ObjectSysHdrs $(sources) : [ FDirName $(LOCALE_UNITTESTS_DIR) include ] ;
+	Depends $(objects) : UnitTester ;	# actually on the includes
+}
+} else {	# TODO: No unit tests on PPC yet.
+rule UnitTest { }
+}
+
 rule LinkAgainst
 {
 	# LinkAgainst <name> : <libs> ;
@@ -209,10 +237,36 @@ rule SubDirSysHdrs
 	# search paths.
 	#
 	# <dirs>: The directories to be added to the current subdir's system
-	# include search paths.
+	#         include search paths.
 	#
 	SUBDIRSYSHDRS += [ FDirName $(1) ] ;
 }
+
+rule ObjectSysHdrs
+{
+	# SubDirSysHdrs <sources or objects> : <dirs> ;
+	#
+	# Adds directories to the system include search paths for the given
+	# sources or objects. Counterpart of ObjectHdrs which adds non-system
+	# include search paths.
+	#
+	# NOTE: This rule must be invoked *after* the rule that generates the
+	# objects.
+	#
+	# <sources or objects>: The targets for which to add system include
+	#                       search paths.
+	# <dirs>: The directories to be added to the given objects' system
+	#         include search paths.
+	#
+
+	local s ;
+	for s in [ FGristFiles $(<:S=$(SUFOBJ)) ] {
+		SYSHDRS on $(s) += $(>) ;
+		CCHDRS on $(s) = [ on $(s) FIncludes $(HDRS) ]
+			$(HDRS_INCLUDES_SEPARATOR) [ on $(s) FSysIncludes $(SYSHDRS) ] ;
+	}
+}
+
 
 # FSysIncludes <dirs> ;
 #
@@ -222,4 +276,11 @@ if $(OSPLAT) = X86 {
 	rule FSysIncludes { return -I$(<) ; }
 } else {
 	rule FSysIncludes { return "-i "$(<) ; }
+}
+
+# Variable referring to the STL.
+if $(OSPLAT) = X86 {
+	STDC++LIB = stdc++.r4 ;
+} else {
+	STDC++LIB = mslcpp_4_0 ;
 }
