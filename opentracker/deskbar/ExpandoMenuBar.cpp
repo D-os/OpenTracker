@@ -696,21 +696,13 @@ TExpandoMenuBar::monitor_team_windows(void *arg)
 {
 	TExpandoMenuBar *teamMenu = (TExpandoMenuBar *)arg;
 
-	int32 totalItems = 0;
-	bool itemModified = false;
-
-	TWindowMenuItem *item = NULL;
-	TTeamMenuItem *teamItem = NULL;
-
-	int32 *tokens = NULL;
-
 	while (teamMenu->sDoMonitor) {
 		sMonLocker.Lock();
 
-		totalItems = teamMenu->CountItems();
+		int32 totalItems = teamMenu->CountItems();
 
 		// Set all WindowMenuItems to require an update.
-		item = NULL;
+		TWindowMenuItem *item = NULL;
 		for (int32 i = 0; i < totalItems; i++) {
 			if (!teamMenu->SubmenuAt(i)){
 				item = static_cast<TWindowMenuItem *>(teamMenu->ItemAt(i));
@@ -719,8 +711,9 @@ TExpandoMenuBar::monitor_team_windows(void *arg)
 		}
 
 		// Perform SetTo() on all the items that still exist as well as add new items.
-		itemModified = false;
-		teamItem = NULL;
+		bool itemModified = false, resize = false;
+		TTeamMenuItem *teamItem = NULL;
+
 		for (int32 i = 0; i < totalItems; i++) {
 			if (teamMenu->SubmenuAt(i)){
 				teamItem = static_cast<TTeamMenuItem *>(teamMenu->ItemAt(i));
@@ -731,7 +724,7 @@ TExpandoMenuBar::monitor_team_windows(void *arg)
 						// WindowMenu.cpp
 						team_id	theTeam = (team_id)teamItem->Teams()->ItemAt(j);
 						int32 count = 0;
-						tokens = get_token_list(theTeam, &count);
+						int32 *tokens = get_token_list(theTeam, &count);
 
 						for (int32 k = 0; k < count; k++) {
 							window_info *wInfo = get_window_info(tokens[k]);
@@ -760,10 +753,7 @@ TExpandoMenuBar::monitor_team_windows(void *arg)
 										false);
 									item->ExpandedItem(true);
 									teamMenu->AddItem(item, i + 1);
-									itemModified = true;
-									teamMenu->Window()->Lock();
-									teamMenu->SizeWindow();
-									teamMenu->Window()->Unlock();
+									resize = true;
 								}
 							}
 							free(wInfo);
@@ -782,17 +772,17 @@ TExpandoMenuBar::monitor_team_windows(void *arg)
 					item = static_cast<TWindowMenuItem *>(teamMenu->RemoveItem(i));
 					delete item;
 					totalItems--;
-					teamMenu->Window()->Lock();
-					teamMenu->SizeWindow();
-					teamMenu->Window()->Unlock();
+
+					resize = true;
 				}
 			}
 		}
 
 		// If any of the WindowMenuItems changed state, we need to force a repaint.
-		if (itemModified) {
-			teamMenu->Window()->Lock();
+		if ((itemModified || resize) && teamMenu->Window()->LockWithTimeout(50000) == B_OK) {
 			teamMenu->Invalidate();
+			if (resize)
+				teamMenu->SizeWindow();
 			teamMenu->Window()->Unlock();
 		}
 
