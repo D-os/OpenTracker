@@ -8434,7 +8434,7 @@ void
 BPoseView::StartWatchDateFormatChange()
 {
 	if (IsFilePanel()) {
-		BMessenger tracker("application/x-vnd.Be-TRAK");
+		BMessenger tracker(kTrackerSignature);
 		BHandler::StartWatching(tracker, kDateFormatChanged);
 	} else
 		BHandler::StartWatching(be_app, kDateFormatChanged);
@@ -8446,7 +8446,7 @@ void
 BPoseView::StopWatchDateFormatChange()
 {
 	if (IsFilePanel()) {
-		BMessenger tracker("application/x-vnd.Be-TRAK");
+		BMessenger tracker(kTrackerSignature);
 		BHandler::StopWatching(tracker, (uint32)kDateFormatChanged);
 	} else {
 		BHandler::StopWatching(be_app, (uint32)kDateFormatChanged);

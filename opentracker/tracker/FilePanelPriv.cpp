@@ -72,6 +72,7 @@ All rights reserved.
 #include "NavMenu.h"
 #include "PoseView.h"
 #include "Tracker.h"
+#include "tracker_private.h"
 
 
 const char *kDefaultFilePanelTemplate = "FilePanelSettings";
@@ -325,7 +326,7 @@ TFilePanel::TFilePanel(file_panel_mode mode, BMessenger *target,
 	AddCommonFilter(new BMessageFilter(B_SIMPLE_DATA, TFilePanel::MessageDropFilter));
 	AddCommonFilter(new BMessageFilter(B_NODE_MONITOR, TFilePanel::FSFilter));
 
-	BMessenger tracker("application/x-vnd.Be-TRAK");
+	BMessenger tracker(kTrackerSignature);
 	StartWatching(tracker, kDesktopFilePanelRootChanged);
 
 	Init();
@@ -344,7 +345,7 @@ TFilePanel::~TFilePanel()
 		fConfigWindow->Quit();
 	}
 	
-	BMessenger tracker("application/x-vnd.Be-TRAK");
+	BMessenger tracker(kTrackerSignature);
 	StopWatchingAll(tracker);
 
 	delete fMessage;
@@ -1515,7 +1516,7 @@ BFilePanelPoseView::StartWatching()
 {
 	TTracker::WatchNode(0, B_WATCH_MOUNT, this);
 
-	BMessenger tracker("application/x-vnd.Be-TRAK");
+	BMessenger tracker(kTrackerSignature);
 	BHandler::StartWatching(tracker, kVolumesOnDesktopChanged);
 	BHandler::StartWatching(tracker, kDesktopIntegrationChanged);
 }
@@ -1526,7 +1527,7 @@ BFilePanelPoseView::StopWatching()
 {
 	stop_watching(this);
 
-	BMessenger tracker("application/x-vnd.Be-TRAK");
+	BMessenger tracker(kTrackerSignature);
 	BHandler::StopWatchingAll(tracker);
 }
 

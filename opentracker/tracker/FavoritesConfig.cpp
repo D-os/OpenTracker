@@ -81,6 +81,7 @@ All rights reserved.
 #include "IconMenuItem.h"
 #include "Model.h"
 #include "ObjectList.h"
+#include "tracker_private.h"
 #include "Utilities.h"
 
 #include "FavoritesConfig.h"
@@ -269,7 +270,7 @@ TFavoritesConfigWindow::TFavoritesConfigWindow(BRect frame, const char *title,
 
 	AddShortcut(B_UP_ARROW, B_COMMAND_KEY, new BMessage(kTraverseUp));
 	
-	BMessenger tracker("application/x-vnd.Be-TRAK");
+	BMessenger tracker(kTrackerSignature);
 	StartWatching(tracker, kFavoriteCountChanged);
 }
 
@@ -282,7 +283,7 @@ TFavoritesConfigWindow::~TFavoritesConfigWindow()
 		//	kill the filepanel if its still showing
 		fAddPanel->Hide();		
 
-	BMessenger tracker("application/x-vnd.Be-TRAK");
+	BMessenger tracker(kTrackerSignature);
 	StopWatchingAll(tracker);
 
 }
@@ -954,7 +955,7 @@ TFavoritesConfigWindow::UpdateFoldersCount(int32 count, bool notifyTracker)
 	fParent.SendMessage(&message);
 	
 	if (notifyTracker) {
-		BMessenger tracker("application/x-vnd.Be-TRAK");
+		BMessenger tracker(kTrackerSignature);
 		BMessage notificationMessage(kFavoriteCountChangedExternally);
 		notificationMessage.AddInt32("RecentFolders", count);
 		tracker.SendMessage(&notificationMessage);
@@ -972,7 +973,7 @@ TFavoritesConfigWindow::UpdateDocsCount(int32 count, bool notifyTracker)
 	fParent.SendMessage(&message);
 
 	if (notifyTracker) {
-		BMessenger tracker("application/x-vnd.Be-TRAK");
+		BMessenger tracker(kTrackerSignature);
 		BMessage notificationMessage(kFavoriteCountChangedExternally);
 		notificationMessage.AddInt32("RecentDocuments", count);
 		tracker.SendMessage(&notificationMessage);
@@ -990,7 +991,7 @@ TFavoritesConfigWindow::UpdateAppsCount(int32 count, bool notifyTracker)
 	fParent.SendMessage(&message);
 
 	if (notifyTracker) {
-		BMessenger tracker("application/x-vnd.Be-TRAK");
+		BMessenger tracker(kTrackerSignature);
 		BMessage notificationMessage(kFavoriteCountChangedExternally);
 		notificationMessage.AddInt32("RecentApplications", count);
 		tracker.SendMessage(&notificationMessage);

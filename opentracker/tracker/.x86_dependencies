@@ -90,7 +90,7 @@ $(OBJ_DIR)/FSUtils.o : FSUtils.cpp Attributes.h Bitmaps.h TrackerIcons.h \
 $(OBJ_DIR)/FavoritesConfig.o : FavoritesConfig.cpp Commands.h PublicCommands.h \
  IconCache.h ../shared/AutoLock.h ../shared/ObjectList.h \
  OpenHashTable.h Utilities.h IconMenuItem.h Model.h \
- ../shared/FavoritesConfig.h
+ ../shared/tracker_private.h ../shared/FavoritesConfig.h
 $(OBJ_DIR)/FavoritesMenu.o : FavoritesMenu.cpp EntryIterator.h \
  ../shared/ObjectList.h NodeWalker.h FavoritesMenu.h \
  ../shared/NavMenu.h SlowMenu.h IconMenuItem.h Model.h IconCache.h \
