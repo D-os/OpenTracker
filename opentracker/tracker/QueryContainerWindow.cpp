@@ -101,7 +101,7 @@ BQueryContainerWindow::AddWindowMenu(BMenu *menu)
 	item->SetTarget(PoseView());
 	menu->AddItem(item);
 
-	item = new BMenuItem("Close", new BMessage(B_CLOSE_REQUESTED), 'W');
+	item = new BMenuItem("Close", new BMessage(B_QUIT_REQUESTED), 'W');
 	item->SetTarget(this);
 	menu->AddItem(item);
 }
@@ -116,7 +116,7 @@ BQueryContainerWindow::AddWindowContextMenus(BMenu *menu)
 	menu->AddItem(new BMenuItem("Select"B_UTF8_ELLIPSIS, new BMessage(kShowSelectionWindow), 'A', B_SHIFT_KEY));
 	menu->AddItem(new BMenuItem("Select All", new BMessage(B_SELECT_ALL), 'A'));
 	BMenuItem *closeItem = new BMenuItem("Close",
-		new BMessage(B_CLOSE_REQUESTED), 'W');
+		new BMessage(B_QUIT_REQUESTED), 'W');
 	menu->AddItem(closeItem);
 	// target items as needed
 	menu->SetTargetForItems(PoseView());

@@ -1087,7 +1087,7 @@ TTracker::CloseActiveQueryWindows(dev_t device)
 		if (window) {
 			AutoLock<BWindow> lock(window);
 			if (window->ActiveOnDevice(device)) {
-				window->PostMessage(B_CLOSE_REQUESTED);
+				window->PostMessage(B_QUIT_REQUESTED);
 				closed = true;
 			}
 		}
@@ -1158,7 +1158,7 @@ TTracker::CloseWindowAndChildren(const node_ref *node)
 	int32 numItems = closeList.CountItems();
 	for (int32 index = 0; index < numItems; index++) {
 		BContainerWindow *window = closeList.ItemAt(index);
-		window->PostMessage(B_CLOSE_REQUESTED);
+		window->PostMessage(B_QUIT_REQUESTED);
 	}
 }
 
@@ -1178,7 +1178,7 @@ TTracker::CloseAllWindows()
 		// avoid the desktop
 		if (!dynamic_cast<BDeskWindow *>(window)
 			&& !dynamic_cast<BStatusWindow *>(window))
-			window->PostMessage(B_CLOSE_REQUESTED);
+			window->PostMessage(B_QUIT_REQUESTED);
 	}
 	// count from end to beginning so we can remove items safely
 	for (int32 index = fWindowList.CountItems() - 1; index >= 0; index--) {
@@ -1419,7 +1419,7 @@ TTracker::CloseParentWindowCommon(BContainerWindow *window)
 		// don't close the destop
 		return false;
 
-	window->PostMessage(B_CLOSE_REQUESTED);
+	window->PostMessage(B_QUIT_REQUESTED);
 	return true;
 }
 

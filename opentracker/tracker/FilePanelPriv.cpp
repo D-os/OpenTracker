@@ -1183,7 +1183,7 @@ TFilePanel::MessageReceived(BMessage *message)
 			break;
 			
 		case kCancelButton:
-			PostMessage(B_CLOSE_REQUESTED);
+			PostMessage(B_QUIT_REQUESTED);
 			break;
 
 		case kOpenDir:
@@ -1428,7 +1428,7 @@ TFilePanel::HandleSaveButton()
 
 	// close window if we're dealing with standard message
 	if (fHideWhenDone)
-		PostMessage(B_CLOSE_REQUESTED);
+		PostMessage(B_QUIT_REQUESTED);
 }
 
 
@@ -1461,7 +1461,7 @@ TFilePanel::OpenSelectionCommon(BMessage *openMessage)
 
 	// close window if we're dealing with standard message
 	if (fHideWhenDone)
-		PostMessage(B_CLOSE_REQUESTED);
+		PostMessage(B_QUIT_REQUESTED);
 }
 
 

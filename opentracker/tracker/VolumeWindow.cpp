@@ -130,7 +130,7 @@ BVolumeWindow::AddWindowContextMenus(BMenu *menu)
 	menu->AddItem(new BMenuItem("Select All", new BMessage(B_SELECT_ALL), 'A'));
 	menu->AddItem(new BMenuItem("Invert Selection", new BMessage(kInvertSelection), 'S'));
 
-	BMenuItem *closeItem = new BMenuItem("Close",new BMessage(B_CLOSE_REQUESTED), 'W');
+	BMenuItem *closeItem = new BMenuItem("Close",new BMessage(B_QUIT_REQUESTED), 'W');
 	menu->AddItem(closeItem);
 	menu->AddSeparatorItem();
 

@@ -1679,7 +1679,7 @@ void
 BContainerWindow::SetCloseItem(BMenu *menu)
 {
 	BMenuItem *item;	
-	if ((item = menu->FindItem(B_CLOSE_REQUESTED)) == NULL
+	if ((item = menu->FindItem(B_QUIT_REQUESTED)) == NULL
 		&& (item = menu->FindItem(kCloseAllWindows)) == NULL)
 		return;
 
@@ -1692,7 +1692,7 @@ BContainerWindow::SetCloseItem(BMenu *menu)
 		item->SetLabel("Close");
 		item->SetShortcut('W', B_COMMAND_KEY);
 		item->SetTarget(this);
-		item->SetMessage(new BMessage(B_CLOSE_REQUESTED));
+		item->SetMessage(new BMessage(B_QUIT_REQUESTED));
 	}
 }
 
@@ -1848,7 +1848,7 @@ BContainerWindow::AddWindowMenu(BMenu *menu)
 		menu->AddItem(item);
 	}
 
-	item = new BMenuItem("Close", new BMessage(B_CLOSE_REQUESTED), 'W');
+	item = new BMenuItem("Close", new BMessage(B_QUIT_REQUESTED), 'W');
 	item->SetTarget(this);
 	menu->AddItem(item);
 
@@ -2546,7 +2546,7 @@ BContainerWindow::AddWindowContextMenus(BMenu *menu)
 		menu->AddItem(new BMenuItem("Open Parent", new BMessage(kOpenParentDir),
 			B_UP_ARROW));
 
-	BMenuItem *closeItem = new BMenuItem("Close", new BMessage(B_CLOSE_REQUESTED),
+	BMenuItem *closeItem = new BMenuItem("Close", new BMessage(B_QUIT_REQUESTED),
 		'W');
 	menu->AddItem(closeItem);
 	menu->AddSeparatorItem();
