@@ -390,14 +390,15 @@ BNavMenu::StartBuildingItemList()
 		|| !entry.Exists()) 
 		return false;
 
+	fItemList = new BObjectList<BMenuItem>(50);
+
 	fIteratingDesktop = false;
 	
 	BDirectory parent;
-	status_t err = entry.GetParent(&parent);
-	fItemList = new BObjectList<BMenuItem>(50);
+	status_t status = entry.GetParent(&parent);
 
 	// if ref is the root item then build list of volume root dirs
-	fFlags |= (err == B_ENTRY_NOT_FOUND) ? kVolumesOnly : 0;
+	fFlags = (fFlags & ~kVolumesOnly) | (status == B_ENTRY_NOT_FOUND ? kVolumesOnly : 0);
 	if (fFlags & kVolumesOnly)
 		return true;
 
