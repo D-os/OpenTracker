@@ -45,24 +45,29 @@ TrackerString::TrackerString()
 {
 }
 
+
 TrackerString::TrackerString(const char *string)
 	:	BString(string)
 {
 }
+
 
 TrackerString::TrackerString(const TrackerString &string)
 	:	BString(string)
 {
 }
 
+
 TrackerString::TrackerString(const char *string, int32 maxLength)
 	:	BString(string, maxLength)
 {
 }
 
+
 TrackerString::~TrackerString()
 {
 }
+
 
 bool
 TrackerString::Matches(const char *string, bool caseSensitivity,
@@ -90,6 +95,7 @@ TrackerString::Matches(const char *string, bool caseSensitivity,
 	}
 }
 
+
 bool
 TrackerString::MatchesRegExp(const char *pattern, bool caseSensitivity) const
 {
@@ -109,11 +115,13 @@ TrackerString::MatchesRegExp(const char *pattern, bool caseSensitivity) const
 	return expression.Matches(textString);
 }
 
+
 bool
 TrackerString::MatchesGlob(const char *string, bool caseSensitivity) const
 {
 	return StringMatchesPattern(String(), string, caseSensitivity);
 }
+
 
 bool
 TrackerString::EndsWith(const char *string, bool caseSensitivity) const
@@ -124,6 +132,7 @@ TrackerString::EndsWith(const char *string, bool caseSensitivity) const
 		return IFindLast(string) == Length() - (int32)strlen(string);
 }
 
+
 bool
 TrackerString::StartsWith(const char *string, bool caseSensitivity) const
 {
@@ -133,6 +142,7 @@ TrackerString::StartsWith(const char *string, bool caseSensitivity) const
 		return IFindFirst(string) == 0;
 }
 
+
 bool
 TrackerString::Contains(const char *string, bool caseSensitivity) const
 {
@@ -141,6 +151,7 @@ TrackerString::Contains(const char *string, bool caseSensitivity) const
 	else
 		return IFindFirst(string) > -1;
 }
+
 
 // About the ?Find* functions:
 // The leading star here has been compliance with BString,
@@ -153,11 +164,13 @@ TrackerString::Contains(const char *string, bool caseSensitivity) const
 // inserting a check on the first character
 // before calling the str*cmp functions.
 
+
 int32
 TrackerString::FindFirst(const BString &string) const
 {
 	return FindFirst(string.String(), 0);
 }
+
 
 int32
 TrackerString::FindFirst(const char *string) const
@@ -165,11 +178,13 @@ TrackerString::FindFirst(const char *string) const
 	return FindFirst(string, 0);
 }
 
+
 int32
 TrackerString::FindFirst(const BString &string, int32 fromOffset) const
 {
 	return FindFirst(string.String(), fromOffset);
 }
+
 
 int32
 TrackerString::FindFirst(const char *string, int32 fromOffset) const
@@ -204,12 +219,14 @@ TrackerString::FindFirst(const char *string, int32 fromOffset) const
 	return position;
 }
 
+
 int32
 TrackerString::FindFirst(char ch) const
 {
 	char string[2] = {ch, '\0'};
 	return FindFirst(string, 0);
 }
+
 
 int32
 TrackerString::FindFirst(char ch, int32 fromOffset) const
@@ -225,17 +242,20 @@ TrackerString::FindLast(const BString &string) const
 	return FindLast(string.String(), Length() - 1);
 }
 
+
 int32
 TrackerString::FindLast(const char *string) const
 {
 	return FindLast(string, Length() - 1);
 }
 
+
 int32
 TrackerString::FindLast(const BString &string, int32 beforeOffset) const
 {
 	return FindLast(string.String(), beforeOffset);
 }
+
 
 int32
 TrackerString::FindLast(const char *string, int32 beforeOffset) const
@@ -269,12 +289,14 @@ TrackerString::FindLast(const char *string, int32 beforeOffset) const
 	return position;
 }
 
+
 int32
 TrackerString::FindLast(char ch) const
 {
 	char string[2] = {ch, '\0'};
 	return FindLast(string, Length() - 1);
 }
+
 
 int32
 TrackerString::FindLast(char ch, int32 beforeOffset) const
@@ -290,17 +312,20 @@ TrackerString::IFindFirst(const BString &string) const
 	return IFindFirst(string.String(), 0);
 }
 
+
 int32
 TrackerString::IFindFirst(const char *string) const
 {
 	return IFindFirst(string, 0);
 }
 
+
 int32
 TrackerString::IFindFirst(const BString &string, int32 fromOffset) const
 {
-	return FindFirst(string.String(), fromOffset);
+	return IFindFirst(string.String(), fromOffset);
 }
+
 
 int32
 TrackerString::IFindFirst(const char *string, int32 fromOffset) const
@@ -341,17 +366,20 @@ TrackerString::IFindLast(const BString &string) const
 	return IFindLast(string.String(), Length() - 1);
 }
 
+
 int32
 TrackerString::IFindLast(const char *string) const
 {
 	return IFindLast(string, Length() - 1);
 }
 
+
 int32
 TrackerString::IFindLast(const BString &string, int32 beforeOffset) const
 {
 	return IFindLast(string.String(), beforeOffset);
 }
+
 
 int32
 TrackerString::IFindLast(const char *string, int32 beforeOffset) const
@@ -384,6 +412,7 @@ TrackerString::IFindLast(const char *string, int32 beforeOffset) const
 				
 	return position;
 }
+
 
 // MatchesBracketExpression() assumes 'pattern' to point to the
 // character following the initial '[' in a bracket expression.
@@ -597,6 +626,7 @@ TrackerString::StringMatchesPattern(const char *string, const char *pattern,
 	return *string == '\0' && *pattern == '\0';
 }
 
+
 bool
 TrackerString::UTF8CharsAreEqual(const char *string1, const char *string2) const
 {
@@ -618,6 +648,7 @@ TrackerString::UTF8CharsAreEqual(const char *string1, const char *string2) const
 		return false;
 }
 
+
 const char *
 TrackerString::MoveToEndOfGlyph(const char *string) const
 {
@@ -629,11 +660,13 @@ TrackerString::MoveToEndOfGlyph(const char *string) const
 	return ptr;
 }
 
+
 bool
 TrackerString::IsGlyph(char ch) const
 {
 	return (ch & 0x80) == 0x80;
 }
+
 
 bool
 TrackerString::IsInsideGlyph(char ch) const
@@ -641,10 +674,9 @@ TrackerString::IsInsideGlyph(char ch) const
 	return (ch & 0xC0) == 0x80;
 }
 
+
 bool
 TrackerString::IsStartOfGlyph(char ch) const
 {
 	return (ch & 0xC0) == 0xC0;
 }
-
-
