@@ -499,6 +499,7 @@ TFilePanel::AdjustButton()
 				} else {
 					// insert the name of the selected model into the text field
 					textControl->SetText(model->Name());
+					textControl->MakeFocus(true);
 				}
 			}
 		} else
