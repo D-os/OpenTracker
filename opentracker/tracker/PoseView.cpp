@@ -2704,7 +2704,7 @@ BPoseView::SetPosesClipboardMode(uint32 clipboardMode)
 			BPose *pose = fPoseList->ItemAt(index);
 			if (pose->ClipboardMode() != clipboardMode) {
 				pose->SetClipboardMode(clipboardMode);
-				Invalidate(pose->CalcRect(loc,this,false));
+				Invalidate(pose->CalcRect(loc, this, false));
 			}
 			loc.y += fListElemHeight;
 		}
@@ -2762,10 +2762,10 @@ BPoseView::UpdatePosesClipboardModeFromClipboard()
 					pose->Select(false);
 
 					BRect poseRect(pose->CalcRect(this));
-					if (EraseWidgetTextBackground() || clipboardMode == kMoveSelectionTo)
+					if (!EraseWidgetTextBackground() || clipboardMode == kMoveSelectionTo)
 						Invalidate(poseRect);
 					else
-						pose->Draw(poseRect,this,false);
+						pose->Draw(poseRect, this, false);
 				}
 				if (pose->Location().y > bounds.bottom)
 					break;
@@ -7602,9 +7602,14 @@ BPoseView::AddRemovePoseFromSelection(BPose *pose, int32 index, bool select)
 	// Do not allow double selection/deselection.
 	if (select == pose->IsSelected())
 		return;
-	
-	pose->Select(select);	
-	DrawPose(pose, index, false);
+
+	pose->Select(select);
+
+	// update display
+	if (EraseWidgetTextBackground())
+		DrawPose(pose, index, false);
+	else
+		Invalidate(pose->CalcRect(this));
 
 	if (select)
 		fSelectionList->AddItem(pose);
