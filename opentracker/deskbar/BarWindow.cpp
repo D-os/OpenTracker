@@ -50,6 +50,7 @@ All rights reserved.
 #include "BeMenu.h"
 #include "PublicCommands.h"
 #include "StatusView.h"
+#include "tracker_private.h"
 
 
 // This is a very ugly hack to be able to call the private BMenuBar::StartMenuBar()
@@ -65,7 +66,6 @@ All rights reserved.
 
 
 TBeMenu *TBarWindow::sBeMenu = NULL;
-
 
 
 TBarWindow::TBarWindow()
@@ -92,6 +92,7 @@ TBarWindow::TBarWindow()
 void
 TBarWindow::DispatchMessage(BMessage *message, BHandler *handler)
 {
+	// ToDo: check if the two following lines are doing anything...
 	if (message->what == B_MOUSE_DOWN) 
 		Activate(true);
 
@@ -155,7 +156,7 @@ TBarWindow::MessageReceived(BMessage *message)
 	switch (message->what) {
 		case kFindButton:
 			{
-				BMessenger tracker("application/x-vnd.Be-TRAK");
+				BMessenger tracker(kTrackerSignature);
 				tracker.SendMessage(message);
 				break;
 			}
@@ -405,6 +406,7 @@ TBarWindow::SetLocation(BMessage *message)
 		SetDeskbarLocation(location, expand);
 }
 
+
 void
 TBarWindow::IsExpanded(BMessage *message)
 {
@@ -412,6 +414,7 @@ TBarWindow::IsExpanded(BMessage *message)
 	reply.AddBool("expanded", fBarView->Expando());
 	message->SendReply(&reply);
 }
+
 
 void
 TBarWindow::Expand(BMessage *message)
@@ -424,6 +427,7 @@ TBarWindow::Expand(BMessage *message)
 		fBarView->ChangeState(expand, vertical, left, top);
 	}
 }
+
 
 void
 TBarWindow::ItemInfo(BMessage *message)
@@ -451,6 +455,7 @@ TBarWindow::ItemInfo(BMessage *message)
 	message->SendReply(&replyMsg);
 }
 
+
 void
 TBarWindow::ItemExists(BMessage *message)
 {
@@ -474,6 +479,7 @@ TBarWindow::ItemExists(BMessage *message)
 	message->SendReply(&replyMsg);
 }
 
+
 void
 TBarWindow::CountItems(BMessage *message)
 {
@@ -488,6 +494,7 @@ TBarWindow::CountItems(BMessage *message)
 	reply.AddInt32("count", fBarView->CountItems(shelf));
 	message->SendReply(&reply);
 }
+
 
 void
 TBarWindow::AddItem(BMessage *message)
@@ -527,6 +534,7 @@ TBarWindow::AddItem(BMessage *message)
 	message->SendReply(&reply);
 }
 
+
 void
 TBarWindow::RemoveItem(BMessage *message)
 {
@@ -553,6 +561,7 @@ TBarWindow::RemoveItem(BMessage *message)
 	}
 #endif
 }
+
 
 void
 TBarWindow::GetIconFrame(BMessage *message)
