@@ -363,6 +363,10 @@ namespace BPrivate {
 void 
 FadeRGBA32Horizontal(uint32 *bits, int32 width, int32 height, int32 from, int32 to)
 {
+	// check parameters
+	if (width < 0 || height < 0 || from < 0 || to < 0)
+		return;
+
 	float change = 1.f / (to - from);
 	if (from > to) {
 		int32 temp = from;
@@ -393,6 +397,10 @@ FadeRGBA32Horizontal(uint32 *bits, int32 width, int32 height, int32 from, int32 
 void 
 FadeRGBA32Vertical(uint32 *bits, int32 width, int32 height, int32 from, int32 to)
 {
+	// check parameters
+	if (width < 0 || height < 0 || from < 0 || to < 0)
+		return;
+
 	if (from > to)
 		bits += width * (height - (from - to));
 

@@ -466,7 +466,7 @@ BPoseView::RestoreState(AttributeStreamNode *node)
 			wrongEndianness = true;
 			size = (size_t)node->Contains(name, B_RAW_TYPE);
 		}
-	
+
 		if (size > 0 && size < 10000) {
 			// check for invalid sizes here to protect against munged attributes
 			char *buffer = new char[size];
@@ -6376,6 +6376,13 @@ BPoseView::MakeDragBitmap(BRect dragRect, BPoint clickedPoint, int32 clickedPose
 		clickedPoint.y - kTransparentDragThreshold.x / 2,
 		clickedPoint.x + kTransparentDragThreshold.x / 2,
 		clickedPoint.y + kTransparentDragThreshold.x / 2);
+
+	// (BRect & BRect) doesn't work correctly if the rectangles don't intersect
+	// this catches a bug that is produced somewhere before this function is called
+	if (inner.right < dragRect.left || inner.bottom < dragRect.top
+		|| inner.left > dragRect.right || inner.top > dragRect.bottom)
+		return NULL;
+
 	inner = inner & dragRect;
 
 	// If the selection is bigger than the specified limit, the
