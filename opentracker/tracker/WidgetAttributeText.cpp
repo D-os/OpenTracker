@@ -1005,6 +1005,13 @@ SizeAttributeText::ReadValue()
 {
 	fValueDirty = false;
 	// get the size
+	
+	if (fModel->IsVolume()) {
+		BVolume volume(fModel->NodeRef()->device);
+
+		return volume.Capacity();
+	}
+
 	if (fModel->IsDirectory() || fModel->IsQuery()
 		|| fModel->IsQueryTemplate() || fModel->IsSymLink())
 		return kUnknownSize;
