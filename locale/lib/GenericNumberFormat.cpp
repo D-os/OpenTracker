@@ -531,7 +531,7 @@ class BGenericNumberFormat::Integer {
 			number_format_sign_policy signPolicy,
 			const GroupingInfo *groupingInfo, int32 minDigits)  const
 		{
-			const Symbol *suffix;
+			const Symbol *suffix = NULL;
 			// write sign prefix
 			if (fNegative) {
 				writer.Append(signSymbols->MinusPrefix());
@@ -738,8 +738,8 @@ class BGenericNumberFormat::Float {
 			int32 maxFractionDigits, bool forceFractionSeparator,
 			bool keepTrailingFractionZeros) const
 		{
-			const Symbol *suffix;
-			const Symbol *mantissaSuffix;
+			const Symbol *suffix = NULL;
+			const Symbol *mantissaSuffix = NULL;
 			// write sign prefix
 			if (fNegative) {
 				writer.Append(signSymbols->MinusPrefix());
@@ -826,8 +826,8 @@ class BGenericNumberFormat::Float {
 			int32 maxFractionDigits, bool forceFractionSeparator,
 			bool keepTrailingFractionZeros) const
 		{
-			const Symbol *suffix;
-			const Symbol *mantissaSuffix;
+			const Symbol *suffix = NULL;
+			const Symbol *mantissaSuffix = NULL;
 			// write sign prefix
 			if (fNegative) {
 				writer.Append(signSymbols->MinusPrefix());
@@ -1117,7 +1117,7 @@ BGenericNumberFormat::FormatFloat(const BFloatFormatParameters *parameters,
 	// consider alignment and check the available space in the buffer
 	int32 padding = max(0L, (int32)parameters->FormatWidth() - charCount);
 // TODO: Padding with zeros.
-	if (bufferSize <= stringLength + padding)
+	if ((int32)bufferSize <= stringLength + padding)
 		return EOVERFLOW;
 	// prepare for writing
 	writer.SetTo(buffer, bufferSize);
@@ -1236,7 +1236,7 @@ BGenericNumberFormat::SetGroupingInfo(const char **groupingSeparators,
 	// check parameters
 	if (groupingSeparators && separatorCount > 0 && groupingSizes
 		&& sizeCount) {
-		for (int i = 0; i < separatorCount; i++) {
+		for (int i = 0; i < (int)separatorCount; i++) {
 			if (!groupingSeparators[i])
 				return B_BAD_VALUE;
 		}
@@ -1377,7 +1377,7 @@ BGenericNumberFormat::FormatInteger(
 	// consider alignment and check the available space in the buffer
 	int32 padding = max(0L, (int32)parameters->FormatWidth() - charCount);
 // TODO: Padding with zeros.
-	if (bufferSize <= stringLength + padding)
+	if ((int32)bufferSize <= stringLength + padding)
 		return EOVERFLOW;
 	// prepare for writing
 	writer.SetTo(buffer, bufferSize);
