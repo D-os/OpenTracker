@@ -57,8 +57,8 @@ struct BCatalogAddOnInfo {
 BLocaleRoster::BLocaleRoster()
 {
 	// ToDo: change this to fetch preferred languages from prefs
-	fPreferredLanguages.AddItem("Deutsch");
-	fPreferredLanguages.AddItem("English");
+	fPreferredLanguages.AddItem(const_cast<char *>("Deutsch"));
+	fPreferredLanguages.AddItem(const_cast<char *>("English"));
 }
 
 
