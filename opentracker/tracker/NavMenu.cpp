@@ -398,7 +398,7 @@ BNavMenu::StartBuildingItemList()
 	status_t status = entry.GetParent(&parent);
 
 	// if ref is the root item then build list of volume root dirs
-	fFlags = (fFlags & ~kVolumesOnly) | (status == B_ENTRY_NOT_FOUND ? kVolumesOnly : 0);
+	fFlags = uint8((fFlags & ~kVolumesOnly) | (status == B_ENTRY_NOT_FOUND ? kVolumesOnly : 0));
 	if (fFlags & kVolumesOnly)
 		return true;
 
@@ -773,7 +773,7 @@ BNavMenu::AddNavParentDir(const Model *model, uint32 what, BHandler *target)
 void
 BNavMenu::SetShowParent(bool show)
 {
-	fFlags = (fFlags & ~kShowParent) | (show ? kShowParent : 0);
+	fFlags = uint8((fFlags & ~kShowParent) | (show ? kShowParent : 0));
 }
 
 

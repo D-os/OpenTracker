@@ -1731,7 +1731,7 @@ AttributeView::FinishEditingTitle(bool commit)
 	bool reopen = false;
 
 	const char *text = fTitleEditView->Text();
-	int32 length = strlen(text);
+	uint32 length = strlen(text);
 	if (commit && strcmp(text, fModel->Name()) != 0 && length < B_FILE_NAME_LENGTH) {
 		BEntry entry(fModel->EntryRef());
 		BDirectory parent;

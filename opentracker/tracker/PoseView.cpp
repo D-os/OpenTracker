@@ -6428,7 +6428,7 @@ BPoseView::MakeDragBitmap(BRect dragRect, BPoint clickedPoint, int32 clickedPose
 	view->ConstrainClippingRegion(&newClip);
 
 	// Transparent draw magic
-	view->SetHighColor(0, 0, 0, fade ? 10 : 0);
+	view->SetHighColor(0, 0, 0, uint8(fade ? 10 : 0));
 	view->FillRect(view->Bounds());
 	view->Sync();
 
@@ -6449,7 +6449,7 @@ BPoseView::MakeDragBitmap(BRect dragRect, BPoint clickedPoint, int32 clickedPose
 	}
 
 	view->SetDrawingMode(B_OP_ALPHA);
-	view->SetHighColor(0, 0, 0, fade ? 164 : 128);
+	view->SetHighColor(0, 0, 0, uint8(fade ? 164 : 128));
 		// set the level of transparency by value
 	view->SetBlendingMode(B_CONSTANT_ALPHA, B_ALPHA_COMPOSITE);
 
