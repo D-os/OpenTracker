@@ -2,6 +2,8 @@
 #define _B_LOCALE_H_
 
 
+#include <LocaleBuild.h>
+
 #include <Collator.h>
 #include <Language.h>
 #include <Country.h>
@@ -11,7 +13,7 @@ class BCatalog;
 class BString;
 
 
-class BLocale {
+class _IMPEXP_LOCALE BLocale {
 	public:
 		BLocale();
 		~BLocale();
@@ -51,8 +53,8 @@ class BLocale {
 };
 
 // global objects
-extern BLocale *be_locale;
-extern BLocaleRoster *be_locale_roster;
+extern _IMPEXP_LOCALE BLocale *be_locale;
+extern _IMPEXP_LOCALE BLocaleRoster *be_locale_roster;
 
 //----------------------------------------------------------------------
 //--- country short-hands inlines ---

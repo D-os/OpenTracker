@@ -6,7 +6,7 @@
 
 class BNumberFormatImpl;
 
-class BNumberFormat : public BFormat {
+class _IMPEXP_LOCALE BNumberFormat : public BFormat {
 	protected:
 		BNumberFormat(const BNumberFormat &other);
 		~BNumberFormat();

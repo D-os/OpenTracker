@@ -1,6 +1,8 @@
 #ifndef _LANGINFO_H_
 #define	_LANGINFO_H_
 
+#include <LocaleBuild.h>
+
 #include <LocaleStrings.h>
 #include <nl_types.h>
 
@@ -79,6 +81,6 @@
 #ifdef __cplusplus
 extern "C"
 #endif
-char	*nl_langinfo(nl_item);
+_IMPEXP_LOCALE char	*nl_langinfo(nl_item);
 
 #endif	/* _LANGINFO_H_ */

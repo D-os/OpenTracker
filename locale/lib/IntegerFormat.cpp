@@ -40,6 +40,7 @@ BIntegerFormat::operator=(const BIntegerFormat &other)
 {
 	BNumberFormat::operator=(other);
 	BIntegerFormatParameters::operator=(other);
+	return *this;
 }
 
 // constructor

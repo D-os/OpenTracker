@@ -7,13 +7,15 @@
 typedef	int nl_item;
 typedef	void *nl_catd;
 
+#include <LocaleBuild.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern nl_catd catopen(const char *name, int oflag);
-extern char *catgets(nl_catd cat,int setID,int msgID,const char *defaultMessage);
-extern int catclose(nl_catd cat);
+extern _IMPEXP_LOCALE nl_catd catopen(const char *name, int oflag);
+extern _IMPEXP_LOCALE char *catgets(nl_catd cat,int setID,int msgID,const char *defaultMessage);
+extern _IMPEXP_LOCALE int catclose(nl_catd cat);
 
 #ifdef __cplusplus
 }

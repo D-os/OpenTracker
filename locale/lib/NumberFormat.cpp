@@ -17,6 +17,7 @@ BNumberFormat &
 BNumberFormat::operator=(const BNumberFormat &other)
 {
 	BFormat::operator=(other);
+	return *this;
 }
 
 // constructor

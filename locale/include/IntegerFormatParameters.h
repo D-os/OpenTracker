@@ -3,7 +3,7 @@
 
 #include <NumberFormatParameters.h>
 
-class BIntegerFormatParameters : public BNumberFormatParameters {
+class _IMPEXP_LOCALE BIntegerFormatParameters : public BNumberFormatParameters {
 	public:
 		BIntegerFormatParameters(const BIntegerFormatParameters *parent = NULL);
 		BIntegerFormatParameters(const BIntegerFormatParameters &other);

@@ -7,14 +7,13 @@
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
-#include <regex.h>
 
 #include <Catalog.h>
 using namespace BPrivate;
 #include <Entry.h>
 #include <File.h>
+#include "RegExp.h"
 #include <String.h>
-
 
 bool showKeys = false;
 bool showSummary = false;
@@ -135,20 +134,18 @@ collectAllCatalogKeys(BString& inputStr)
 {
 	const int errbufsz = 256;
 	char errbuf[errbufsz];
-	regex_t rxprg;
-	int rxflags = REG_EXTENDED;
-	int rxres = regcomp(&rxprg, rxString.String(), rxflags);
-	if (rxres != 0) {
-		regerror(rxres, &rxprg, errbuf, errbufsz);
-		fprintf(stderr, "regex-compilation error %s\n", errbuf);
+	RegExp rx;
+	struct regexp *rxprg = rx.Compile(rxString.String());
+	if (rx.InitCheck() != B_OK) {
+		fprintf(stderr, "regex-compilation error %s\n", rx.ErrorString());
 		return;
 	}
 	status_t res;
-	regmatch_t rxmatch;
 	const char *in = inputStr.String();
-	while(regexec(&rxprg, in, 1, &rxmatch, 0) == 0) {
-		const char *start = in+rxmatch.rm_so;
-		in += rxmatch.rm_eo;
+	int32 matchCount = rx.RunMatcher(rxprg, in);
+	for(int32 m=1; m<matchCount; ++m) {
+		const char *start = rxprg->startp[m];
+		in = rxprg->endp[m];
 		if (fetchKey(in)) {
 			if (haveID) {
 				if (showKeys)

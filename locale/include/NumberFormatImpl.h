@@ -6,7 +6,7 @@
 struct format_field_position;
 class BNumberFormatParameters;
 
-class BNumberFormatImpl : public BFormatImpl {
+class _IMPEXP_LOCALE BNumberFormatImpl : public BFormatImpl {
 	public:
 		BNumberFormatImpl();
 		virtual ~BNumberFormatImpl();

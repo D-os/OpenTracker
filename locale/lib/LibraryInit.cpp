@@ -115,6 +115,7 @@ public:
 extern const BRoster *be_roster;
 
 extern "C"
+_IMPEXP_LOCALE 
 void
 initialize_after()
 {

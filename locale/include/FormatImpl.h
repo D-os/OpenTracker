@@ -3,9 +3,11 @@
 
 #include <SupportDefs.h>
 
+#include <LocaleBuild.h>
+
 class BFormatParameters;
 
-class BFormatImpl {
+class _IMPEXP_LOCALE BFormatImpl {
 	public:
 		BFormatImpl();
 		virtual ~BFormatImpl();

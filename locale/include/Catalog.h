@@ -1,6 +1,8 @@
 #ifndef _CATALOG_H_
 #define _CATALOG_H_
 
+#include <LocaleBuild.h>
+
 #include <SupportDefs.h>
 #include <String.h>
 
@@ -10,7 +12,7 @@ class BMessage;
 struct entry_ref;
 
 
-class BCatalog {
+class _IMPEXP_LOCALE BCatalog {
 
 	public:
 		BCatalog();
@@ -49,8 +51,8 @@ class BCatalog {
 };
 
 
-extern BCatalog* be_catalog;
-extern BCatalog* be_app_catalog;
+extern _IMPEXP_LOCALE BCatalog* be_catalog;
+extern _IMPEXP_LOCALE BCatalog* be_app_catalog;
 
 
 #ifndef B_AVOID_TRANSLATION_MACROS
@@ -140,7 +142,7 @@ extern BCatalog* be_app_catalog;
 /************************************************************************/
 // For BCatalog add-on implementations:
 
-class BCatalogAddOn {
+class _IMPEXP_LOCALE BCatalogAddOn {
 		friend class BLocaleRoster;
 	public:
 		BCatalogAddOn(const char *signature, const char *language,
@@ -205,13 +207,15 @@ class BCatalogAddOn {
 
 // every catalog-add-on should export these symbols...
 // ...the function that instantiates a catalog for this add-on-type...
-extern "C" BCatalogAddOn *instantiate_catalog(const char *signature,
-							const char *language, int32 fingerprint);
+extern "C" _IMPEXP_LOCALE 
+BCatalogAddOn *instantiate_catalog(const char *signature,
+	const char *language, int32 fingerprint);
 // ...the function that creates an empty catalog for this add-on-type...
-extern "C" BCatalogAddOn *create_catalog(const char *signature,
-							const char *language);
+extern "C" _IMPEXP_LOCALE 
+BCatalogAddOn *create_catalog(const char *signature,
+	const char *language);
 // ...and the priority which will be used to order the catalog-add-ons:
-extern uint8 gCatalogAddOnPriority;
+extern _IMPEXP_LOCALE uint8 gCatalogAddOnPriority;
 
 
 /*
@@ -308,7 +312,7 @@ namespace BPrivate {
 /*
  * EditableCatalog
  */
-class EditableCatalog : public BCatalog {
+class _IMPEXP_LOCALE EditableCatalog : public BCatalog {
 
 	public:
 		EditableCatalog(const char *type, const char *signature, 

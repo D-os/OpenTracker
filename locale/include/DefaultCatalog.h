@@ -7,6 +7,8 @@
 #include <hash_map>
 #endif
 
+#include <LocaleBuild.h>
+
 #include <Catalog.h>
 #include <String.h>
 
@@ -21,7 +23,7 @@ namespace BPrivate {
  * but it should also support being created from up to three strings,
  * which as a whole specify the key to the translated string.
  */
-struct CatKey {
+struct _IMPEXP_LOCALE CatKey {
 	BString fKey;
 		// the key-string consists of three values separated by a special 
 		// token:
@@ -64,7 +66,7 @@ struct hash<CatKey>
  * but the value-type might change to add support for shortcuts and/or
  * graphical data (like button-images and the like).
  */
-class DefaultCatalog : public BCatalogAddOn {
+class _IMPEXP_LOCALE DefaultCatalog : public BCatalogAddOn {
 
 	public:
 		DefaultCatalog(const char *signature, const char *language,

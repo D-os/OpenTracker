@@ -11,7 +11,9 @@
 
 #include <SupportDefs.h>
 
-uint32 adler32(uint32 adler, const uint8 *buf, uint32 len);
+#include <LocaleBuild.h>
+
+uint32 _IMPEXP_LOCALE adler32(uint32 adler, const uint8 *buf, uint32 len);
 	// prototype required by mwcc
 
 #define BASE 65521L /* largest prime smaller than 65536 */

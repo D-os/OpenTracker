@@ -20,7 +20,7 @@ enum number_format_base {
 	B_HEXADECIMAL_BASE		= 16,
 };
 
-class BNumberFormatParameters : public BFormatParameters {
+class _IMPEXP_LOCALE BNumberFormatParameters : public BFormatParameters {
 	public:
 		BNumberFormatParameters(const BNumberFormatParameters *parent = NULL);
 		BNumberFormatParameters(const BNumberFormatParameters &other);

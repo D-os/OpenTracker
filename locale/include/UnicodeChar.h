@@ -3,6 +3,7 @@
 
 #include <SupportDefs.h>
 
+#include <LocaleBuild.h>
 
 enum unicode_char_category
 {
@@ -187,7 +188,7 @@ enum unicode_cell_width
 };
 
 
-class BUnicodeChar {
+class _IMPEXP_LOCALE BUnicodeChar {
 	public:
 		static bool IsAlpha(uint32 c);
 		static bool IsAlNum(uint32 c);

@@ -1,5 +1,7 @@
 SubDir LOCALE_TOP lib ;
 
+DEFINES += _BUILDING_locale=1 ;
+
 SharedLibrary liblocale.so
 	: adler32.c
 	  cat.cpp

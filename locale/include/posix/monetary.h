@@ -3,12 +3,14 @@
 
 #include <stdarg.h>
 
+#include <LocaleBuild.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-ssize_t strfmon(char *string, size_t maxSize, const char *format, ...);
-ssize_t vstrfmon(char *string, size_t maxSize, const char *format, va_list args);
+_IMPEXP_LOCALE ssize_t strfmon(char *string, size_t maxSize, const char *format, ...);
+_IMPEXP_LOCALE ssize_t vstrfmon(char *string, size_t maxSize, const char *format, va_list args);
 
 #ifdef __cplusplus
 }

@@ -1,4 +1,4 @@
 SubDir LOCALE_TOP apps ;
 
 AddResources collectcatkeys : collectcatkeys.rsrc ;
-Application collectcatkeys : collectcatkeys.cpp : be liblocale.so ;
+Application collectcatkeys : collectcatkeys.cpp RegExp.cpp : be liblocale.so ;

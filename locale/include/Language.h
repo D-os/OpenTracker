@@ -3,6 +3,7 @@
 
 
 #include <SupportDefs.h>
+#include <LocaleBuild.h>
 #include <LocaleStrings.h>
 
 
@@ -13,7 +14,7 @@ enum script_direction {
 };
 
 
-class BLanguage {
+class _IMPEXP_LOCALE BLanguage {
 	public:
 		~BLanguage();
 

@@ -1,6 +1,8 @@
 #ifndef _LOCALE_ROSTER_H_
 #define _LOCALE_ROSTER_H_
 
+#include <LocaleBuild.h>
+
 #include <String.h>
 
 class BLanguage;
@@ -18,7 +20,7 @@ enum {
 	B_LOCALE_CHANGED	= '_LCC',
 };
 
-class BLocaleRoster {
+class _IMPEXP_LOCALE BLocaleRoster {
 
 	public:
 		BLocaleRoster();
