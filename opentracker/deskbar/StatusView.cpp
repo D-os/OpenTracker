@@ -481,7 +481,6 @@ TReplicantTray::InitAddOnSupport()
 	BVolumeRoster roster;
 	BVolume volume;
 	while (roster.GetNextVolume(&volume) == B_OK) {
-
 		fs_create_index(volume.Device(), kStatusPredicate, B_STRING_TYPE, 0);
 		RunAddOnQuery(&volume, kEnabledPredicate);
 	}
@@ -703,6 +702,7 @@ TReplicantTray::HandleEntryUpdate(BMessage *message)
 //	the add-ons must support the exported C function API
 //	if they do, they will be loaded and added to deskbar
 //	primary function is the Instantiate function
+
 status_t
 TReplicantTray::LoadAddOn(BEntry *entry, int32 *id, bool force)
 {
@@ -724,9 +724,10 @@ TReplicantTray::LoadAddOn(BEntry *entry, int32 *id, bool force)
 		uint64 deskbarID;
 		ssize_t size = node.ReadAttr(kDeskbarSecurityCodeAttr, B_UINT64_TYPE, 0,
 			&deskbarID, sizeof(fDeskbarSecurityCode));
-		if (size != sizeof(fDeskbarSecurityCode) || deskbarID != fDeskbarSecurityCode)
+		if (size != sizeof(fDeskbarSecurityCode) || deskbarID != fDeskbarSecurityCode) {
 			// no code or code doesn't match
-			return B_ERROR; 
+			return B_ERROR;
+		}
 	}
 	
 	BPath path;
@@ -860,7 +861,7 @@ TReplicantTray::RemoveItem(int32 id)
 		DeskbarItemInfo *item = (DeskbarItemInfo*)fItemList->ItemAt(i);
 		if (!item)
 			continue;
-			
+
 		if (item->id == id) {
 			//	attribute was added via Deskbar API (AddItem(entry_ref *, int32 *)
 			entry_ref ref(item->edevice, item->edirectory, item->ename);
@@ -884,6 +885,7 @@ TReplicantTray::RemoveItem(int32 id)
 
 //	ENTRY_MOVED message, moving only occurs on a device
 //	copying will occur (ENTRY_CREATED) between devices
+
 void
 TReplicantTray::MoveItem(entry_ref *ref, ino_t toDirectory, ino_t DEBUG_ONLY(node))
 {
@@ -899,7 +901,7 @@ TReplicantTray::MoveItem(entry_ref *ref, ino_t toDirectory, ino_t DEBUG_ONLY(nod
 		DeskbarItemInfo *item = (DeskbarItemInfo *)fItemList->ItemAt(i);
 		if (!item)
 			continue;
-			
+
 		if (strcmp(item->ename, ref->name) == 0
 			&& item->edevice == ref->device
 			&& item->edirectory == ref->directory) {
@@ -920,8 +922,10 @@ TReplicantTray::MoveItem(entry_ref *ref, ino_t toDirectory, ino_t DEBUG_ONLY(nod
 //		the ability of non-host apps to remove
 //		icons without a little bit of work
 
-//	for a specific id
-//	return the name of the replicant (name of view)
+/**	for a specific id
+ *	return the name of the replicant (name of view)
+ */
+
 status_t
 TReplicantTray::ItemInfo(int32 id, const char **name)
 {
