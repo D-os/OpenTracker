@@ -49,7 +49,7 @@ rule SetUpSubDirBuildSettings {
 	# debugging settings
 	if $(DEBUG) {
 		OPTIMIZE = 0 ;
-		FDEFINES += DEBUG=$(DEBUG) ;
+		DEFINES += DEBUG=$(DEBUG) ;
 		CCFLAGS += -g ;
 		C++FLAGS += -g ;
 		LINKFLAGS += -g ;
@@ -58,9 +58,9 @@ rule SetUpSubDirBuildSettings {
 	# optimization settings
 	if $(OPTIMIZE) = 0 {
 		if $(OSPLAT) = X86 {
-			OPTIM ?= -O0 ;
+			OPTIM = -O0 ;
 		} else {
-			OPTIM ?= -O0 ;
+			OPTIM = -O0 ;
 		}
 	} else {
 		if $(OSPLAT) = X86 {
