@@ -47,6 +47,7 @@ All rights reserved.
 #include "DirMenu.h"
 #include "FSUtils.h"
 #include "IconMenuItem.h"
+#include "NavMenu.h"
 #include "TrackerSettings.h"
 #include "Utilities.h"
 
@@ -71,7 +72,8 @@ BDirMenu::~BDirMenu()
 
 void
 BDirMenu::Populate(const BEntry *startEntry, BWindow *originatingWindow,
-	bool includeStartEntry, bool select, bool reverse, bool addShortcuts)
+	bool includeStartEntry, bool select, bool reverse, bool addShortcuts,
+	bool navMenuEntries)
 {
 	try {
 		if (!startEntry)
@@ -150,7 +152,8 @@ BDirMenu::Populate(const BEntry *startEntry, BWindow *originatingWindow,
 				
 			if (result == kReadAttrFailed || !info.fInvisible
 				|| (showDesktop && desktopEntry == entry)) 
-				AddItemToDirMenu(&entry, originatingWindow, reverse, addShortcuts);
+				AddItemToDirMenu(&entry, originatingWindow, reverse,
+								 addShortcuts, navMenuEntries);
 	
 			if (hitRoot) {
 				if (!showDesktop && showDisksIcon && *startEntry != "/")
@@ -186,7 +189,7 @@ BDirMenu::Populate(const BEntry *startEntry, BWindow *originatingWindow,
 
 void
 BDirMenu::AddItemToDirMenu(const BEntry *entry, BWindow *originatingWindow,
-	bool atEnd, bool addShortcuts)
+	bool atEnd, bool addShortcuts, bool navMenuEntries)
 {
 	Model model(entry);
 	if (model.InitCheck() != B_OK) 
@@ -202,7 +205,18 @@ BDirMenu::AddItemToDirMenu(const BEntry *entry, BWindow *originatingWindow,
 	if (window)
 		message->AddData("nodeRefsToClose", B_RAW_TYPE, window->TargetModel()->NodeRef(),
 			sizeof (node_ref));
-	ModelMenuItem *item = new ModelMenuItem(&model, model.Name(), message);
+	ModelMenuItem *item;
+	if (navMenuEntries) {
+		BNavMenu* subMenu = new BNavMenu(model.Name(), B_REFS_RECEIVED, be_app, window);
+		entry_ref ref;
+		entry->GetRef(&ref);
+		subMenu->SetNavDir(&ref);
+		item = new ModelMenuItem(&model, subMenu);
+		item->SetLabel(model.Name());
+		item->SetMessage(message);
+	} else {
+		item = new ModelMenuItem(&model, model.Name(), message);
+	}
 
 	if (addShortcuts) {
 		if (FSIsDeskDir(entry))
@@ -210,7 +224,7 @@ BDirMenu::AddItemToDirMenu(const BEntry *entry, BWindow *originatingWindow,
 		else if (FSIsHomeDir(entry))
 			item->SetShortcut('H', B_COMMAND_KEY);
 	}
-		
+
 	if (atEnd)
 		AddItem(item);
 	else

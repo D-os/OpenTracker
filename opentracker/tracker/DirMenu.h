@@ -49,9 +49,9 @@ public:
 
 	void Populate(const BEntry *startDir, BWindow *originatingWindow,
 		bool includeStartDir = false, bool select = false, bool reverse = false,
-		bool addShortcuts = false);
+		bool addShortcuts = false, bool navMenuEntries = false);
 	void AddItemToDirMenu(const BEntry *, BWindow *originatingWindow,
-		bool atEnd, bool addShortcuts);
+		bool atEnd, bool addShortcuts, bool navMenuEntries = false);
 	void AddDisksIconToMenu(bool reverse = false);
 	
 	void SetMenuBar(BMenuBar *);
