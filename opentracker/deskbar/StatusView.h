@@ -63,13 +63,10 @@ const float kMinimumWindowWidth = kGutter + kMinimumTrayWidth + kDragRegionWidth
 
 #ifdef DB_ADDONS
 struct DeskbarItemInfo {
-	bool isaddon;		// attribute tagged item
+	bool isAddOn;		// attribute tagged item
 	int32 id;			// id given to replicant
-	dev_t edevice;		// entry_ref to item tagged
-	ino_t edirectory;
-	char *ename;
-	node_ref nref;		// node_ref to boot vol item
-	dev_t realDevice;	// device for actual item for vol unmounting
+	entry_ref entryRef;	// entry_ref to item tagged
+	node_ref nodeRef;	// node_ref to boot vol item
 };
 #endif
 
@@ -77,78 +74,77 @@ class TReplicantTray : public BView {
 public:
 	TReplicantTray(TBarView *bv, bool vertical);
 	virtual ~TReplicantTray();
-	
+
 	virtual void AttachedToWindow();
 	virtual void DetachedFromWindow();
-	virtual void Draw(BRect );
-	virtual void MouseDown(BPoint );
+	virtual void Draw(BRect updateRect);
+	virtual void MouseDown(BPoint point);
 	virtual void MessageReceived(BMessage *);
 	virtual void GetPreferredSize(float *, float *);
-	
+
 	void AdjustPlacement();
-	
+
 	void ShowReplicantMenu(BPoint);
-	
+
 	void SetMultiRow(bool state);
-	bool IsMultiRow() const
-		{ return fMultiRowMode; };
-	
+	bool IsMultiRow() const { return fMultiRowMode; }
+
 	status_t ItemInfo(int32 target, const char **name);
 	status_t ItemInfo(const char *name, int32 *id);
 	status_t ItemInfo(int32 index, const char **name, int32 *id);
-	
-	bool IconExists(int32 target, bool byIndex = false);		
+
+	bool IconExists(int32 target, bool byIndex = false);
 	bool IconExists(const char *name);
-	
+
 	int32  IconCount() const;
-	
+
 	status_t AddIcon(BMessage *, int32 *id, const entry_ref * = NULL);
-	
+
 	void RemoveIcon(int32 target, bool byIndex = false);
 	void RemoveIcon(const char *name);
-	
+
 	BRect IconFrame(int32 target, bool byIndex=false);
 	BRect IconFrame(const char *name);
-	
+
 	bool AcceptAddon(BRect frame, BMessage *message);
 	void RealignReplicants(int32 startIndex = -1);
-	
+
 	bool ShowingSeconds(void);
 	bool ShowingMiltime(void);
 	bool ShowingEuroDate(void);
 	bool ShowingFullDate(void);
 	bool CanShowFullDate(void);
-	
+
 	void RememberClockSettings();
 	void DealWithClock(bool);
 
 #ifdef DB_ADDONS
-	status_t LoadAddOn(BEntry *entry, int32 *id, bool force=false);
+	status_t LoadAddOn(BEntry *entry, int32 *id, bool force = false);
 #endif
-	
+
 private:
 	BView *ViewAt(int32 *index, int32 *id, int32 target, bool byIndex = false);
 	BView *ViewAt(int32 *index, int32 *id, const char *name);
-	
+
 	void RealReplicantAdjustment(int32 startindex);
-	
-	
-	
+
 #ifdef DB_ADDONS
 	void InitAddOnSupport();
 	void DeleteAddOnSupport();
 	void RunAddOnQuery(BVolume *volume, const char *predicated);
-	
-	bool IsAddOn(entry_ref *eref);
-	bool NodeExists(node_ref*);
-	
+
+	bool IsAddOn(entry_ref &ref);
+	DeskbarItemInfo *DeskbarItemFor(node_ref &nodeRef);
+	DeskbarItemInfo *DeskbarItemFor(int32 id);
+	bool NodeExists(node_ref &nodeRef);
+
 	void HandleEntryUpdate(BMessage *);
-	status_t AddItem(int32 id, node_ref nref, BEntry *entry, bool isAddon);		
-	
+	status_t AddItem(int32 id, node_ref nodeRef, BEntry &entry, bool isAddon);
+
 	void UnloadAddOn(node_ref *, dev_t *, bool which, bool removeAll);
 	void RemoveItem(int32 id);
-	
-	void MoveItem(entry_ref *, ino_t toDirectory, ino_t node);
+
+	void MoveItem(entry_ref *, ino_t toDirectory);
 #endif		
 
 	BPoint LocForReplicant(int32 replicantCount, int32 index, float width);

@@ -86,26 +86,25 @@ const char *const kDisabledPredicate = "be:deskbar_item_status=disabled";
 static void
 DumpItem(DeskbarItemInfo *item)
 {
-	printf("is addon: %i, id: %li\n", item->isaddon, item->id);
-	printf("entry_ref:  %ld, %Ld, %s\n", item->edevice, item->edirectory, item->ename);
-	printf("node_ref:  %ld, %Ld\n", item->nref.device, item->nref.node);
-	printf("real dev:  %li\n", item->realDevice);				
+	printf("is addon: %i, id: %li\n", item->isAddOn, item->id);
+	printf("entry_ref:  %ld, %Ld, %s\n", item->entryRef.device, item->entryRef.directory, item->entryRef.name);
+	printf("node_ref:  %ld, %Ld\n", item->nodeRef.device, item->nodeRef.node);
 }
 
 
 static void
 DumpList(BList *itemlist)
 {
-	int32 count = itemlist->CountItems()-1;
+	int32 count = itemlist->CountItems() - 1;
 	if (count < 0) {
 		printf("no items in list\n");
 		return;
 	}
-	for (int32 i=count ; i>=0 ; i--) {
+	for (int32 i = count ; i >= 0 ; i--) {
 		DeskbarItemInfo *item = (DeskbarItemInfo*)itemlist->ItemAt(i);
 		if (!item)
 			continue;
-			
+
 		DumpItem(item);
 	}
 }
@@ -115,13 +114,13 @@ DumpList(BList *itemlist)
 //	don't change the name of this view to anything other than
 //	Status 
 TReplicantTray::TReplicantTray(TBarView *parent, bool vertical)
-	:	BView(BRect(0,0,1,1), "Status", B_FOLLOW_LEFT | B_FOLLOW_TOP,
+	:	BView(BRect(0, 0, 1, 1), "Status", B_FOLLOW_LEFT | B_FOLLOW_TOP,
 			B_WILL_DRAW | B_FRAME_EVENTS),
-		fClock(NULL),
-		fBarView(parent),
-		fShelf(new TReplicantShelf(this)),
-		fMultiRowMode(vertical),
-		fAlignmentSupport(false)	
+	fClock(NULL),
+	fBarView(parent),
+	fShelf(new TReplicantShelf(this)),
+	fMultiRowMode(vertical),
+	fAlignmentSupport(false)	
 {	
 }
 
@@ -494,14 +493,13 @@ TReplicantTray::InitAddOnSupport()
 void
 TReplicantTray::DeleteAddOnSupport()
 {
-	int32 count = fItemList->CountItems();
-	for (int32 i=count ; i >= 0 ; i--) {
+	for (int32 i = fItemList->CountItems(); i-- > 0 ;) {
 		DeskbarItemInfo *item = (DeskbarItemInfo *)fItemList->RemoveItem(i);
 		if (item) {
-			if (item->isaddon)
-				watch_node(&(item->nref), B_STOP_WATCHING, this, Window());
-			free(item->ename);		//strdup'd in LoadAddOn
-			free(item);
+			if (item->isAddOn)
+				watch_node(&(item->nodeRef), B_STOP_WATCHING, this, Window());
+			
+			delete item;
 		}
 	}
 	delete fItemList;
@@ -540,40 +538,68 @@ TReplicantTray::RunAddOnQuery(BVolume *volume, const char *predicate)
 
 
 bool
-TReplicantTray::IsAddOn(entry_ref *eref)
+TReplicantTray::IsAddOn(entry_ref &ref)
 {
-	BFile file(eref, O_RDWR);
-	char buffer[128];
-	ssize_t size = file.ReadAttr(kStatusPredicate, B_STRING_TYPE,
-		0, &buffer, 128);
-		
+	BFile file(&ref, B_READ_ONLY);
+
+	char status[64];
+	ssize_t size = file.ReadAttr(kStatusPredicate, B_STRING_TYPE, 0, &status, 64);
 	return size > 0;
 }
 
 
-bool
-TReplicantTray::NodeExists(node_ref *nodeRef)
+DeskbarItemInfo *
+TReplicantTray::DeskbarItemFor(node_ref &nodeRef)
 {
-	int32 count = fItemList->CountItems()-1;	
-	for (int32 i = count ; i >= 0 ; i--) {
-		DeskbarItemInfo *item = (DeskbarItemInfo *)fItemList->ItemAt(i);
-		if (!item)
+	for (int32 i = fItemList->CountItems(); i-- > 0 ;) {
+		DeskbarItemInfo *item = static_cast<DeskbarItemInfo *>(fItemList->ItemAt(i));
+		if (item == NULL)
 			continue;
-			
-		if (item->nref == *nodeRef)
-			return true;
+
+		if (item->nodeRef == nodeRef)
+			return item;
 	}
-	return false;
+
+	return NULL;
 }
 
-//	received from B_NODE_MONITOR & B_QUERY_UPDATE msgs
+
+DeskbarItemInfo *
+TReplicantTray::DeskbarItemFor(int32 id)
+{
+	for (int32 i = fItemList->CountItems(); i-- > 0 ;) {
+		DeskbarItemInfo *item = static_cast<DeskbarItemInfo *>(fItemList->ItemAt(i));
+		if (item == NULL)
+			continue;
+
+		if (item->id == id)
+			return item;
+	}
+
+	return NULL;
+}
+
+
+bool
+TReplicantTray::NodeExists(node_ref &nodeRef)
+{
+	return DeskbarItemFor(nodeRef) != NULL;
+}
+
+
+/**	This handles B_NODE_MONITOR & B_QUERY_UPDATE messages received
+ *	for the registered add-ons.
+ */
+
 void
 TReplicantTray::HandleEntryUpdate(BMessage *message)
 {
 	int32 opcode;
 	if (message->FindInt32("opcode", &opcode) != B_OK)
 		return;
-		
+
+	message->PrintToStream();
+
 	BPath path;
 	switch (opcode) {
 		case B_ENTRY_CREATED:
@@ -590,7 +616,7 @@ TReplicantTray::HandleEntryUpdate(BMessage *message)
 					entry_ref ref(device, directory, name);
 					//	see if this item has the attribute
 					//	that we expect
-					if (IsAddOn(&ref)) {
+					if (IsAddOn(ref)) {
 						int32 id;
 						BEntry entry(&ref);					
 						LoadAddOn(&entry, &id);
@@ -606,39 +632,31 @@ TReplicantTray::HandleEntryUpdate(BMessage *message)
 				node_ref nodeRef;
 				if (message->FindInt32("device", &(nodeRef.device)) == B_OK
 					&& message->FindInt64("node", &(nodeRef.node)) == B_OK) {
-					int32 count = fItemList->CountItems()-1;	
-					for (int32 i = count ; i >= 0 ; i--) {
-						DeskbarItemInfo *item = (DeskbarItemInfo*)fItemList->ItemAt(i);
-						if (!item)
-							continue;
+					// get the add-on this is for
+					DeskbarItemInfo *item = DeskbarItemFor(nodeRef);
+					if (item == NULL)
+						break;
 
-						//	match both device and inode
-						if (item->nref == nodeRef) {
-							entry_ref ref(item->edevice, item->edirectory, item->ename);
-							BFile file(&ref, O_RDWR);
-							
-							char str[255];
-							ssize_t size = file.ReadAttr(kStatusPredicate,
-								B_STRING_TYPE, 0, str, 255);
+					BFile file(&item->entryRef, B_READ_ONLY);
 
-							//	attribute was removed
-							if (size == B_ENTRY_NOT_FOUND) {
+					char status[255];
+					ssize_t size = file.ReadAttr(kStatusPredicate,
+						B_STRING_TYPE, 0, status, sizeof(status) - 1);
+					status[sizeof(status) - 1] = '\0';
 
-								//	cleans up and removes node_watch
-								UnloadAddOn(&nodeRef, NULL, true, false);
-								break;
-							} else if (str && strcmp(str, "enable") == 0) {
-								int32 id;
-								BEntry entry(&ref, true);
-								LoadAddOn(&entry, &id);
-								break;
-							}
-						}
+					// attribute was removed
+					if (size == B_ENTRY_NOT_FOUND) {
+						// cleans up and removes node_watch
+						UnloadAddOn(&nodeRef, NULL, true, false);
+					} else if (!strcmp(status, "enable")) {
+						int32 id;
+						BEntry entry(&item->entryRef, true);
+						LoadAddOn(&entry, &id);
 					}
 				}
 			}
 			break;
-	
+
 		case B_ENTRY_MOVED:
 			{
 				entry_ref ref;
@@ -650,29 +668,38 @@ TReplicantTray::HandleEntryUpdate(BMessage *message)
 					&& message->FindInt64("to directory", &todirectory) == B_OK
 					&& message->FindInt32("device", &(ref.device)) == B_OK
 					&& message->FindInt64("node", &node) == B_OK ) {
-					
+
 					if (!name)
 						break;
-						
+
 					ref.set_name(name);
 					//	change the directory reference to
 					//	the new directory
-					MoveItem(&ref, todirectory, node);
+					MoveItem(&ref, todirectory);
 				}
 			}
 			break;
-			
+
 		case B_ENTRY_REMOVED:
-			{
-				//	entry was rm'd from the device
-				node_ref nodeRef;
-				if (message->FindInt32("device", &(nodeRef.device)) == B_OK
-					&& message->FindInt64("node", &(nodeRef.node)) == B_OK ) {	
-					UnloadAddOn(&nodeRef, NULL, true, false);
-				}
+		{
+			//	entry was rm'd from the device
+			node_ref nodeRef;
+			if (message->FindInt32("device", &(nodeRef.device)) == B_OK
+				&& message->FindInt64("node", &(nodeRef.node)) == B_OK) {
+				DeskbarItemInfo *item = DeskbarItemFor(nodeRef);
+				if (item == NULL)
+					break;
+
+				// If there is a team running where the add-on comes from,
+				// we don't want to remove the icon yet.
+				if (be_roster->IsRunning(&item->entryRef))
+					break;
+
+				UnloadAddOn(&nodeRef, NULL, true, false);
 			}
-			break;
-				
+		}
+		break;
+
 		case B_DEVICE_MOUNTED:
 			{
 				//	run a new query on the new device
@@ -692,7 +719,7 @@ TReplicantTray::HandleEntryUpdate(BMessage *message)
 				dev_t device;
 				if (message->FindInt32("device", &device) != B_OK)
 					break;
-				
+
 				UnloadAddOn(NULL, &device, false, true);	
 			}
 			break;
@@ -713,7 +740,7 @@ TReplicantTray::LoadAddOn(BEntry *entry, int32 *id, bool force)
 	node_ref nodeRef;
 	entry->GetNodeRef(&nodeRef);
 	//	no duplicates
-	if (NodeExists(&nodeRef))
+	if (NodeExists(nodeRef))
 		return B_ERROR;
 
 	BNode node(entry);
@@ -730,45 +757,42 @@ TReplicantTray::LoadAddOn(BEntry *entry, int32 *id, bool force)
 			return B_ERROR;
 		}
 	}
-	
+
 	BPath path;
 	entry->GetPath(&path);
 
-	image_id addOnImageID;
-
 	//	load the add-on
-	addOnImageID = load_add_on(path.Path());
-	if (addOnImageID < 0)
-		return (status_t)addOnImageID;
-	
+	image_id image = load_add_on(path.Path());
+	if (image < 0)
+		return (status_t)image;
+
 	// 	get the view loading function symbol		
 	//    we first look for a symbol that takes an image_id
 	//    and entry_ref pointer, if not found, go with normal
 	//    instantiate function
 	BView *(*entryFunction)(image_id, const entry_ref *);
 	BView *(*itemFunction)(void);
-
 	BView *view = NULL;
+
 	entry_ref ref;
+	entry->GetRef(&ref);
 
-	entry->GetRef (&ref);
-
-	if (get_image_symbol(addOnImageID, kInstantiateEntryCFunctionName,
+	if (get_image_symbol(image, kInstantiateEntryCFunctionName,
 		B_SYMBOL_TYPE_TEXT, (void **)&entryFunction) >= 0) {
 
-		view = (*entryFunction)(addOnImageID, &ref);
-	} else if (get_image_symbol(addOnImageID, kInstantiateItemCFunctionName,
+		view = (*entryFunction)(image, &ref);
+	} else if (get_image_symbol(image, kInstantiateItemCFunctionName,
 		B_SYMBOL_TYPE_TEXT, (void **)&itemFunction) >= 0) {
 
 		view = (*itemFunction)();
 	} else {
-		unload_add_on(addOnImageID);
+		unload_add_on(image);
 		return B_ERROR;
 	}
 
 	if (!view || IconExists (view->Name())) {
 		delete view;
-		unload_add_on (addOnImageID);
+		unload_add_on(image);
 		return B_ERROR;
 	}
 
@@ -787,67 +811,53 @@ TReplicantTray::LoadAddOn(BEntry *entry, int32 *id, bool force)
 
 
 status_t
-TReplicantTray::AddItem(int32 id, node_ref nodeRef, BEntry *entry, bool isaddon)
+TReplicantTray::AddItem(int32 id, node_ref nodeRef, BEntry &entry, bool isAddOn)
 {
-	DeskbarItemInfo *item = (DeskbarItemInfo*)malloc(sizeof(DeskbarItemInfo));
-	if (!item)
-		return B_ERROR;
-	
-	item->id = id;
-	item->isaddon = isaddon;
-	
-	entry_ref ref;			
-	entry->GetRef(&ref);
-	
-	item->edevice = ref.device;
-	item->edirectory = ref.directory;
-	if (ref.name && strlen(ref.name)>0)
-		item->ename = strdup(ref.name);
-	else
-		item->ename = strdup("");			// The pointer can't be null
-	
-	item->nref = nodeRef;
-	
-	//	get the actual entry
-	//	since this may not be the boot volume
-	//	we need the actual dev_t for matching
-	//	if the volume is unmounted later
-	BEntry realEntry(&ref, true);			
+	DeskbarItemInfo *item = new DeskbarItemInfo;
+	if (item == NULL)
+		return B_NO_MEMORY;
 
-	realEntry.GetRef(&ref);
-	item->realDevice = ref.device;
+	item->id = id;
+	item->isAddOn = isAddOn;
+
+	if (entry.GetRef(&item->entryRef) < B_OK) {
+		item->entryRef.device = -1;
+		item->entryRef.directory = -1;
+		item->entryRef.name = NULL;
+	}
+	item->nodeRef = nodeRef;
 
 	fItemList->AddItem(item);
 
-	if (isaddon)
+	if (isAddOn)
 		watch_node(&nodeRef, B_WATCH_NAME | B_WATCH_ATTR, this, Window());
 
 	return B_OK;		
 }
 
 
-//	from entry_removed message, when attribute removed
-//	or when a device is unmounted (use removeall, by device)
+/**	from entry_removed message, when attribute removed
+ *	or when a device is unmounted (use removeall, by device)
+ */
+
 void
 TReplicantTray::UnloadAddOn(node_ref *nodeRef, dev_t *device,
-	bool which, bool removeall)
+	bool which, bool removeAll)
 {
-	int32 count = fItemList->CountItems()-1;	
-	for (int32 i=count ; i>=0 ; i--) {
+	for (int32 i = fItemList->CountItems(); i-- > 0 ;) {
 		DeskbarItemInfo *item = (DeskbarItemInfo*)fItemList->ItemAt(i);
 		if (!item)
 			continue;
+
+		if ((which && nodeRef && item->nodeRef == *nodeRef)
+			|| (device && item->nodeRef.device == *device)) {
 			
-		bool found=false;
-		if (which && nodeRef && item->nref == *nodeRef)
-			found = true;
-		else if (device && item->realDevice == *device)
-			found = true;
-		
-		if (found) {
+			if (device && be_roster->IsRunning(&item->entryRef))
+				continue;
+
 			RemoveIcon(item->id);
-			
-			if (!removeall)
+
+			if (!removeAll)
 				break;
 		}
 	}
@@ -857,56 +867,45 @@ TReplicantTray::UnloadAddOn(node_ref *nodeRef, dev_t *device,
 void
 TReplicantTray::RemoveItem(int32 id)
 {
-	int32 count = fItemList->CountItems() - 1;	
-	for (int32 i = count ; i >= 0 ; i--) {
-		DeskbarItemInfo *item = (DeskbarItemInfo*)fItemList->ItemAt(i);
-		if (!item)
-			continue;
+	DeskbarItemInfo *item = DeskbarItemFor(id);
+	if (item == NULL)
+		return;
 
-		if (item->id == id) {
-			//	attribute was added via Deskbar API (AddItem(entry_ref *, int32 *)
-			entry_ref ref(item->edevice, item->edirectory, item->ename);
-			if (item->isaddon) {
-				BNode node(&ref);
-				node.RemoveAttr(kStatusPredicate);
-				watch_node(&(item->nref), B_STOP_WATCHING, this, Window());			
-			}
-
-			fItemList->RemoveItem(i);
-			
-			free(item->ename);
-				// strdup'd in LoadAddOn
-			free(item);
-			
-			break;
-		}
+	// attribute was added via Deskbar API (AddItem(entry_ref *, int32 *)
+	if (item->isAddOn) {
+		BNode node(&item->entryRef);
+		node.RemoveAttr(kStatusPredicate);
+		watch_node(&item->nodeRef, B_STOP_WATCHING, this, Window());
 	}
+
+	fItemList->RemoveItem(item);
+	delete item;			
 }
 
 
-//	ENTRY_MOVED message, moving only occurs on a device
-//	copying will occur (ENTRY_CREATED) between devices
-
+/**	ENTRY_MOVED message, moving only occurs on a device
+ *	copying will occur (ENTRY_CREATED) between devices
+ */
+	
 void
-TReplicantTray::MoveItem(entry_ref *ref, ino_t toDirectory, ino_t DEBUG_ONLY(node))
+TReplicantTray::MoveItem(entry_ref *ref, ino_t toDirectory)
 {
 	if (!ref)
 		return;
 
-	//	scan for a matching entry_ref
+	//	scan for a matching entry_ref and update it
 	//
 	//	don't need to change node info as it does not change
-	//		- what about mv to other vol?
-	int32 count = fItemList->CountItems()-1;	
-	for (int32 i = count ; i >= 0 ; i--) {
+
+	for (int32 i = fItemList->CountItems(); i-- > 0 ;) {
 		DeskbarItemInfo *item = (DeskbarItemInfo *)fItemList->ItemAt(i);
 		if (!item)
 			continue;
 
-		if (strcmp(item->ename, ref->name) == 0
-			&& item->edevice == ref->device
-			&& item->edirectory == ref->directory) {
-			item->edirectory = toDirectory;
+		if (!strcmp(item->entryRef.name, ref->name)
+			&& item->entryRef.device == ref->device
+			&& item->entryRef.directory == ref->directory) {
+			item->entryRef.directory = toDirectory;
 			break;
 		}
 	}
@@ -932,14 +931,14 @@ TReplicantTray::ItemInfo(int32 id, const char **name)
 {
 	if (id < 0)
 		return B_ERROR;
-	
+
 	int32 index, temp;
 	BView *view = ViewAt(&index, &temp, id, false);
 	if (view) {
 		*name = view->Name();
 		return B_OK;
 	}
-	
+
 	return B_ERROR;
 }
 
@@ -1052,11 +1051,11 @@ TReplicantTray::AddIcon(BMessage *icon, int32 *id, const entry_ref *addOn)
 		roster.FindApp(appsig, &ref);
 	}
 
-	BFile file(&ref, O_RDWR);
+	BFile file(&ref, B_READ_ONLY);
 	node_ref nodeRef;
 	file.GetNodeRef(&nodeRef);
-	BEntry entry(&ref);
-	AddItem(*id, nodeRef, &entry, addOn != NULL);
+	BEntry entry(&ref, true);
+	AddItem(*id, nodeRef, entry, addOn != NULL);
 
  	return B_OK;
 }
