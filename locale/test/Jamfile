@@ -15,3 +15,14 @@ SimpleTest catalogTest.cpp ;
 AddOn catalogTestAddOn : catalogTestAddOn.cpp : be liblocale.so ;
 SimpleTest catalogSpeed.cpp ;
 SimpleTest genericNumberFormatTest.cpp ;
+
+# For the unit tests we need liblocale.so to live in the `lib' subdirectory
+# of the UnitTester application. We simply create a symlink that can be
+# referred to by `<unittests>liblocale.so'.
+{
+	local symlink = <unittests>liblocale.so ;
+	MakeLocate $(symlink) : [ FDirName $(LOCALE_UNITTESTS_DIR) lib ] ;
+	RelSymLink $(symlink) : liblocale.so ;
+}
+
+SubInclude LOCALE_TOP test number_format ;
