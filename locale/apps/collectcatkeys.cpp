@@ -59,7 +59,6 @@ fetchStr(const char *&in, BString &str, bool lookForID)
 	}
 	if (*in == '"') {
 		in++;
-		const char *start = in;
 		bool quoted = false;
 		while (*in != '"' || quoted) {
 			if (quoted) {
@@ -147,7 +146,6 @@ collectAllCatalogKeys(BString& inputStr)
 	status_t res;
 	regmatch_t rxmatch;
 	const char *in = inputStr.String();
-	int count = 0;
 	while(regexec(&rxprg, in, 1, &rxmatch, 0) == 0) {
 		const char *start = in+rxmatch.rm_so;
 		in += rxmatch.rm_eo;
@@ -193,7 +191,7 @@ main(int argc, char **argv)
 		if (argv[0][0] == '-' && argv[0][1] != '-') {
 			char *arg = argv[0] + 1;
 			char c;
-			while (c = *arg++) {
+			while ((c = *arg++) != '\0') {
 				if (c == 'p')
 					showKeys = true;
 				else if (c == 's')
