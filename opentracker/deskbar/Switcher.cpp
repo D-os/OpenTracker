@@ -198,7 +198,7 @@ TSwitchMgr::TSwitchMgr(BPoint point)
 
 TSwitchMgr::~TSwitchMgr()
 {
-	for (int32 i = 0; ; i++) {
+	for (int32 i = fGroupList.CountItems(); i-- > 0;) {
 		TTeamGroup *teamInfo = static_cast<TTeamGroup *>(fGroupList.ItemAt(i));
 		delete teamInfo;
 	}
