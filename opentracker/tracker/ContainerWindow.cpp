@@ -316,14 +316,20 @@ BContainerWindow::BContainerWindow(LockingList<BWindow> *list,
 BContainerWindow::~BContainerWindow()
 {
 	ASSERT(IsLocked());
+
+	// stop the watchers
+	be_app->StopWatching(this, kWindowsShowFullPathChanged);
+	be_app->StopWatching(this, kSingleWindowBrowseChanged);
+	be_app->StopWatching(this, kShowNavigatorChanged);
+	be_app->StopWatching(this, kDontMoveFilesToTrashChanged);
+
 	delete fTaskLoop;
 	delete fBackgroundImage;
 	delete fDragMessage;
 	delete fCachedTypesList;
-	
+
 	if (fSelectionWindow && fSelectionWindow->Lock())
 		fSelectionWindow->Quit();
-	
 }
 
 
