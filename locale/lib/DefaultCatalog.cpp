@@ -75,7 +75,7 @@ CatKey::CatKey(const char *str, const char *ctx, const char *cmt)
 	}
 	*keyBuf = '\0';
 	fKey.UnlockBuffer(keyLen);
-	fHashVal = __stl_hash_string(fKey.String());
+	fHashVal = HashFun(fKey.String());
 }
 
 
@@ -104,6 +104,15 @@ CatKey::operator== (const CatKey& right) const
 	// are equivalent:
 	return fHashVal == right.fHashVal
 		&& fKey == right.fKey;
+}
+
+
+size_t CatKey::HashFun(const char* s) { 
+	unsigned long h = 0; 
+	for ( ; *s; ++s) 
+		h = 5*h + *s; 
+
+	return size_t(h); 
 }
 
 
@@ -614,7 +623,9 @@ DefaultCatalog::Unflatten(BDataIO *dataIO)
 		CatKey key;
 		const char *keyStr;
 		const char *translated;
+#ifdef __GCC
 		fCatMap.resize(count);
+#endif
 		for (int i=0; res==B_OK && i<count; ++i) {
 			res = archiveMsg.Unflatten(dataIO);
 			if (res == B_OK) {
@@ -624,7 +635,7 @@ DefaultCatalog::Unflatten(BDataIO *dataIO)
 			}
 			if (res == B_OK) {
 				key.fKey = keyStr;
-				fCatMap.insert(make_pair(key, translated));
+				fCatMap.insert(pair<const BPrivate::CatKey, BString>(key, translated));
 			}
 		}
 		int32 checkFP = ComputeFingerprint();

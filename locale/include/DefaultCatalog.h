@@ -1,7 +1,11 @@
 #ifndef _DEFAULT_CATALOG_H_
 #define _DEFAULT_CATALOG_H_
 
+#ifdef __MWERKS__
+#include <hashmap.h>
+#else
 #include <hash_map>
+#endif
 
 #include <Catalog.h>
 #include <String.h>
@@ -35,18 +39,21 @@ struct CatKey {
 	CatKey(uint32 id);
 	CatKey();
 	bool operator== (const CatKey& right) const;
+	static size_t HashFun(const char* s);
 };
-
 
 /*
  * the hash-access functor which is being used to access the hash-value
  * stored inside of each key.
  */
-__STL_TEMPLATE_NULL struct hash<CatKey>
-{
-  size_t operator()(const BPrivate::CatKey &key) const;
+template <class T> struct hash : public unary_function<T,size_t> {
+	size_t operator() (const T &key) const;
 };
 
+struct hash<CatKey>
+{
+	size_t operator() (const BPrivate::CatKey &key) const;
+};
 
 /*
  * The implementation of the Locale Kit's standard catalog-type.
@@ -104,7 +111,7 @@ class DefaultCatalog : public BCatalogAddOn {
 		int32 ComputeFingerprint() const;
 		void UpdateAttributes(BFile& catalogFile);
 
-		typedef hash_map<CatKey, BString> CatMap;
+		typedef hash_map<CatKey, BString, hash<CatKey>, equal_to<CatKey> > CatMap;
 		CatMap 				fCatMap;
 		mutable BString 	fPath;
 };
