@@ -256,22 +256,18 @@ BCollatorAddOn::Compare(const char *a, const char *b, int32 length, int8 strengt
 
 		case B_COLLATE_SECONDARY:
 		{
+			// diacriticals can only change the order between equal strings
+			int32 compare = Compare(a, b, length, B_COLLATE_PRIMARY, ignorePunctuation);
+			if (compare != 0)
+				return compare;
+
 			for (int32 i = 0; i < length; i++) {
-				uint32 charA = getNextChar(&a, contextA);
-				uint32 charB = getNextChar(&b, contextB);
+				uint32 charA = BUnicodeChar::ToLower(getNextChar(&a, contextA));
+				uint32 charB = BUnicodeChar::ToLower(getNextChar(&b, contextB));
+
+				// the two strings does have the same size when we get here
 				if (charA == 0)
-					return charB == 0 ? 0 : -(int32)charB;
-				else if (charB == 0)
-					return (int32)charA;
-
-				uint32 primaryA = getPrimaryChar(charA);
-				uint32 primaryB = getPrimaryChar(charB);
-
-				if (primaryA != primaryB)
-					return (int32)primaryA - (int32)primaryB;
-
-				charA = BUnicodeChar::ToLower(charA);
-				charB = BUnicodeChar::ToLower(charB);
+					return 0;
 
 				if (charA != charB)
 					return (int32)charA - (int32)charB;
@@ -282,19 +278,18 @@ BCollatorAddOn::Compare(const char *a, const char *b, int32 length, int8 strengt
 		case B_COLLATE_TERTIARY:
 		case B_COLLATE_QUATERNARY:
 		{
+			// diacriticals can only change the order between equal strings
+			int32 compare = Compare(a, b, length, B_COLLATE_PRIMARY, ignorePunctuation);
+			if (compare != 0)
+				return compare;
+
 			for (int32 i = 0; i < length; i++) {
 				uint32 charA = getNextChar(&a, contextA);
 				uint32 charB = getNextChar(&b, contextB);
+
+				// the two strings does have the same size when we get here
 				if (charA == 0)
-					return charB == 0 ? 0 : -(int32)charB;
-				else if (charB == 0)
-					return (int32)charA;
-
-				uint32 primaryA = getPrimaryChar(charA);
-				uint32 primaryB = getPrimaryChar(charB);
-
-				if (primaryA != primaryB)
-					return (int32)primaryA - (int32)primaryB;
+					return 0;
 
 				if (charA != charB)
 					return (int32)charA - (int32)charB;
