@@ -406,7 +406,8 @@ Model::OpenNodeCommon(bool writable)
 			if (!IsNodeOpen())
 				fNode = new BDirectory(&fEntryRef);
 
-			if (static_cast<BDirectory *>(fNode)->IsRootDirectory()) {
+			if (fBaseType == kDirectoryNode
+				&& static_cast<BDirectory *>(fNode)->IsRootDirectory()) {
 				// promote from directory to volume
 				fBaseType = kVolumeNode;
 			}
@@ -578,14 +579,6 @@ Model::FinishSettingUpType()
 
 	switch (fBaseType) {
 		case kDirectoryNode:
-			if (NodeRef()->node == fEntryRef.directory
-				&& NodeRef()->device == fEntryRef.device) {
-				// promote from directory to file system root
-				fBaseType = kRootNode;
-				fMimeType = B_ROOT_MIMETYPE;
-				break;
-			}
-
 			fMimeType = B_DIR_MIMETYPE;	// should use a shared string here
 			if (IsNodeOpen()) {
 				BNodeInfo info(fNode);
@@ -598,9 +591,17 @@ Model::FinishSettingUpType()
 					fIconFrom = kTrackerSupplied;
 			}
 			break;
-			
+
 		case kVolumeNode:
 		{
+			if (NodeRef()->node == fEntryRef.directory
+				&& NodeRef()->device == fEntryRef.device) {
+				// promote from volume to file system root
+				fBaseType = kRootNode;
+				fMimeType = B_ROOT_MIMETYPE;
+				break;
+			}
+
 			// volumes have to have a B_VOLUME_MIMETYPE type
 			fMimeType = B_VOLUME_MIMETYPE;
 			if (fIconFrom == kUnknownNotFromNode) {
@@ -1120,7 +1121,7 @@ Model::Mimeset(bool force)
 	if (force) {
 		if (opener.OpenNode(true) != B_OK)
 			return false;
-		
+
 		Node()->RemoveAttr(kAttrMIMEType);
 		update_mime_info(path.Path(), 0, 1, 1);
 	} else
