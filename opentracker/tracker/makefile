@@ -16,7 +16,8 @@ else
 	CPU = ppc
 endif
 
-BIN_DIR = $(ROOT_DIR)/bin/$(CPU)
+#	the build tools are now in the top level directory
+BIN_DIR = $(ROOT_DIR)/../bin/$(CPU)
 
 SHARED_INCLUDE_PATHS = shared
 LOCAL_INCLUDE_PATHS = $(ROOT_DIR)/$(SHARED_INCLUDE_PATHS)
@@ -137,9 +138,9 @@ resources_app := \
 # @<-src@ 
 
 SRCS := \
-	$(sources_src) \
 	main.cpp \
 #
+#	$(sources_src) \
 
 RDEFS := \
 	$(resources_rdef) \
@@ -315,11 +316,12 @@ CFLAGS += $(COMPILER_FLAGS)
 
 #	SETTING: add the additional linker flags
 LDFLAGS += $(LINKER_FLAGS)
+APP_LDFLAGS += -L$(OBJ_DIR) -ltracker
 LIB_LDFLAGS += $(LINKER_FLAGS)
 
 #	define the actual work to be done	
-all: $(TARGET) $(TARGET_LIB)
-default: $(TARGET)
+default all: $(TARGET_LIB) $(TARGET)
+tracker: $(TARGET)
 libtracker: $(TARGET_LIB)
 
 $(TARGET):	$(OBJ_DIR) $(OBJS) $(RSRCS) $(APP_RSRCS)
@@ -335,9 +337,9 @@ $(TARGET_LIB):	$(OBJ_DIR) $(LIB_OBJS) $(RSRCS) $(LIB_EXP)
 $(LIB_EXP):
 		$(BUILD_EXP)
  
- install:	$(TARGET) $(TARGET_LIB)
-		copyattr -d $(TARGET) /system
+install:	$(TARGET_LIB) $(TARGET)
 		cp $(TARGET_LIB) /system/lib
+		copyattr -d $(TARGET) /system
 
 
 #	rule to create the object file directory if needed

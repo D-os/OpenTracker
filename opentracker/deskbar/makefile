@@ -15,7 +15,8 @@ else
 	CPU = ppc
 endif
 
-BIN_DIR = $(ROOT_DIR)/bin/$(CPU)
+#	the build tools are now in the top level directory
+BIN_DIR = $(ROOT_DIR)/../bin/$(CPU)
 
 SHARED_INCLUDE_PATHS = shared
 TRACKER_INCLUDE_PATHS = tracker
