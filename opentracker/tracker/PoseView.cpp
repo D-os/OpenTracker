@@ -3475,7 +3475,7 @@ BPoseView::HandleMessageDropped(BMessage *message)
  		// do not handle roColor-style drops here, pass them on to the desktop
  		return false;
 
-	if (fDropTarget && !DragSelectionContains(fDropTarget, message))
+	if (fDropTarget)
 		HiliteDropTarget(false);
 
 	fDropTarget = NULL;
@@ -7939,7 +7939,7 @@ BPoseView::UpdateDropTarget(BPoint mouseLoc, const BMessage *dragMessage,
 		// no change
 		return false;
 
-	if (fDropTarget && !DragSelectionContains(fDropTarget, dragMessage)) 
+	if (fDropTarget)
 		HiliteDropTarget(false);
 
 	fDropTarget = targetPose;
