@@ -40,16 +40,18 @@ All rights reserved.
 
 #include "ShowHideMenuItem.h"
 #include "WindowMenuItem.h"
+#include "tracker_private.h"
+
 
 const int32	kDesktopWindow = 4;
 const float kHPad = 10.0f;
 const float kVPad = 2.0f;
 
-TShowHideMenuItem::TShowHideMenuItem(const char *title, const BList *teams,
-	uint32 action)
+
+TShowHideMenuItem::TShowHideMenuItem(const char *title, const BList *teams, uint32 action)
 	:	BMenuItem(title, NULL),
-		fTeams(teams),
-		fAction(action)
+	fTeams(teams),
+	fAction(action)
 {
 	BFont font(be_plain_font);
 	fTitleWidth = ceilf(font.StringWidth(title));
@@ -59,6 +61,7 @@ TShowHideMenuItem::TShowHideMenuItem(const char *title, const BList *teams,
 	fTitleDescent = ceilf(fontHeight.descent + fontHeight.leading);
 }
 
+
 void
 TShowHideMenuItem::GetContentSize(float *width, float *height)
 {
@@ -66,6 +69,7 @@ TShowHideMenuItem::GetContentSize(float *width, float *height)
 	*height = fTitleAscent + fTitleDescent;
 	*height += kVPad * 2;
 }
+
 
 void
 TShowHideMenuItem::DrawContent()
@@ -78,6 +82,7 @@ TShowHideMenuItem::DrawContent()
 	Menu()->MovePenBy(drawLoc.x, drawLoc.y);
 	BMenuItem::DrawContent();
 }
+
 
 status_t
 TShowHideMenuItem::Invoke(BMessage *)
@@ -92,6 +97,7 @@ TShowHideMenuItem::Invoke(BMessage *)
 	}
 	return TeamShowHideCommon(static_cast<int32>(fAction), fTeams, zoomRect, doZoom);
 }
+
 
 status_t 
 TShowHideMenuItem::TeamShowHideCommon(int32 action, const BList *teamList, 
@@ -120,7 +126,7 @@ TShowHideMenuItem::TeamShowHideCommon(int32 action, const BList *teamList,
 					app_info aInfo;
 					be_roster->GetRunningAppInfo(team, &aInfo);
 	
-					if (strcasecmp(aInfo.signature, "application/x-vnd.Be-TRAK") == 0)
+					if (strcasecmp(aInfo.signature, kTrackerSignature) == 0)
 						command = 'Tall';
 					
 					messenger.SendMessage(command);
