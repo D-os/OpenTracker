@@ -40,7 +40,7 @@ class UndoItemCopy : public UndoItem {
 	private:
 		BObjectList<entry_ref> fSourceList;
 		BObjectList<entry_ref> fTargetList;
-		BEntry		fSource, fTarget;
+		entry_ref	fSourceRef, fTargetRef;
 		uint32		fMoveMode;
 };
 
@@ -57,7 +57,7 @@ class UndoItemMove : public UndoItem {
 
 	private:
 		BObjectList<entry_ref> fSourceList;
-		BEntry		fSource, fTarget;
+		entry_ref	fSourceRef, fTargetRef;
 };
 
 class UndoItemFolder : public UndoItem {
@@ -204,10 +204,15 @@ UndoItemCopy::UndoItemCopy(BObjectList<entry_ref> *sourceList, BDirectory &targe
 	fMoveMode(moveMode)
 {
 	BEntry entry(sourceList->ItemAt(0));
-	entry.GetParent(&fSource);
 
-	target.GetEntry(&fTarget);
-	ChangeListSource(fTargetList, fTarget);
+	BEntry sourceEntry;
+	entry.GetParent(&sourceEntry);
+	sourceEntry.GetRef(&fSourceRef);
+
+	BEntry targetEntry;
+	target.GetEntry(&targetEntry);
+	targetEntry.GetRef(&fTargetRef);
+	ChangeListSource(fTargetList, targetEntry);
 }
 
 
@@ -227,7 +232,7 @@ UndoItemCopy::Undo()
 status_t
 UndoItemCopy::Redo()
 {
-	FSMoveToFolder(new BObjectList<entry_ref>(fSourceList), new BEntry(fTarget),
+	FSMoveToFolder(new BObjectList<entry_ref>(fSourceList), new BEntry(&fTargetRef),
 		FSUndoMoveMode(fMoveMode), NULL);
 
 	return B_OK;
@@ -261,9 +266,13 @@ UndoItemMove::UndoItemMove(BObjectList<entry_ref> *sourceList, BDirectory &targe
 	fSourceList(*sourceList)
 {
 	BEntry entry(sourceList->ItemAt(0));
-	entry.GetParent(&fSource);
+	BEntry source;
+	entry.GetParent(&source);
+	source.GetRef(&fSourceRef);
 
-	target.GetEntry(&fTarget);
+	BEntry targetEntry;
+	target.GetEntry(&targetEntry);
+	targetEntry.GetRef(&fTargetRef);
 }
 
 
@@ -276,10 +285,11 @@ status_t
 UndoItemMove::Undo()
 {
 	BObjectList<entry_ref> *list = new BObjectList<entry_ref>(fSourceList);
-	ChangeListSource(*list, fTarget);
+	BEntry entry(&fTargetRef);
+	ChangeListSource(*list, entry);
 
 	// FSMoveToFolder() owns its arguments
-	FSMoveToFolder(list, new BEntry(fSource), FSUndoMoveMode(kMoveSelectionTo), NULL);
+	FSMoveToFolder(list, new BEntry(&fSourceRef), FSUndoMoveMode(kMoveSelectionTo), NULL);
 
 	return B_OK;
 }
@@ -289,7 +299,7 @@ status_t
 UndoItemMove::Redo()
 {
 	// FSMoveToFolder() owns its arguments
-	FSMoveToFolder(new BObjectList<entry_ref>(fSourceList), new BEntry(fTarget),
+	FSMoveToFolder(new BObjectList<entry_ref>(fSourceList), new BEntry(&fTargetRef),
 		FSUndoMoveMode(kMoveSelectionTo), NULL);
 
 	return B_OK;
