@@ -204,6 +204,9 @@ BContainerWindow::QuitRequested()
 		&& (CurrentMessage()->FindInt32("modifiers") & B_CONTROL_KEY))
 		be_app->PostMessage(kCloseAllWindows);
 
+	Hide();
+		// this will close the window instantly, even if
+		// the file system is very busy right now
 	return true;
 }
 
