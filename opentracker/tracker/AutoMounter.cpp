@@ -420,7 +420,7 @@ void
 AutoMounter::RescanDevices()
 {
 #if _INCLUDES_CLASS_DEVICE_MAP
-	stop_watching(0, this);
+	stop_watching(this);
 	fList.RescanDevices(true);
 	fList.UpdateMountingInfo();
 	fList.EachMountedPartition(TryWatchMountPoint, 0);
