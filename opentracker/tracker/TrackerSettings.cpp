@@ -93,6 +93,8 @@ StringValueSetting::Handle(const char *const *argv)
 	return 0;
 }
 
+//	#pragma mark -
+
 EnumeratedStringValueSetting::EnumeratedStringValueSetting(const char *name,
 	const char *defaultValue, const char *const *values, const char *valueExpectedErrorString,
 	const char *wrongValueErrorString)
@@ -143,15 +145,16 @@ EnumeratedStringValueSetting::Handle(const char *const *argv)
 	return 0;
 }
 
+//	#pragma mark -
+
 ScalarValueSetting::ScalarValueSetting(const char *name, int32 defaultValue,
 	const char *valueExpectedErrorString, const char *wrongValueErrorString,
-	int32 min, int32 max, bool hex)
+	int32 min, int32 max)
 	:	SettingsArgvDispatcher(name),
 		fDefaultValue(defaultValue),
 		fValue(defaultValue),
 		fMax(max),
 		fMin(min),
-		fHex(hex),
 		fValueExpectedErrorString(valueExpectedErrorString),
 		fWrongValueErrorString(wrongValueErrorString)
 {
@@ -174,7 +177,7 @@ ScalarValueSetting::Value() const
 void 
 ScalarValueSetting::GetValueAsString(char *buffer) const
 {
-	sprintf(buffer, fHex ? "0x%08lx" : "%ld", fValue);
+	sprintf(buffer, "%ld", fValue);
 }
 
 const char *
@@ -199,7 +202,7 @@ ScalarValueSetting::Handle(const char *const *argv)
 void 
 ScalarValueSetting::SaveSettingValue(Settings *settings)
 {
-	settings->Write(fHex ? "0x%08lx" : "%ld", fValue);
+	settings->Write("%ld", fValue);
 }
 
 bool 
@@ -208,6 +211,29 @@ ScalarValueSetting::NeedsSaving() const
 	return fValue != fDefaultValue;
 }
 
+//	#pragma mark -
+
+HexScalarValueSetting::HexScalarValueSetting(const char *name, int32 defaultValue,
+	const char *valueExpectedErrorString, const char *wrongValueErrorString,
+	int32 min, int32 max)
+		:	ScalarValueSetting(name, defaultValue, valueExpectedErrorString,
+					wrongValueErrorString, min, max)
+{
+}
+
+void 
+HexScalarValueSetting::GetValueAsString(char *buffer) const
+{
+	sprintf(buffer, "0x%08lx", fValue);
+}
+
+void 
+HexScalarValueSetting::SaveSettingValue(Settings *settings)
+{
+	settings->Write("0x%08lx", fValue);
+}
+
+//	#pragma mark -
 
 BooleanValueSetting::BooleanValueSetting(const char *name, bool defaultValue)
 	:	ScalarValueSetting(name, defaultValue, 0, 0)

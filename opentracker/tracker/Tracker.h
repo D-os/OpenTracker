@@ -52,11 +52,12 @@ class BContainerWindow;
 class BDeskWindow;
 class BInfoWindow;
 class BTrashWatcher;
-class BooleanValueSetting;
 class ExtraAttributeLazyInstaller;
 class MimeTypeList;
 class Model;
+class BooleanValueSetting;
 class ScalarValueSetting;
+class HexScalarValueSetting;
 class TaskLoop;
 class TrackerSettingsWindow;
 
@@ -372,9 +373,9 @@ private:
 	ScalarValueSetting *fDateOrderFormat;
 
 	BooleanValueSetting *fShowVolumeSpaceBar;
-	ScalarValueSetting *fUsedSpaceColor;
-	ScalarValueSetting *fFreeSpaceColor;
-	ScalarValueSetting *fWarningSpaceColor;
+	HexScalarValueSetting *fUsedSpaceColor;
+	HexScalarValueSetting *fFreeSpaceColor;
+	HexScalarValueSetting *fWarningSpaceColor;
 
 	Benaphore fInitLock;
 	bool fInited;

@@ -85,7 +85,7 @@ class ScalarValueSetting : public SettingsArgvDispatcher {
 public:
 	ScalarValueSetting(const char *name, int32 defaultValue,
 		const char *valueExpectedErrorString, const char *wrongValueErrorString,
-		int32 min = LONG_MIN, int32 max = LONG_MAX, bool hex = false);
+		int32 min = LONG_MIN, int32 max = LONG_MAX);
 
 	void ValueChanged(int32 newValue);
 	int32 Value() const;
@@ -100,9 +100,22 @@ protected:
 	int32 fValue;
 	int32 fMax;
 	int32 fMin;
-	bool  fHex;
+
 	const char *fValueExpectedErrorString;
 	const char *fWrongValueErrorString;
+};
+
+class HexScalarValueSetting : public ScalarValueSetting {
+	// hexadecimal int32 setting
+public:
+	HexScalarValueSetting(const char *name, int32 defaultValue,
+		const char *valueExpectedErrorString, const char *wrongValueErrorString,
+		int32 min = LONG_MIN, int32 max = LONG_MAX);
+
+	void GetValueAsString(char *buffer) const;
+
+protected:
+	virtual void SaveSettingValue(Settings *settings);
 };
 
 class BooleanValueSetting : public ScalarValueSetting {

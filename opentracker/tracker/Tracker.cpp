@@ -2031,9 +2031,9 @@ TTrackerState::LoadSettingsIfNeeded()
 
 	Add(fShowVolumeSpaceBar = new BooleanValueSetting("ShowVolumeSpaceBar", 0));
 
-	Add(fUsedSpaceColor = new ScalarValueSetting("UsedSpaceColor", 0xc000cb00, "", "", LONG_MIN, LONG_MAX, true));
-	Add(fFreeSpaceColor = new ScalarValueSetting("FreeSpaceColor", 0xc0ffffff, "", "", LONG_MIN, LONG_MAX, true));
-	Add(fWarningSpaceColor = new ScalarValueSetting("WarningSpaceColor", 0xc0cb0000, "", "", LONG_MIN, LONG_MAX, true));
+	Add(fUsedSpaceColor = new HexScalarValueSetting("UsedSpaceColor", 0xc000cb00, "", ""));
+	Add(fFreeSpaceColor = new HexScalarValueSetting("FreeSpaceColor", 0xc0ffffff, "", ""));
+	Add(fWarningSpaceColor = new HexScalarValueSetting("WarningSpaceColor", 0xc0cb0000, "", ""));
 
 	TryReadingSettings();
 
