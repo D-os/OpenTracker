@@ -1174,6 +1174,29 @@ Model::GetLongVersionString(BString &result, version_kind kind)
 	return B_OK;
 }
 
+status_t 
+Model::GetVersionString(BString &result, version_kind kind)
+{
+	BFile file(EntryRef(), O_RDONLY);
+	status_t error = file.InitCheck();
+	if (error != B_OK)
+		return error;
+
+	BAppFileInfo info(&file);
+	error = info.InitCheck();
+	if (error != B_OK)
+		return error;
+
+	version_info version;
+	error = info.GetVersionInfo(&version, kind);
+	if (error != B_OK)
+		return error;
+
+	char vstr[32];
+	sprintf(vstr, "%ld.%ld.%ld", version.major, version.middle, version.minor);
+	result = vstr;
+	return B_OK;
+}
 
 #if DEBUG
 

@@ -154,6 +154,7 @@ class Model {
 		void SetLinkTo(Model *);
 
 		status_t GetLongVersionString(BString &, version_kind);
+		status_t GetVersionString(BString &, version_kind);
 		status_t AttrAsString(BString &, int64 *value, const char *attributeName,
 			uint32 attributeType);
 
