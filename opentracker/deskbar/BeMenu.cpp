@@ -81,7 +81,7 @@ class MountMenuItem : public BMenuItem {
 
 #endif
 
-// #define SHOW_RECENT_FIND_ITEMS
+//#define SHOW_RECENT_FIND_ITEMS
 
 namespace BPrivate {
 	BMenu *TrackerBuildRecentFindItemsMenu(const char *);
@@ -326,12 +326,12 @@ TBeMenu::AddStandardBeMenuItems()
 
 	subMenu->AddSeparatorItem();
 
-	item = new BMenuItem("Show Team Expander", new BMessage(msg_superExpando));
+	item = new BMenuItem("Show Application Expander", new BMessage(msg_superExpando));
 	item->SetTarget(be_app);
 	item->SetMarked( static_cast<TBarApp *>(be_app)->Settings()->superExpando);
 	subMenu->AddItem(item);
 
-	item = new BMenuItem("Expand New Teams", new BMessage(msg_expandNewTeams));
+	item = new BMenuItem("Expand New Applications", new BMessage(msg_expandNewTeams));
 	item->SetTarget(be_app);
 	item->SetMarked( static_cast<TBarApp *>(be_app)->Settings()->expandNewTeams);
 	item->SetEnabled(static_cast<TBarApp *>(be_app)->Settings()->superExpando);
