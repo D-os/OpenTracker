@@ -1,0 +1,25 @@
+
+# The directory for build system specific files.
+LOCALE_BUILD_DIR = [ FDirName $(LOCALE_TOP) build ] ;
+
+# Cache files for header scanning and jamfile caching.
+HCACHEFILE = header_cache ;
+JCACHEFILE = jamfile_cache ;
+LOCATE on $(HCACHEFILE) $(JCACHEFILE) = $(LOCALE_BUILD_DIR) ;
+
+include [ FDirName $(LOCALE_BUILD_DIR) HelperRules ] ;
+include [ FDirName $(LOCALE_BUILD_DIR) ConfigRules ] ;
+
+# Include UserBuildConfig.
+{
+	local userBuildConfig = [ GLOB $(LOCALE_BUILD_DIR) : UserBuildConfig ] ;
+	if $(userBuildConfig)
+	{
+		LOCATE on UserBuildConfig = $(LOCALE_BUILD_DIR) ;
+		include UserBuildConfig ;
+	}
+}
+
+include [ FDirName $(LOCALE_BUILD_DIR) BuildSettings ] ;
+include [ FDirName $(LOCALE_BUILD_DIR) OverriddenJamRules ] ;
+include [ FDirName $(LOCALE_BUILD_DIR) MainBuildRules ] ;

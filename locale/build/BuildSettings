@@ -1,0 +1,47 @@
+# BuildSettings
+#
+# Setup global variables.
+
+# warnings settings
+if $(WARNINGS) != 0 {
+	if $(OSPLAT) = X86 {
+		CCFLAGS += -Wall -Wno-multichar -Wmissing-prototypes ;
+		CCFLAGS += -Wpointer-arith -Wcast-align -Wsign-compare ;
+		C++FLAGS += -Wall -Wno-multichar -Wmissing-prototypes ;
+		C++FLAGS += -Wno-ctor-dtor-privacy -Woverloaded-virtual ;
+		C++FLAGS += -Wpointer-arith -Wcast-align -Wsign-compare ;
+	} else {
+		CCFLAGS += -w on -requireprotos ;
+	}
+}
+
+# debugging settings
+if $(DEBUG) {
+	OPTIMIZE = 0 ;
+	FDEFINES += DEBUG=$(DEBUG) ;
+	CCFLAGS += -g ;
+	C++FLAGS += -g ;
+	LINKFLAGS += -g ;
+}
+
+# optimization settings
+if $(OPTIMIZE) = 0 {
+	if $(OSPLAT) = X86 {
+		OPTIM ?= -O0 ;
+	} else {
+		OPTIM ?= -O0 ;
+	}
+} else {
+	if $(OSPLAT) = X86 {
+		OPTIM ?= -O1 ;
+	} else {
+		OPTIM ?= -O7 ;
+	}
+}
+
+# C and C++ flags
+if $(OSPLAT) = PPC {
+	# filter out -nosyspath
+	CFLAGS = [ FFilter $(CFLAGS) : -nosyspath ] ;
+	C++FLAGS = [ FFilter $(C++FLAGS) : -nosyspath ] ;
+}

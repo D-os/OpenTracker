@@ -1,0 +1,208 @@
+# MainBuildRules
+#
+# Rules that specify what to build and how to do it.
+
+rule SharedLibraryFromObjects
+{
+	# SharedLibraryFromObjects <name> : <objects> : <libraries> ;
+	#
+	# Links a shared library from objects.
+	#
+	# <name>: Name of the shared library. Grist is allowed.
+	# <objects>: List of object files. Grist will be set.
+	# <libraries>: List of libraries to link against.
+	#
+	local lib = $(1) ;
+	local objects = $(2) ;
+	local libs = $(3) ;
+	MainFromObjects $(lib) : $(objects) ;
+	MakeLocate $(lib) : $(LOCATE_TARGET) ;
+	local linkFlags ;
+	if $(OSPLAT) = X86 {
+		linkFlags = -nostart -Xlinker -soname=\"$(lib)\" ;
+	} else {
+		linkFlags = -xms ;
+	}
+	LINKFLAGS on $(lib) = [ on $(lib) return $(LINKFLAGS) ] $(linkFlags) ;
+	LinkAgainst $(lib) : $(libs) ;
+}
+
+rule SharedLibrary
+{
+	# SharedLibrary <name> : <sources> : <libraries> ;
+	#
+	# Creates a shared library from sources.
+	#
+	# <name>: Name of the shared library. Grist is allowed.
+	# <sources>: List of source files. Grist will be set.
+	# <libraries>: List of libraries to link against.
+	#
+	MakeLocateObjects $(2) ;
+	Objects $(2) ;
+	SharedLibraryFromObjects $(1) : $(2:S=$(SUFOBJ)) : $(3) ;
+}
+
+rule StaticLibrary
+{
+	# StaticLibrary <name> : <sources> ;
+	#
+	# Creates a static library from sources.
+	#
+	# <name>: Name of the static library. Grist is allowed.
+	# <source>: List of source files. Grist will be set.
+	#
+	local lib = $(1) ;
+	MakeLocateObjects $(2) ;
+# TODO: What about MakeLocateObject?
+	Library $(lib) : $(2) ;
+
+	# If KEEPOBJS is set, Library doesn't make the library depend on `lib'.
+	if $(KEEPOBJS) {
+		LocalDepends lib : $(lib) ;
+	}
+}
+
+rule LinkAgainst
+{
+	# LinkAgainst <name> : <libs> ;
+	#
+	# Adds libraries to the list of libraries a (Main) target shall be linked
+	# against.
+	#
+	# <name>: The name of the target for which to add libraries.
+	# <libs>: The libraries (actually arbitrary shared objects and static
+	#         libraries) to be added. Valid elements are e.g. "be" or
+	#         "libopenbeos.so" or "/boot/.../libfoo.so". If the basename starts
+	#         with "lib" or the thingy has a dirname or grist, it is added to
+	#         the NEEDLIBS variable (i.e. the file will be bound!), otherwise
+	#         it is prefixed "-l" and added to LINKLIBS. If you want to specify
+	#         a target that isn't a library and also has neither grist nor a
+	#         dirname, you can prepend "<nogrist>" as grist; it will be
+	#         stripped by this rule.
+	#
+	for i in $(>)
+	{
+		local isfile = ;
+		if $(i:D) || $(i:G) {
+			isfile = true ;
+			if $(i:G) = <nogrist> {
+				i = $(i:G=) ;
+			}
+		} else {
+			switch $(i:B)
+			{
+				# XXX: _APP_ and _KERNEL_ should not be needed for ELF.
+				case _APP_ : isfile = true ;
+				case _KERNEL_ : isfile = true ;
+				case lib*	: isfile = true ;
+				case *	: isfile = ;
+			}
+			if ! $(isfile) && ( $(i:S) = .so || $(i:S) = .a ) {
+				isfile = true ;
+			}
+		}
+		if $(isfile) {
+			NEEDLIBS on $(1) = [ on $(1) return $(NEEDLIBS) ] $(i) ;
+			Depends $(1) : $(i) ;
+		} else {
+			LINKLIBS on $(1) = [ on $(1) return $(LINKLIBS) ] -l$(i) ;
+		}
+	}
+}
+
+rule AddResources
+{
+	# AddResources <name> : <resourcefiles> ;
+	#
+	# Adds resources to the list of resources to be added to a shared object.
+	#
+	# <name>: The name of the target for which to add resources.
+	# <resourcefiles>: A list of resource files (.rsrc or .rdef) to be
+	#                  added. Grist will be added.
+	#
+	# NOTE: This rule must be invoked *before* invoking the rule that makes
+	# the shared object.
+	#
+	local resfiles = [ FGristFiles $(2) ] ;
+	SEARCH on $(resfiles) += $(SEARCH_SOURCE) ;
+
+	for file in $(resfiles) {
+		if $(file:S) = .rdef {
+			local rdef = $(file) ;
+			file = $(rdef:S=.rsrc) ;
+			ResComp $(file) : $(rdef) ;
+		}
+		RESFILES on $(1) += $(file) ;
+	}
+}
+
+rule ResComp
+{
+	# ResComp <resource file> : <rdef file> ;
+	#
+	# Compiles a resource definition (.rdef) file to a resource (.rsrc) file.
+	#
+	# <resource file>: The resource file. Must be gristed.
+	# <rdef file>: The resource definition file. Must be gristed.
+	#
+	SEARCH on $(2) += $(SEARCH_SOURCE) ;
+	MakeLocate $(1) : $(LOCATE_TARGET) ;
+	Depends $(1) : $(2) ;
+	LocalClean clean : $(1) ;
+}
+
+actions ResComp
+{
+	beres -o $(1) $(2)
+}
+
+rule XRes
+{
+	# XRes <target> : <resource files>
+	#
+	# Adds resources to a file.
+	#
+	# <target>: The files to which resources shall be added.
+	# <resource files>: The resource files.
+	#
+	if $(2)
+	{
+		Depends $(1) : $(2) ;
+		XRes1 $(1) : $(2) ;
+	}
+}
+
+actions XRes1
+{
+	xres -o "$(1)" "$(2)" ;
+}
+
+actions MimeSet
+{
+	mimeset -f "$(1)" ;
+}
+
+rule SysSubDirHdrs
+{
+	# SysSubDirHdrs <dirs>
+	#
+	# Adds directories to the system include search paths for the current
+	# subdirectory. Counterpart of SubDirHdrs which adds non-system include
+	# search paths.
+	#
+	# <dirs>: The directories to be added to the current subdir's system
+	# include search paths.
+	#
+	SYSSUBDIRHDRS += [ FDirName $(1) ] ;
+}
+
+# FSysIncludes <dirs>
+#
+# Counterpart of FIncludes for system include search paths.
+#
+if $(OSPLAT) = X86 {
+	rule FSysIncludes { return -I$(<) ; }
+} else {
+	rule FSysIncludes { return "-i "$(<) ; }
+}
+

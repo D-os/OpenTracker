@@ -1,0 +1,29 @@
+# HelperRules
+#
+# Helper rules without side effects.
+
+rule Filter
+{
+	# Filter <list> : <excludes> ;
+	#
+	# Removes all occurrences of <excludes> in <list>.
+
+	local list = $(1) ;
+	local excludes = $(2) ;
+	local newList ;
+	local item ;
+	for item in $(list) {
+		local skip ;
+		local exclude ;
+		for exclude in $(excludes) {
+			if $(item) = $(exclude) {
+				skip = true ;
+			}
+		}
+		if ! $(skip) {
+			newList += $(item) ;
+		}
+	}
+	return $(newList) ;
+}
+
