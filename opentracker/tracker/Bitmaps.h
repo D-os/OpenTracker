@@ -94,7 +94,8 @@ enum {
 	kResUpNavInactive = R_ResUpNavInactive,
 	kResBackNavActiveSel = R_ResBackNavActiveSel,
 	kResForwNavActiveSel = R_ResForwNavActiveSel,
-	kResUpNavActiveSel = R_ResUpNavActiveSel
+	kResUpNavActiveSel = R_ResUpNavActiveSel,
+	kResShareIcon = R_ShareIcon
 };
 
 
