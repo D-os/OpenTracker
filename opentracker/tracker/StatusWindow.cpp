@@ -51,7 +51,7 @@ All rights reserved.
 #include "DeskWindow.h"
 
 
-const float	kStatusViewHeight = 50;
+const float	kDefaultStatusViewHeight = 50;
 const float kUpdateGrain = 100000;
 const BRect kStatusRect(200, 200, 550, 200);
 
@@ -221,17 +221,18 @@ void
 BStatusWindow::CreateStatusItem(thread_id thread, StatusWindowState type)
 {
 	AutoLock<BWindow> lock(this);
-	int32 count = fViewList.CountItems();
 
 	BRect rect(Bounds());
-	rect.top = count * kStatusViewHeight;
-	rect.bottom = rect.top + kStatusViewHeight - 1;
+	if (BStatusView* lastView = fViewList.LastItem())
+		rect.top = lastView->Frame().bottom + 1;
+	rect.bottom = rect.top + kDefaultStatusViewHeight - 1;
 
 	BStatusView *view = new BStatusView(rect, thread, type);
+	// the BStatusView will resize itself if needed in its constructor
 	ChildAt(0)->AddChild(view);
 	fViewList.AddItem(view);
 
-	ResizeTo(Bounds().Width(), fViewList.CountItems() * kStatusViewHeight);
+	ResizeTo(Bounds().Width(), view->Frame().bottom);
 
 	// find out if the desktop is the active window
 	// if the status window is the only thing to take over active state and
@@ -285,6 +286,8 @@ BStatusWindow::RemoveStatusItem(thread_id thread)
 	}
 
 	if (winner) {
+		// the height by which the other views will have to be moved (in pixel count)
+		float height = winner->Bounds().Height() + 1;
 		fViewList.RemoveItem(winner);
 		winner->RemoveSelf();
 		delete winner;
@@ -308,9 +311,9 @@ BStatusWindow::RemoveStatusItem(thread_id thread)
 		}
 		
 		for (; index < numItems; index++) 
-			fViewList.ItemAt(index)->MoveBy(0, -kStatusViewHeight);
+			fViewList.ItemAt(index)->MoveBy(0, -height);
 
-		ResizeTo(Bounds().Width(), fViewList.CountItems() * kStatusViewHeight);
+		ResizeTo(Bounds().Width(), Bounds().Height() - height);
 	}
 
 }
@@ -378,8 +381,8 @@ BStatusView::BStatusView(BRect bounds, thread_id thread, StatusWindowState type)
 	fThread = thread;
 	fType = type;
 
-	SetViewColor(216, 216, 216);
-	SetLowColor(216, 216, 216);
+	SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
+	SetLowColor(ViewColor());
 	SetHighColor(20, 20, 20);
 	SetDrawingMode(B_OP_OVER);
 
@@ -434,8 +437,22 @@ BStatusView::BStatusView(BRect bounds, thread_id thread, StatusWindowState type)
 			break;
 	}
 
-	if (caption)
+	if (caption) {
 		fStatusBar = new BStatusBar(rect, "StatusBar", caption);
+		fStatusBar->SetBarHeight(12);
+		float width, height;
+		fStatusBar->GetPreferredSize(&width, &height);
+		fStatusBar->ResizeTo(fStatusBar->Frame().Width(), height);
+		AddChild(fStatusBar);
+
+		// figure out how much room we need to display
+		// the additional status message below the bar
+		font_height fh;
+		GetFontHeight(&fh);
+		BRect f = fStatusBar->Frame();
+		// height is 3 x the "room from the top" + bar height + room for string
+		ResizeTo(Bounds().Width(), f.top + f.Height() + fh.leading + fh.ascent + fh.descent + f.top);
+	}
 
 	if (id)
 	 	GetTrackerResources()->GetBitmapResource(B_MESSAGE_TYPE, id, &fBitmap);
@@ -455,9 +472,6 @@ BStatusView::BStatusView(BRect bounds, thread_id thread, StatusWindowState type)
 	fStopButton = new TCustomButton(rect, kStopButton);
 	fStopButton->ResizeTo(22, 18);
 	AddChild(fStopButton);
-
-	fStatusBar->SetBarHeight(12);
-	AddChild(fStatusBar);
 }
 
 
@@ -634,12 +648,20 @@ BStatusView::Draw(BRect)
 
 	BRect bounds(Bounds());
 
-	// draw separator
-	SetHighColor(150, 150, 150);
-	StrokeLine(bounds.LeftTop(), bounds.RightTop());
-	SetHighColor(255, 255, 255);
-	bounds.top++;
-	StrokeLine(bounds.LeftTop(), bounds.RightTop());
+	// draw a frame, which also separates multiple BStatusViews
+	rgb_color light = tint_color(ViewColor(), B_LIGHTEN_MAX_TINT);
+	rgb_color shadow = tint_color(ViewColor(), B_DARKEN_1_TINT);
+	BeginLineArray(4);
+		AddLine(BPoint(bounds.left, bounds.bottom - 1.0),
+				BPoint(bounds.left, bounds.top), light);
+		AddLine(BPoint(bounds.left + 1.0, bounds.top),
+				BPoint(bounds.right, bounds.top), light);
+		AddLine(BPoint(bounds.right, bounds.top + 1.0),
+				BPoint(bounds.right, bounds.bottom), shadow);
+		AddLine(BPoint(bounds.right - 1.0, bounds.bottom),
+				BPoint(bounds.left, bounds.bottom), shadow);
+	EndLineArray();
+
 	SetHighColor(0, 0, 0);
 
 	BPoint tp = fStatusBar->Frame().LeftBottom();
