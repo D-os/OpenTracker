@@ -46,9 +46,12 @@ struct CatKey {
  * the hash-access functor which is being used to access the hash-value
  * stored inside of each key.
  */
+#ifdef __MWERKS__
+	// Codewarrior doesn't provide this declaration, so we do:
 template <class T> struct hash : public unary_function<T,size_t> {
 	size_t operator() (const T &key) const;
 };
+#endif
 
 struct hash<CatKey>
 {
