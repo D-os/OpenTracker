@@ -336,7 +336,7 @@ OpenHashElementArray<Element>::Add()
 	} else if (fNextFree >= fSize - 1) {
 		int32 newSize = fSize + kGrowChunk;
 		Element *newData = (Element *)calloc((size_t)newSize , sizeof(Element));
-		if (!fData)
+		if (!newData)
 			throw bad_alloc();
 		memcpy(newData, fData, fSize * sizeof(Element));
 		free(fData);
