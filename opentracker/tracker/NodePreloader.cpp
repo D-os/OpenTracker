@@ -203,6 +203,12 @@ NodePreloader::Preload()
 		}
 	}
 
+	BMessenger messenger(kTrackerSignature);
+	if (!messenger.IsValid()) {
+		// put out some message here!
+		return;
+	}
+
 	ASSERT(fLock.IsLocked());
 	BPath path;
 	if (find_directory(B_BEOS_APPS_DIRECTORY, &path) == B_OK) 
