@@ -68,6 +68,7 @@ All rights reserved.
 #include "FavoritesMenu.h"
 #include "FindPanel.h"
 #include "FSClipboard.h"
+#include "FSUndoRedo.h"
 #include "FSUtils.h"
 #include "IconMenuItem.h"
 #include "OpenWithWindow.h"
@@ -83,6 +84,11 @@ All rights reserved.
 #include "TrackerSettings.h"
 #include "Thread.h"
 #include "TemplatesMenu.h"
+
+
+const uint32 kRedo = 'REDO';
+	// this is the same as B_REDO in Dano/Zeta/OpenBeOS
+
 
 #if !B_BEOS_VERSION_DANO
 _IMPEXP_BE
@@ -505,6 +511,11 @@ BContainerWindow::BContainerWindow(LockingList<BWindow> *list,
 		app->StartWatching(this, kDontMoveFilesToTrashChanged);
 		app->Unlock();
 	}
+
+	// ToDo: remove me once we have undo/redo menu items
+	//	(that is, move them to AddShortcuts())
+ 	AddShortcut('Z', B_COMMAND_KEY, new BMessage(B_UNDO), this);
+ 	AddShortcut('Z', B_COMMAND_KEY | B_SHIFT_KEY, new BMessage(kRedo), this);
 }
 
 
@@ -1553,11 +1564,20 @@ BContainerWindow::MessageReceived(BMessage *message)
 			}		
 			break;
 		}
-			
+
 		case B_NODE_MONITOR:
 			UpdateTitle();
 			break;
-		
+
+		case B_UNDO:
+			FSUndo();
+			break;
+
+		//case B_REDO:	/* only defined in Dano/Zeta/OpenBeOS */
+		case kRedo:
+			FSRedo();
+			break;
+
 		default:
 			_inherited::MessageReceived(message);
 	}
@@ -1764,6 +1784,7 @@ BContainerWindow::AddFileMenu(BMenu *menu)
 		menu->AddItem(pasteItem = new BMenuItem("Paste", new BMessage(B_PASTE), 'V'));
 
 		menu->AddSeparatorItem();
+				
 		menu->AddItem(new BMenuItem("Identify", new BMessage(kIdentifyEntry)));
 		BMenu *addOnMenuItem = new BMenu(kAddOnsMenuName);
 		addOnMenuItem->SetFont(be_plain_font);
