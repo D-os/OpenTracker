@@ -51,6 +51,35 @@ All rights reserved.
 #include "TrackerString.h"
 
 
+namespace BPrivate {
+
+bool
+ShouldShowDesktopPose(dev_t device, const Model *model, const PoseInfo *)
+{
+	if (model->NodeRef()->device != device) {
+		// avoid having more than one Trash
+		BDirectory remoteTrash;
+		if (FSGetTrashDir(&remoteTrash, model->NodeRef()->device) == B_OK) {
+			node_ref remoteTrashNodeRef;
+			remoteTrash.GetNodeRef(&remoteTrashNodeRef);
+			if (remoteTrashNodeRef == *model->NodeRef())
+				return false;
+		}
+	}
+	return true;
+}
+
+}
+
+
+DesktopEntryListCollection::DesktopEntryListCollection()
+{
+}
+
+
+//	#pragma mark -
+
+
 DesktopPoseView::DesktopPoseView(Model *model, BRect frame, uint32 viewMode,
 	uint32 resizeMask)
 	:	BPoseView(model, frame, viewMode, resizeMask)
@@ -66,8 +95,8 @@ DesktopPoseView::InitDesktopDirentIterator(BPoseView *nodeMonitoringTarget,
 	// integrated onto the desktop
 
 	Model sourceModel(ref, false, true);
-	if (sourceModel.InitCheck() != B_OK) 
-		return 0;
+	if (sourceModel.InitCheck() != B_OK)
+		return NULL;
 
 	CachedEntryIteratorList *result = new DesktopEntryListCollection();
 	
@@ -84,51 +113,50 @@ DesktopPoseView::InitDesktopDirentIterator(BPoseView *nodeMonitoringTarget,
 		*sourceDirectory);
 
 	result->AddItem(perDesktopIterator);
-	if (nodeMonitoringTarget)
-		TTracker::WatchNode(sourceModel.NodeRef(), B_WATCH_DIRECTORY
-			| B_WATCH_NAME | B_WATCH_STAT | B_WATCH_ATTR, nodeMonitoringTarget);
+	if (nodeMonitoringTarget) {
+		TTracker::WatchNode(sourceModel.NodeRef(),
+				B_WATCH_DIRECTORY | B_WATCH_NAME | B_WATCH_STAT | B_WATCH_ATTR,
+				nodeMonitoringTarget);
+	}
 
 	// add the other volumes
+
 	BVolumeRoster roster;
 	roster.Rewind();
 	BVolume volume;
 	while (roster.GetNextVolume(&volume) == B_OK) {
-
 		if (volume.Device() == sourceDevice)
 			// got that already
-			continue;
-
-		if (!volume.IsPersistent())
 			continue;
 
 		if (!DesktopPoseView::ShouldIntegrateVolume(&volume))
 			continue;
 
+		BDirectory remoteDesktop;
+		if (FSGetDeskDir(&remoteDesktop, volume.Device()) < B_OK)
+			continue;
+
 		BDirectory root;
 		if (volume.GetRootDirectory(&root) == B_OK) {
-			
-			BDirectory remoteDesktop;
-
-			FSGetDeskDir(&remoteDesktop, volume.Device());
 			perDesktopIterator = new CachedDirectoryEntryList(remoteDesktop);
-
 			result->AddItem(perDesktopIterator);
 
 			node_ref nodeRef;
 			remoteDesktop.GetNodeRef(&nodeRef);
 
-			if (nodeMonitoringTarget)
-				TTracker::WatchNode(&nodeRef, B_WATCH_DIRECTORY
-					| B_WATCH_NAME | B_WATCH_STAT | B_WATCH_ATTR,
-					nodeMonitoringTarget);
+			if (nodeMonitoringTarget) {
+				TTracker::WatchNode(&nodeRef,
+						B_WATCH_DIRECTORY | B_WATCH_NAME | B_WATCH_STAT | B_WATCH_ATTR,
+						nodeMonitoringTarget);
+			}
 		}
 	}
-
 	
 	if (result->Rewind() != B_OK) {
 		delete result;
 		if (nodeMonitoringTarget)
 			nodeMonitoringTarget->HideBarberPole();
+
 		return NULL;
 	}
 
@@ -186,25 +214,6 @@ DesktopPoseView::FSNotification(const BMessage *message)
 	return _inherited::FSNotification(message);
 }
 
-namespace BPrivate {
-
-bool
-ShouldShowDesktopPose(dev_t device, const Model *model, const PoseInfo *)
-{
-	if (model->NodeRef()->device != device) {
-		// avoid having more than one Trash
-		BDirectory remoteTrash;
-		if (FSGetTrashDir(&remoteTrash, model->NodeRef()->device) == B_OK) {
-			node_ref remoteTrashNodeRef;
-			remoteTrash.GetNodeRef(&remoteTrashNodeRef);
-			if (remoteTrashNodeRef == *model->NodeRef())
-				return false;
-		}
-	}
-	return true;
-}
-
-}
 
 bool
 DesktopPoseView::AddPosesThreadValid(const entry_ref *) const
@@ -249,11 +258,6 @@ DesktopPoseView::Represents(const entry_ref *ref) const
 	node_ref nref;
 	entry.GetNodeRef(&nref);
 	return Represents(&nref);
-}
-
-
-DesktopEntryListCollection::DesktopEntryListCollection()
-{
 }
 
 
