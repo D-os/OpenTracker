@@ -3,6 +3,7 @@
 ** Distributed under the terms of the OpenBeOS License.
 */
 
+#include <assert.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -33,7 +34,7 @@ CatalogTest::Run()
 	status_t res;
 	BString s;
 	s << "string" << "\x01" << TR_CONTEXT << "\x01";
-	size_t hashVal = __stl_hash_string(s.String());
+	size_t hashVal = CatKey::HashFun(s.String());
 	assert(be_locale != NULL);
 	system("mkdir -p ./locale/catalogs/"catSig);
 
@@ -102,7 +103,7 @@ CatalogTest::Check()
 	printf("app-check...");
 	BString s;
 	s << "string" << "\x01" << TR_CONTEXT << "\x01";
-	size_t hashVal = __stl_hash_string(s.String());
+	size_t hashVal = CatKey::HashFun(s.String());
 	// ok, we now try to re-load the catalog that has just been written:
 	//
 	// actually, the following code can be seen as an example of what an 

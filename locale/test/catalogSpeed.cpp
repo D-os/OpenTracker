@@ -3,6 +3,7 @@
 ** Distributed under the terms of the OpenBeOS License.
 */
 
+#include <assert.h>
 #include <stdio.h>
 #include <unistd.h>
 
