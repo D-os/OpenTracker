@@ -306,12 +306,14 @@ BContainerWindow::BContainerWindow(LockingList<BWindow> *list,
 	Run();
 
 	// Watch out for settings changes:
-	be_app->LockLooper();
-	be_app->StartWatching(this, kWindowsShowFullPathChanged);
-	be_app->StartWatching(this, kSingleWindowBrowseChanged);
-	be_app->StartWatching(this, kShowNavigatorChanged);
-	be_app->StartWatching(this, kDontMoveFilesToTrashChanged);
-	be_app->UnlockLooper();
+	if (TTracker *app = dynamic_cast<TTracker*>(be_app)) {
+		app->Lock();
+		app->StartWatching(this, kWindowsShowFullPathChanged);
+		app->StartWatching(this, kSingleWindowBrowseChanged);
+		app->StartWatching(this, kShowNavigatorChanged);
+		app->StartWatching(this, kDontMoveFilesToTrashChanged);
+		app->Unlock();
+	}
 }
 
 
@@ -320,12 +322,14 @@ BContainerWindow::~BContainerWindow()
 	ASSERT(IsLocked());
 
 	// stop the watchers
-	be_app->LockLooper();
-	be_app->StopWatching(this, kWindowsShowFullPathChanged);
-	be_app->StopWatching(this, kSingleWindowBrowseChanged);
-	be_app->StopWatching(this, kShowNavigatorChanged);
-	be_app->StopWatching(this, kDontMoveFilesToTrashChanged);
-	be_app->UnlockLooper();
+	if (TTracker *app = dynamic_cast<TTracker*>(be_app)) {
+		app->Lock();
+		app->StopWatching(this, kWindowsShowFullPathChanged);
+		app->StopWatching(this, kSingleWindowBrowseChanged);
+		app->StopWatching(this, kShowNavigatorChanged);
+		app->StopWatching(this, kDontMoveFilesToTrashChanged);
+		app->Unlock();
+	}
 
 	delete fTaskLoop;
 	delete fBackgroundImage;

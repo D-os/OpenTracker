@@ -790,14 +790,16 @@ BPoseView::DetachedFromWindow()
 	if (fTitleView && !fTitleView->Window())
 		delete fTitleView;
 
-	be_app->LockLooper();
-	be_app->StopWatching(this, kShowSelectionWhenInactiveChanged);
-	be_app->StopWatching(this, kTransparentSelectionChanged);
-	be_app->StopWatching(this, kSortFolderNamesFirstChanged);
-	be_app->StopWatching(this, kShowVolumeSpaceBar);
-	be_app->StopWatching(this, kSpaceBarColorChanged);
-	be_app->StopWatching(this, kUpdateVolumeSpaceBar);
-	be_app->UnlockLooper();
+	if (TTracker *app = dynamic_cast<TTracker*>(be_app)) {
+		app->Lock();
+		app->StopWatching(this, kShowSelectionWhenInactiveChanged);
+		app->StopWatching(this, kTransparentSelectionChanged);
+		app->StopWatching(this, kSortFolderNamesFirstChanged);
+		app->StopWatching(this, kShowVolumeSpaceBar);
+		app->StopWatching(this, kSpaceBarColorChanged);
+		app->StopWatching(this, kUpdateVolumeSpaceBar);
+		app->Unlock();
+	}
 
 	StopWatching();
 	CommitActivePose();
@@ -873,14 +875,16 @@ BPoseView::AttachedToWindow()
 		fFontHeight = fFontInfo.ascent + fFontInfo.descent + fFontInfo.leading;
 	}
 
-	be_app->LockLooper();
-	be_app->StartWatching(this, kShowSelectionWhenInactiveChanged);
-	be_app->StartWatching(this, kTransparentSelectionChanged);
-	be_app->StartWatching(this, kSortFolderNamesFirstChanged);
-	be_app->StartWatching(this, kShowVolumeSpaceBar);
-	be_app->StartWatching(this, kSpaceBarColorChanged);
-	be_app->StartWatching(this, kUpdateVolumeSpaceBar);
-	be_app->UnlockLooper();
+	if (TTracker *app = dynamic_cast<TTracker*>(be_app)) {
+		app->Lock();
+		app->StartWatching(this, kShowSelectionWhenInactiveChanged);
+		app->StartWatching(this, kTransparentSelectionChanged);
+		app->StartWatching(this, kSortFolderNamesFirstChanged);
+		app->StartWatching(this, kShowVolumeSpaceBar);
+		app->StartWatching(this, kSpaceBarColorChanged);
+		app->StartWatching(this, kUpdateVolumeSpaceBar);
+		app->Unlock();
+	}
 
 	FSClipboardStartWatch(this);
 }
@@ -1979,12 +1983,12 @@ BPoseView::MessageReceived(BMessage *message)
 			break;
 
 		case B_COPY:
-			if (FSClipboardAddPoses(TargetModel()->NodeRef(),fSelectionList,kCopySelectionTo,true) > 0)
+			if (FSClipboardAddPoses(TargetModel()->NodeRef(), fSelectionList, kCopySelectionTo, true) > 0)
 				SetHasPosesInClipboard(true);
 			break;
 
 		case kCopyMoreSelectionToClipboard:
-			if (FSClipboardAddPoses(TargetModel()->NodeRef(),fSelectionList,kCopySelectionTo,false) > 0)
+			if (FSClipboardAddPoses(TargetModel()->NodeRef(), fSelectionList, kCopySelectionTo, false) > 0)
 				SetHasPosesInClipboard(true);
 			break;
 
