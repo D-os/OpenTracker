@@ -127,7 +127,7 @@ TExpandoMenuBar::AttachedToWindow()
 		if ((barInfo->flags & B_BACKGROUND_APP) == 0
 			&& strcasecmp(barInfo->sig, TASK_BAR_MIME_SIG) != 0) {
 			if ((settings->trackerAlwaysFirst)
-				&& (strcmp(barInfo->sig, kTrackerSig)) == 0) {
+				&& (strcmp(barInfo->sig, kTrackerSignature)) == 0) {
 				AddItem(new TTeamMenuItem(barInfo->teams, barInfo->icon, 
 					barInfo->name, barInfo->sig, width, height,
 					fDrawLabel, fVertical), fFirstApp);
@@ -414,14 +414,14 @@ TExpandoMenuBar::AddTeam(BList *team, BBitmap *icon, char *name, char *sig)
 
 	desk_settings *settings = ((TBarApp *)be_app)->Settings();
 	if ((settings->trackerAlwaysFirst)
-		&& (strcmp( sig, kTrackerSig) == 0)) {
+		&& (strcmp( sig, kTrackerSignature) == 0)) {
 		AddItem(new TTeamMenuItem(team, icon, name, sig,
 			itemWidth, itemHeight, fDrawLabel, fVertical), fFirstApp);
 	} else if (settings->sortRunningApps) {
 		int32 firstApp = fFirstApp;
 		if ((settings->trackerAlwaysFirst)
 			&& (strcmp(static_cast<TTeamMenuItem *>(ItemAt(fFirstApp))->Signature(),
-					kTrackerSig) == 0)) {
+					kTrackerSignature) == 0)) {
 			firstApp++;
 		}
 		int32 count = CountItems();

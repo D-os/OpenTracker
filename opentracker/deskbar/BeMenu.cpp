@@ -92,7 +92,7 @@ using namespace BPrivate;
 
 
 TBeMenu::TBeMenu(TBarView *barview)
-	: BNavMenu("BeMenu", B_REFS_RECEIVED, BMessenger(kTrackerSig)),
+	: BNavMenu("BeMenu", B_REFS_RECEIVED, BMessenger(kTrackerSignature)),
 		fAddState(kStart),
 		fBarView(barview)
 {
@@ -111,7 +111,7 @@ TBeMenu::AttachedToWindow()
 			fBarView->DragStart();
 		} else {
 			SetTypesList(NULL);
-			SetTarget(BMessenger(kTrackerSig));
+			SetTarget(BMessenger(kTrackerSignature));
 			SetTrackingHookDeep(this, NULL, NULL);		
 		}
 
@@ -400,7 +400,7 @@ TBeMenu::ResetTargets()
 	//	else set it to the default (Tracker)
 	//
 	if (!fBarView->Dragging())
-		SetTarget(BMessenger(kTrackerSig));
+		SetTarget(BMessenger(kTrackerSignature));
 	//
 	//	now set the target for the menuitems to the currently
 	//	set target, which may or may not be tracker
@@ -424,7 +424,7 @@ TBeMenu::ResetTargets()
 					break;
 				case kFindButton:
 					// about, find
-					item->SetTarget(BMessenger(kTrackerSig));
+					item->SetTarget(BMessenger(kTrackerSignature));
 					break;
 	
 				case msg_ToggleDraggers:
@@ -478,7 +478,7 @@ TBeMenu::ScreenLocation()
 
 
 TRecentsMenu::TRecentsMenu(const char *name, TBarView *bar, int32 which)
-	: BNavMenu(name, B_REFS_RECEIVED, BMessenger(kTrackerSig)),
+	: BNavMenu(name, B_REFS_RECEIVED, BMessenger(kTrackerSignature)),
 	fWhich(which),
 	fRecentsCount(0),
 	fItemIndex(0),
@@ -631,7 +631,7 @@ TRecentsMenu::ResetTargets()
 	//	else set it to the default (Tracker)
 	//
 	if (!fBarView->Dragging())
-		SetTarget(BMessenger(kTrackerSig));
+		SetTarget(BMessenger(kTrackerSignature));
 	//
 	//	now set the target for the menuitems to the currently
 	//	set target, which may or may not be tracker
@@ -665,7 +665,7 @@ MountMenu::AddDynamicItem(add_state s)
 	//
 	BMessage request('gmtv');
 	BMessage reply;
-	BMessenger(kTrackerSig).SendMessage(&request,
+	BMessenger(kTrackerSignature).SendMessage(&request,
 		&reply);
 
 	//	
@@ -682,7 +682,7 @@ MountMenu::AddDynamicItem(add_state s)
 		AddItem(new MountMenuItem(reply.FindString("DisplayName", vol),
 		  invokeMessage, icon));
 	}
-	
+
 	if (countFound > 0)
 		AddSeparatorItem();
 
@@ -691,9 +691,9 @@ MountMenu::AddDynamicItem(add_state s)
 	mountAll->SetEnabled(countFound > 0);
 	BMenuItem *mountSettings = new BMenuItem("Settings", new BMessage('Tram'));
 	AddItem(mountSettings);
-	
-	SetTargetForItems(BMessenger(kTrackerSig));
-	
+
+	SetTargetForItems(BMessenger(kTrackerSignature));
+
 	return false;
 }
 

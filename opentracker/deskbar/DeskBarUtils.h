@@ -35,7 +35,7 @@ All rights reserved.
 #ifndef DB_UTILS_H
 #define DB_UTILS_H
 
-#define kTrackerSig "application/x-vnd.Be-TRAK"
+#include "tracker_private.h"
 
 enum {
 	msg_be_container
@@ -53,4 +53,4 @@ float FontHeight(const BFont* font, bool full);
 void AddToLog(const char*);
 #endif
 
-#endif
+#endif	/* DB_UTILS_H */

@@ -754,7 +754,7 @@ TBarView::AppCanHandleTypes(const char *signature)
 		|| !fCachedTypesList || fCachedTypesList->CountItems() == 0)
 		return false;
 
-	if (strcmp(signature, kTrackerSig) == 0) 
+	if (strcmp(signature, kTrackerSignature) == 0) 
 		//	tracker should support all types
 		//	and should pass them on to the appropriate application
 		return true;

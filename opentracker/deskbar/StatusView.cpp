@@ -119,10 +119,10 @@ TReplicantTray::TReplicantTray(TBarView *parent, bool vertical)
 			B_WILL_DRAW | B_FRAME_EVENTS),
 		fClock(NULL),
 		fBarView(parent),
+		fShelf(new TReplicantShelf(this)),
 		fMultiRowMode(vertical),
-		fAlignmentSupport(false)
-{
-	fShelf = new TReplicantShelf(this);
+		fAlignmentSupport(false)	
+{	
 }
 
 
@@ -277,12 +277,13 @@ TReplicantTray::GetPreferredSize(float *preferredWidth, float *preferredHeight)
 	} else {
 		// if last replicant overruns clock then
 		// resize to accomodate
-		if (view) {	
+		if (view) {
+			BRect viewFrame(view->Frame());	
 			if (fBarView->ShowingClock()
-				&& view->Frame().right + 6 >= fClock->Frame().left) {
-				width = view->Frame().right + 6 + fClock->Frame().Width();
+				&& viewFrame.right + 6 >= fClock->Frame().left) {
+				width = viewFrame.right + 6 + fClock->Frame().Width();
 			} else 
-				width = view->Frame().right + 3;
+				width = viewFrame.right + 3;
 		}
 		//	this view has a fixed minimum width
 		width = max(kMinimumTrayWidth, width);
@@ -554,7 +555,7 @@ bool
 TReplicantTray::NodeExists(node_ref *nodeRef)
 {
 	int32 count = fItemList->CountItems()-1;	
-	for (int32 i=count ; i >= 0 ; i--) {
+	for (int32 i = count ; i >= 0 ; i--) {
 		DeskbarItemInfo *item = (DeskbarItemInfo *)fItemList->ItemAt(i);
 		if (!item)
 			continue;

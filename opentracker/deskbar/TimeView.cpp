@@ -58,11 +58,13 @@ FontHeight(BView* target, bool full)
 	return h;
 }
 
+
 enum {
 	msg_showclock,
 	msg_changeclock,
 	msg_hide
 };
+
 
 TTimeView::TTimeView(bool showSeconds, bool milTime, bool fullDate, bool euroDate, bool)
 	: 	BView(BRect(-100,-100,-90,-90), "_deskbar_tv_",
@@ -84,6 +86,7 @@ TTimeView::TTimeView(bool showSeconds, bool milTime, bool fullDate, bool euroDat
 	fNeedToUpdate = true;
 }
 
+
 #ifdef AS_REPLICANT
 TTimeView::TTimeView(BMessage *data)
 	: BView(data)
@@ -98,9 +101,11 @@ TTimeView::TTimeView(BMessage *data)
 }
 #endif
 
+
 TTimeView::~TTimeView()
 {
 }
+
 
 #ifdef AS_REPLICANT
 BArchivable*
@@ -110,6 +115,7 @@ TTimeView::Instantiate(BMessage *data)
 		return NULL;
 	return new TTimeView(data);
 }
+
 
 status_t
 TTimeView::Archive(BMessage *data, bool deep) const
@@ -124,6 +130,7 @@ TTimeView::Archive(BMessage *data, bool deep) const
 	return B_OK;
 }
 #endif
+
 
 void
 TTimeView::AttachedToWindow()
@@ -143,6 +150,7 @@ TTimeView::AttachedToWindow()
 	CalculateTextPlacement();
 }
 
+
 void
 TTimeView::GetPreferredSize(float *width, float *height)
 {
@@ -160,6 +168,7 @@ TTimeView::GetPreferredSize(float *width, float *height)
 	}
 }
 
+
 void
 TTimeView::ResizeToPreferred()
 {
@@ -174,11 +183,13 @@ TTimeView::ResizeToPreferred()
 	}
 }
 
+
 void
 TTimeView::FrameMoved(BPoint)
 {
 	Update();
 }
+
 
 void
 TTimeView::MessageReceived(BMessage* message)
@@ -201,6 +212,7 @@ TTimeView::MessageReceived(BMessage* message)
 			BView::MessageReceived(message);
 	}
 }
+
 
 void
 TTimeView::GetCurrentTime()
@@ -241,10 +253,12 @@ TTimeView::GetCurrentTime()
 	fHour = time.tm_hour;
 }
 
+
 const char *kShortDateFormat = "%m/%d/%y";
 const char *kShortEuroDateFormat = "%d/%m/%y";
 const char *kLongDateFormat = "%a, %B %d, %Y";
 const char *kLongEuroDateFormat = "%a, %d %B, %Y";
+
 
 void
 TTimeView::GetCurrentDate()
@@ -265,6 +279,7 @@ TTimeView::GetCurrentDate()
 		
 	strcpy(fDateStr, str);
 }
+
 
 void
 TTimeView::Draw(BRect )
@@ -288,6 +303,7 @@ TTimeView::Draw(BRect )
 	PopState();
 }
 
+
 void
 TTimeView::MouseDown(BPoint point)
 {
@@ -306,6 +322,7 @@ TTimeView::MouseDown(BPoint point)
 		
 	Update();
 }
+
 
 void
 TTimeView::Pulse()
@@ -347,12 +364,14 @@ TTimeView::Pulse()
 	}	
 }
 
+
 void
 TTimeView::ShowSeconds(bool on)
 {
 	fShowSeconds = on;
 	Update();
 }
+
 
 void
 TTimeView::ShowMilTime(bool on)
@@ -361,12 +380,14 @@ TTimeView::ShowMilTime(bool on)
 	Update();
 }
 
+
 void
 TTimeView::ShowDate(bool on)
 {
 	fShowingDate = on;
 	Update();
 }
+
 
 void
 TTimeView::ShowFullDate(bool on)
@@ -375,12 +396,14 @@ TTimeView::ShowFullDate(bool on)
 	Update();
 }
 
+
 void
 TTimeView::ShowEuroDate(bool on)
 {
 	fEuroDate = on;
 	Update();
 }
+
 
 bool
 TTimeView::CanShowFullDate() const
@@ -391,6 +414,7 @@ TTimeView::CanShowFullDate() const
 		showFullDate = false;	// This won't fit when the Deskbar isn't horizontally expanded.
 	return showFullDate;
 }	
+
 
 void
 TTimeView::Update()
@@ -405,11 +429,6 @@ TTimeView::Update()
 	}
 }
 
-bool
-TTimeView::Orientation() const
-{
-	return fOrientation;
-}
 
 void
 TTimeView::SetOrientation(bool o)
@@ -419,19 +438,23 @@ TTimeView::SetOrientation(bool o)
 	Invalidate();
 }
 
+
 void
 TTimeView::CalculateTextPlacement()
 {
+	BRect bounds(Bounds());
+	
 	if (fOrientation) {		// vertical mode
-		fDateLocation.x = Bounds().Width()/2 - StringWidth(fDateStr)/2;
-		fTimeLocation.x = Bounds().Width()/2 - StringWidth(fTimeStr)/2;
+		fDateLocation.x = bounds.Width()/2 - StringWidth(fDateStr)/2;
+		fTimeLocation.x = bounds.Width()/2 - StringWidth(fTimeStr)/2;
 	} else {
-		fTimeLocation.x = Bounds().Width() - StringWidth(fTimeStr) - 5;
-		fDateLocation.x = Bounds().Width() - StringWidth(fDateStr) - 5;
+		fTimeLocation.x = bounds.Width() - StringWidth(fTimeStr) - 5;
+		fDateLocation.x = bounds.Width() - StringWidth(fDateStr) - 5;
 	}
 	//	center vertically
-	fDateLocation.y = fTimeLocation.y = Bounds().Height()/2 + fFontHeight/2;
+	fDateLocation.y = fTimeLocation.y = bounds.Height()/2 + fFontHeight/2;
 }
+
 		
 void
 TTimeView::ShowClockOptions(BPoint point)

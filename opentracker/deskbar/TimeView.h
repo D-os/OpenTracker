@@ -45,16 +45,15 @@ class _EXPORT	TTimeView;
 #endif
 
 class TTimeView : public BView {
-public:
-					TTimeView( bool showSeconds=false, bool milTime=false,
-						bool fullDate=false, bool euroDate=false,
-						bool showInterval=false);
-					TTimeView(BMessage *data);
-					~TTimeView();
+	public:
+		TTimeView(bool showSeconds = false, bool milTime = false, bool fullDate = false,
+			bool euroDate = false, bool showInterval = false);
+		TTimeView(BMessage *data);
+		~TTimeView();
 
 #ifdef AS_REPLICANT
-		status_t	Archive(BMessage *data, bool deep = true) const;
-static	BArchivable	*Instantiate(BMessage *data);
+		status_t Archive(BMessage *data, bool deep = true) const;
+		static BArchivable *Instantiate(BMessage *data);
 #endif
 
 		void		AttachedToWindow();
@@ -77,10 +76,12 @@ static	BArchivable	*Instantiate(BMessage *data);
 		bool		CanShowFullDate() const;
 		bool		ShowingEuroDate()	{return fEuroDate; }
 		void		ShowEuroDate(bool);
-		
+
 		bool		Orientation() const;
 		void		SetOrientation(bool o);
-private:
+
+	private:
+		friend class TReplicantTray;
 
 		void		Update();
 		void		GetCurrentTime();
@@ -112,11 +113,17 @@ private:
 		bool		fEuroDate;
 				
 		float		fFontHeight;
-		bool		fOrientation;		// vertical=true
+		bool		fOrientation;		// vertical = true
 		BPoint		fTimeLocation;
 		BPoint		fDateLocation;
-
-friend class TReplicantTray;
 };
 
-#endif
+
+inline bool
+TTimeView::Orientation() const
+{
+	return fOrientation;
+}
+
+
+#endif	/* TIME_VIEW_H */
