@@ -62,9 +62,9 @@ FontHeight(BView *target, bool full)
 
 
 enum {
-	msg_showclock,
-	msg_changeclock,
-	msg_hide
+	kMsgShowClock,
+	kMsgChangeClock,
+	kMsgHide
 };
 
 
@@ -73,10 +73,11 @@ TTimeView::TTimeView(bool showSeconds, bool milTime, bool fullDate, bool euroDat
 	B_FOLLOW_RIGHT | B_FOLLOW_TOP,
 	B_WILL_DRAW | B_PULSE_NEEDED | B_FRAME_EVENTS),
 	fParent(NULL),
-	fShowInterval(true), // defaulting this to true until UI is in place
+	fShowInterval(true), // ToDo: defaulting this to true until UI is in place
 	fShowSeconds(showSeconds),
 	fMilTime(milTime),
 	fFullDate(fullDate),
+	fCanShowFullDate(false),
 	fEuroDate(euroDate),
 	fOrientation(false)
 {
@@ -198,11 +199,23 @@ void
 TTimeView::MessageReceived(BMessage* message)
 {
 	switch (message->what) {
-		case msg_fulldate:
+		case kMsgFullDate:
 			ShowFullDate(!ShowingFullDate());
 			break;
 
-		case msg_changeclock:
+		case kMsgShowSeconds:
+			ShowSeconds(!ShowingSeconds());
+			break;
+
+		case kMsgMilTime:
+			ShowMilTime(!ShowingMilTime());
+			break;
+
+		case kMsgEuroDate:
+			ShowEuroDate(!ShowingEuroDate());
+			break;
+
+		case kMsgChangeClock:
 			// launch the time prefs app
 			be_roster->Launch("application/x-vnd.Be-TIME");
 			break;
@@ -400,15 +413,13 @@ TTimeView::ShowEuroDate(bool on)
 }
 
 
-bool
-TTimeView::CanShowFullDate() const
+void
+TTimeView::AllowFullDate(bool allow)
 {
-	bool showFullDate = true;
-	TReplicantTray *tray = dynamic_cast<TReplicantTray *>(fParent);
-	if (tray != NULL && tray->IsMultiRow())
-		showFullDate = false;	// This won't fit when the Deskbar isn't horizontally expanded.
+	fCanShowFullDate = allow;
 
-	return showFullDate;
+	if (allow != ShowingFullDate())
+		Update();
 }
 
 
@@ -462,7 +473,7 @@ TTimeView::ShowClockOptions(BPoint point)
 	menu->SetFont(be_plain_font);
 	BMenuItem	*item;
 
-	item = new BMenuItem("Change Time" B_UTF8_ELLIPSIS, new BMessage(msg_changeclock));
+	item = new BMenuItem("Change Time" B_UTF8_ELLIPSIS, new BMessage(kMsgChangeClock));
 	menu->AddItem(item);
 
 	item = new BMenuItem("Hide Time", new BMessage('time'));

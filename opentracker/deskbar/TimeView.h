@@ -40,6 +40,12 @@ All rights reserved.
 #include <Window.h>
 
 
+const uint32 kMsgShowSeconds = 'ShSc';
+const uint32 kMsgMilTime = 'MilT';
+const uint32 kMsgFullDate = 'FDat';
+const uint32 kMsgEuroDate = 'EDat';
+
+
 #ifdef AS_REPLICANT
 class _EXPORT	TTimeView;
 #endif
@@ -73,7 +79,8 @@ class TTimeView : public BView {
 		void		ShowDate(bool);
 		bool		ShowingFullDate()	{ return fFullDate; }
 		void		ShowFullDate(bool);
-		bool		CanShowFullDate() const;
+		bool		CanShowFullDate() const { return fCanShowFullDate; }
+		void		AllowFullDate(bool);
 		bool		ShowingEuroDate()	{return fEuroDate; }
 		void		ShowEuroDate(bool);
 
@@ -88,30 +95,31 @@ class TTimeView : public BView {
 		void		GetCurrentDate();
 		void		CalculateTextPlacement();
 		void		ShowClockOptions(BPoint);
-		
-		BView*		fParent;
+
+		BView		*fParent;
 		bool		fNeedToUpdate;
-		
+
 		time_t		fTime;
 		time_t		fLastTime;
-		
+
 		char		fTimeStr[64];
 		char		fLastTimeStr[64];
 		char		fDateStr[64];
 		char		fLastDateStr[64];
-		
+
 		int			fSeconds;
 		int			fMinute;
 		int			fHour;
 		bool		fInterval;
-		
+
 		bool		fShowInterval;
 		bool		fShowSeconds;
 		bool		fMilTime;
 		bool		fShowingDate;
 		bool		fFullDate;
+		bool		fCanShowFullDate;
 		bool		fEuroDate;
-				
+
 		float		fFontHeight;
 		bool		fOrientation;		// vertical = true
 		BPoint		fTimeLocation;

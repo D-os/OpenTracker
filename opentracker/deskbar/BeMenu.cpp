@@ -297,25 +297,25 @@ TBeMenu::AddStandardBeMenuItems()
  	
  	TReplicantTray *replicantTray = ((TBarApp *)be_app)->BarView()->fReplicantTray;
 
-	item = new BMenuItem("24 Hour Clock", new BMessage(msg_miltime));
+	item = new BMenuItem("24 Hour Clock", new BMessage(kMsgMilTime));
  	item->SetTarget(replicantTray);
  	item->SetEnabled(((TBarApp *)be_app)->BarView()->ShowingClock());
  	item->SetMarked(replicantTray->ShowingMiltime());
  	subMenu->AddItem(item);
 
-	item = new BMenuItem("Show Seconds", new BMessage(msg_showseconds));
+	item = new BMenuItem("Show Seconds", new BMessage(kMsgShowSeconds));
  	item->SetTarget(replicantTray);
  	item->SetEnabled(((TBarApp *)be_app)->BarView()->ShowingClock());
  	item->SetMarked(replicantTray->ShowingSeconds());
  	subMenu->AddItem(item);
 
-	item = new BMenuItem("European Date", new BMessage(msg_eurodate));
+	item = new BMenuItem("European Date", new BMessage(kMsgEuroDate));
  	item->SetTarget(replicantTray);
  	item->SetEnabled(((TBarApp *)be_app)->BarView()->ShowingClock());
  	item->SetMarked(replicantTray->ShowingEuroDate());
  	subMenu->AddItem(item);
 
-	item = new BMenuItem("Full Date", new BMessage(msg_fulldate));
+	item = new BMenuItem("Full Date", new BMessage(kMsgFullDate));
 	item->SetTarget(replicantTray);
 	item->SetEnabled(replicantTray->CanShowFullDate());
 	item->SetMarked(replicantTray->ShowingFullDate());
@@ -440,13 +440,13 @@ TBeMenu::ResetTargets()
 				case msg_ToggleDraggers:
 				case msg_config_db:
 				case msg_AlwaysTop:
-				case msg_showseconds:
-				case msg_miltime:
-				case msg_eurodate:
+				case kMsgShowSeconds:
+				case kMsgMilTime:
+				case kMsgEuroDate:
 					// show/hide replicants
 					item->SetTarget(be_app);
 					break;
-					
+
 				case CMD_REBOOT_SYSTEM:
 				case CMD_SUSPEND_SYSTEM:
 				case CMD_SHUTDOWN_SYSTEM:

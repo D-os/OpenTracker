@@ -204,7 +204,7 @@ TReplicantTray::ShowingEuroDate()
 bool
 TReplicantTray::ShowingFullDate()
 {
-	if (fClock)
+	if (fClock && CanShowFullDate())
 		return fClock->ShowingFullDate();
 	return false;
 }
@@ -229,7 +229,9 @@ TReplicantTray::DealWithClock(bool showClock)
 			fClock = new TTimeView(settings->timeShowSeconds, settings->timeShowMil,
 				settings->timeFullDate, settings->timeShowEuro, false);
 			AddChild(fClock);
+
 			fClock->MoveTo(Bounds().right - fClock->Bounds().Width() - 1, 2);
+			fClock->AllowFullDate(!IsMultiRow());
 		}
 	} else {
 		if (fClock) {
@@ -244,10 +246,12 @@ TReplicantTray::DealWithClock(bool showClock)
 }
 
 
-//	width is set to a minimum of kMinimumReplicantCount by kMaxReplicantWidth
-// 	if not in multirowmode and greater than kMinimumReplicantCount
-//	the width should be calculated based on the actual
-//	replicant widths
+/**	width is set to a minimum of kMinimumReplicantCount by kMaxReplicantWidth
+ *	if not in multirowmode and greater than kMinimumReplicantCount
+ *	the width should be calculated based on the actual
+ *	replicant widths
+ */
+
 void
 TReplicantTray::GetPreferredSize(float *preferredWidth, float *preferredHeight)
 {
@@ -354,25 +358,12 @@ TReplicantTray::MessageReceived(BMessage *message)
 			AdjustPlacement();
 			break;
 
-		case msg_showseconds:
-			if (fClock) 
-				fClock->ShowSeconds(!fClock->ShowingSeconds());
-			break;
-
-		case msg_miltime:
-			if (fClock) 
-				fClock->ShowMilTime(!fClock->ShowingMilTime());
-			break;
-
-		case msg_eurodate:
-			if (fClock)
-				fClock->ShowEuroDate(!fClock->ShowingEuroDate());
-			break;
-
-		case msg_fulldate:
-			if (fClock)
-				if (fClock->CanShowFullDate())
-					fClock->ShowFullDate(!fClock->ShowingFullDate());
+		case kMsgShowSeconds:
+		case kMsgMilTime:
+		case kMsgEuroDate:
+		case kMsgFullDate:
+			if (fClock != NULL)
+				Window()->PostMessage(message, fClock);
 			break;
 
 #ifdef DB_ADDONS
@@ -797,7 +788,7 @@ TReplicantTray::LoadAddOn(BEntry *entry, int32 *id, bool force)
 		return B_ERROR;
 	}
 
-	if (!view || IconExists (view->Name())) {
+	if (!view || IconExists(view->Name())) {
 		delete view;
 		unload_add_on(image);
 		return B_ERROR;
@@ -1282,8 +1273,10 @@ TReplicantTray::IconFrame(const char *name)
 }
 
 
-//	scan from the startIndex and reset the location
-//	as defined in LocForReplicant
+/**	scan from the startIndex and reset the location
+ *	as defined in LocForReplicant
+ */
+
 void
 TReplicantTray::RealignReplicants(int32 startIndex)
 {
@@ -1294,8 +1287,8 @@ TReplicantTray::RealignReplicants(int32 startIndex)
 	if (count <= 0)
 		return;
 
-	BView *view=NULL;
-	for (int32 i=startIndex ; i<count ; i++){
+	BView *view = NULL;
+	for (int32 i = startIndex ; i < count ; i++){
 		fShelf->ReplicantAt(i, &view);
 		BPoint loc = LocForReplicant(count, i, view->Frame().Width());
 		if (view && (view->Frame().LeftTop() != loc)) {
@@ -1309,6 +1302,11 @@ void
 TReplicantTray::SetMultiRow(bool state)
 {
 	fMultiRowMode = state;
+
+	// in multi-row state, we only want the short date
+
+	if (fClock != NULL)
+		fClock->AllowFullDate(!state);
 }
 
 
