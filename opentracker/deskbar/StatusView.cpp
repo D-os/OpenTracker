@@ -514,8 +514,16 @@ TReplicantTray::DeleteAddOnSupport()
 void
 TReplicantTray::RunAddOnQuery(BVolume *volume, const char *predicate)
 {
-	//	run a new query on a specific volume
-	//	make it live
+	// Since the new BFS supports querying for attributes without
+	// an index, we only run the query if the index exists (for
+	// newly mounted devices only - the Deskbar will automatically
+	// create an index for every device mounted at startup).
+	index_info info;
+	if (!volume->KnowsQuery() || fs_stat_index(volume->Device(),kStatusPredicate,&info) != 0)
+		return;
+
+	// run a new query on a specific volume
+	// make it live
 	BQuery query;
 	query.SetVolume(volume);
 	query.SetPredicate(predicate);
