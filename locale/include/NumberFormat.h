@@ -3,16 +3,18 @@
 
 #include <Format.h>
 
+class BNumberFormatImpl;
+
 class BNumberFormat : public BFormat {
 	public:
-		BNumberFormat();
-		virtual ~BNumberFormat();
+		BNumberFormat(const BNumberFormat &other);
+		~BNumberFormat();
 
 		// formatting
 
 		// no-frills version: Simply appends the formatted number to the
 		// string buffer. Can fail only with B_NO_MEMORY or B_BAD_VALUE.
-		virtual status_t Format(double number, BString *buffer) = 0;
+		status_t Format(double number, BString *buffer) const;
 
 		// Appends the formatted number to the string buffer. Additionally
 		// one can get the positions of certain fields in the formatted
@@ -27,11 +29,11 @@ class BNumberFormat : public BFormat {
 		// the positions buffer is too small (fieldCount will be set
 		// nevertheless, so that the caller can adjust the buffer size to
 		// make them all fit).
-		virtual status_t Format(double number, BString *buffer,
-								format_field_position *positions,
-								int32 positionCount = 1,
-								int32 *fieldCount = NULL,
-								bool allFieldPositions = false) = 0;
+		status_t Format(double number, BString *buffer,
+						format_field_position *positions,
+						int32 positionCount = 1,
+						int32 *fieldCount = NULL,
+						bool allFieldPositions = false) const;
 
 		// TODO: Format() versions for (char* buffer, size_t bufferSize)
 		// instead of BString*. And, of course, versions for the other
@@ -39,6 +41,16 @@ class BNumberFormat : public BFormat {
  
 		// parsing
 		// TODO: ...
+
+		status_t SetGroupingUsed(bool useGrouping);
+		bool IsGroupingUsed() const;
+
+		BNumberFormat &operator=(const BNumberFormat &other);
+
+		BNumberFormat(BNumberFormatImpl *impl);		// conceptually private
+
+	private:
+		inline BNumberFormatImpl *NumberFormatImpl() const;
 };
 
 
