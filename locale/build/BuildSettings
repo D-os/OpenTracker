@@ -46,9 +46,9 @@ MKDIR = mkdir -p ;
 	MakeLocate $(archive) : $(LOCALE_DOWNLOADS_DIR) ;
 	local url ;
 	if $(OSPLAT) = X86 {
-		url = http://tfs.cs.tu-berlin.de/~bonefish/private/unittests-x86.zip ;
+		url = http://opentracker.sourceforge.net/downloads/x86/unittests-x86.zip ;
 	} else {
-		url = http://tfs.cs.tu-berlin.de/~bonefish/private/unittests-ppc.zip ;
+		url = http://opentracker.sourceforge.net/downloads/ppc/unittests-ppc.zip ;
 	}
 	Download $(archive) : $(url) ;
 	local targetDir = $(LOCALE_GENERATED_DIR) ;
