@@ -41,11 +41,16 @@ class BNumberFormatParameters : public BFormatParameters {
 		void SetMinimalIntegerDigits(size_t minIntegerDigits);
 		size_t MinimalIntegerDigits() const;
 
-		void SetParentNumberParameters(const BNumberFormatParameters *parent);
+		void SetUseZeroPadding(bool zeroPadding);
+		bool UseZeroPadding() const;
+
 		const BNumberFormatParameters *ParentNumberParameters() const;
 
 		BNumberFormatParameters &operator=(
 			const BNumberFormatParameters &other);
+
+	protected:
+		void SetParentNumberParameters(const BNumberFormatParameters *parent);
 
 	private:
 		const BNumberFormatParameters	*fParent;
@@ -54,6 +59,7 @@ class BNumberFormatParameters : public BFormatParameters {
 		number_format_base				fBase;
 		bool							fUseBasePrefix;
 		size_t							fMinimalIntegerDigits;
+		bool							fUseZeroPadding;
 		uint32							fFlags;
 };
 

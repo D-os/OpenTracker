@@ -20,10 +20,12 @@ class BFormatParameters {
 		void SetFormatWidth(size_t width);
 		size_t FormatWidth() const;
 
-		void SetParentParameters(const BFormatParameters *parent);
 		const BFormatParameters *ParentParameters() const;
 
 		BFormatParameters &operator=(const BFormatParameters &other);
+
+	protected:
+		void SetParentParameters(const BFormatParameters *parent);
 
 	private:
 		const BFormatParameters	*fParent;

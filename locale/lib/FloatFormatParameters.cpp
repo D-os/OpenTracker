@@ -1,10 +1,19 @@
 #include <FloatFormatParameters.h>
 
+// defaults
+static const size_t kDefaultMinimalFractionDigits = 0;
+static const size_t kDefaultMaximalFractionDigits = 6;
+static const bool kDefaultUseUpperCase = false;
+static const float_format_type kDefaultFloatFormatType = B_AUTO_FLOAT_FORMAT;
+static const bool kDefaultAlwaysUseFractionSeparator = false;
+static const bool kDefaultKeepTrailingFractionZeros = false;
+
+
 // flags
 enum {
 	MINIMAL_FRACTION_DIGITS_SET			= 0x01,
 	MAXIMAL_FRACTION_DIGITS_SET			= 0x02,
-	USE_CAPITALS_SET					= 0x04,
+	USE_UPPER_CASE_SET					= 0x04,
 	FLOAT_FORMAT_TYPE_SET				= 0x08,
 	ALWAYS_USE_FRACTION_SEPARATOR_SET	= 0x10,
 	KEEP_TRAILING_FRACTION_ZEROS_SET	= 0x20,
@@ -15,12 +24,6 @@ BFloatFormatParameters::BFloatFormatParameters(
 	const BFloatFormatParameters *parent)
 	: BNumberFormatParameters(parent),
 	  fParent(parent),
-	  fMinimalFractionDigits(0),
-	  fMaximalFractionDigits(100),
-	  fUseCapitals(false),
-	  fFloatFormatType(B_AUTO_FLOAT_FORMAT),
-	  fAlwaysUseFractionSeparator(false),
-	  fKeepTrailingFractionZeros(false),
 	  fFlags(0)
 {
 }
@@ -32,7 +35,7 @@ BFloatFormatParameters::BFloatFormatParameters(
 	  fParent(other.fParent),
 	  fMinimalFractionDigits(other.fMinimalFractionDigits),
 	  fMaximalFractionDigits(other.fMaximalFractionDigits),
-	  fUseCapitals(other.fUseCapitals),
+	  fUseUpperCase(other.fUseUpperCase),
 	  fFloatFormatType(other.fFloatFormatType),
 	  fAlwaysUseFractionSeparator(other.fAlwaysUseFractionSeparator),
 	  fKeepTrailingFractionZeros(other.fKeepTrailingFractionZeros),
@@ -61,7 +64,7 @@ BFloatFormatParameters::MinimalFractionDigits() const
 		return fMinimalFractionDigits;
 	if (fParent)
 		return fParent->MinimalFractionDigits();
-	return fMinimalFractionDigits;
+	return kDefaultMinimalFractionDigits;
 }
 
 // SetMaximalFractionDigits
@@ -80,26 +83,26 @@ BFloatFormatParameters::MaximalFractionDigits() const
 		return fMaximalFractionDigits;
 	if (fParent)
 		return fParent->MaximalFractionDigits();
-	return fMaximalFractionDigits;
+	return kDefaultMaximalFractionDigits;
 }
 
-// SetUseCapitals
+// SetUseUpperCase
 void
-BFloatFormatParameters::SetUseCapitals(bool useCapitals)
+BFloatFormatParameters::SetUseUpperCase(bool useCapitals)
 {
-	fUseCapitals = useCapitals;
-	fFlags |= USE_CAPITALS_SET;
+	fUseUpperCase = useCapitals;
+	fFlags |= USE_UPPER_CASE_SET;
 }
 
-// UseCapitals
+// UseUpperCase
 bool
-BFloatFormatParameters::UseCapitals() const
+BFloatFormatParameters::UseUpperCase() const
 {
-	if (fFlags & USE_CAPITALS_SET)
-		return fUseCapitals;
+	if (fFlags & USE_UPPER_CASE_SET)
+		return fUseUpperCase;
 	if (fParent)
-		return fParent->UseCapitals();
-	return fUseCapitals;
+		return fParent->UseUpperCase();
+	return kDefaultUseUpperCase;
 }
 
 // SetFloatFormatType
@@ -118,7 +121,7 @@ BFloatFormatParameters::FloatFormatType() const
 		return fFloatFormatType;
 	if (fParent)
 		return fParent->FloatFormatType();
-	return fFloatFormatType;
+	return kDefaultFloatFormatType;
 }
 
 // SetAlwaysUseFractionSeparator
@@ -138,7 +141,7 @@ BFloatFormatParameters::AlwaysUseFractionSeparator() const
 		return fAlwaysUseFractionSeparator;
 	if (fParent)
 		return fParent->AlwaysUseFractionSeparator();
-	return fAlwaysUseFractionSeparator;
+	return kDefaultAlwaysUseFractionSeparator;
 }
 
 // SetKeepTrailingFractionZeros
@@ -158,7 +161,7 @@ BFloatFormatParameters::KeepTrailingFractionZeros() const
 		return fKeepTrailingFractionZeros;
 	if (fParent)
 		return fParent->KeepTrailingFractionZeros();
-	return fKeepTrailingFractionZeros;
+	return kDefaultKeepTrailingFractionZeros;
 }
 
 // SetParentFloatParameters
@@ -167,6 +170,7 @@ BFloatFormatParameters::SetParentFloatParameters(
 	const BFloatFormatParameters *parent)
 {
 	fParent = parent;
+	SetParentNumberParameters(parent);
 }
 
 // ParentFloatParameters
@@ -184,7 +188,7 @@ BFloatFormatParameters::operator=(const BFloatFormatParameters &other)
 	fParent = other.fParent;
 	fMinimalFractionDigits = other.fMinimalFractionDigits;
 	fMaximalFractionDigits = other.fMaximalFractionDigits;
-	fUseCapitals = other.fUseCapitals;
+	fUseUpperCase = other.fUseUpperCase;
 	fFloatFormatType = other.fFloatFormatType;
 	fAlwaysUseFractionSeparator = other.fAlwaysUseFractionSeparator;
 	fKeepTrailingFractionZeros = other.fKeepTrailingFractionZeros;

@@ -5,7 +5,7 @@
 
 enum float_format_type {
 	B_FIXED_POINT_FLOAT_FORMAT,
-	B_EXPONENT_FLOAT_FORMAT,
+	B_SCIENTIFIC_FLOAT_FORMAT,
 	B_AUTO_FLOAT_FORMAT,			// picks one of the above depending of the
 									// number to be formatted
 };
@@ -22,8 +22,8 @@ class BFloatFormatParameters : public BNumberFormatParameters {
 		void SetMaximalFractionDigits(size_t maxFractionDigits);
 		size_t MaximalFractionDigits() const;
 
-		void SetUseCapitals(bool useCapitals);
-		bool UseCapitals() const;
+		void SetUseUpperCase(bool useCapitals);
+		bool UseUpperCase() const;
 
 		void SetFloatFormatType(float_format_type type);
 		float_format_type FloatFormatType() const;
@@ -44,7 +44,7 @@ class BFloatFormatParameters : public BNumberFormatParameters {
 		const BFloatFormatParameters	*fParent;
 		size_t							fMinimalFractionDigits;
 		size_t							fMaximalFractionDigits;
-		bool							fUseCapitals;
+		bool							fUseUpperCase;
 		float_format_type				fFloatFormatType;
 		bool							fAlwaysUseFractionSeparator;
 		bool							fKeepTrailingFractionZeros;

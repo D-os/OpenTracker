@@ -1,5 +1,9 @@
 #include <FormatParameters.h>
 
+// defaults
+static const format_alignment kDefaultAlignment = B_ALIGN_FORMAT_RIGHT;
+static const size_t kDefaultFormatWidth = 1;
+
 // flags
 enum {
 	ALIGNMENT_SET	= 0x01,
@@ -9,8 +13,6 @@ enum {
 // constructor
 BFormatParameters::BFormatParameters(const BFormatParameters *parent)
 	: fParent(parent),
-	  fAlignment(B_ALIGN_FORMAT_RIGHT),
-	  fWidth(1),
 	  fFlags(0)
 {
 }
@@ -45,7 +47,7 @@ BFormatParameters::Alignment() const
 		return fAlignment;
 	if (fParent)
 		return fParent->Alignment();
-	return fAlignment;
+	return kDefaultAlignment;
 }
 
 // SetFormatWidth
@@ -64,7 +66,7 @@ BFormatParameters::FormatWidth() const
 		return fWidth;
 	if (fParent)
 		return fParent->FormatWidth();
-	return fWidth;
+	return kDefaultFormatWidth;
 }
 
 // SetParentParameters

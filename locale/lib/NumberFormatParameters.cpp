@@ -1,5 +1,14 @@
 #include <NumberFormatParameters.h>
 
+// defaults
+static const bool kDefaultUseGrouping = false;
+static const number_format_sign_policy kDefaultSignPolicy
+	= B_USE_NEGATIVE_SIGN_ONLY;
+static const number_format_base kDefaultBase = B_DEFAULT_BASE;
+static const bool kDefaultUseBasePrefix = false;
+static const size_t kDefaultMinimalIntegerDigits = 1;
+static const bool kDefaultUseZeroPadding = false;
+
 // flags
 enum {
 	USE_GROUPING_SET			= 0x01,
@@ -7,6 +16,7 @@ enum {
 	BASE_SET					= 0x04,
 	USE_BASE_PREFIX_SET			= 0x08,
 	MINIMAL_INTEGER_DIGITS_SET	= 0x10,
+	USE_ZERO_PADDING_SET		= 0x20,
 };
 
 // constructor
@@ -14,11 +24,6 @@ BNumberFormatParameters::BNumberFormatParameters(
 	const BNumberFormatParameters *parent)
 	: BFormatParameters(parent),
 	  fParent(parent),
-	  fUseGrouping(false),
-	  fSignPolicy(B_USE_NEGATIVE_SIGN_ONLY),
-	  fBase(B_DEFAULT_BASE),
-	  fUseBasePrefix(false),
-	  fMinimalIntegerDigits(1),
 	  fFlags(0)
 {
 }
@@ -58,7 +63,7 @@ BNumberFormatParameters::UseGrouping() const
 		return fUseGrouping;
 	if (fParent)
 		return fParent->UseGrouping();
-	return fUseGrouping;
+	return kDefaultUseGrouping;
 }
 
 // SetSignPolicy
@@ -77,7 +82,7 @@ BNumberFormatParameters::SignPolicy() const
 		return fSignPolicy;
 	if (fParent)
 		return fParent->SignPolicy();
-	return fSignPolicy;
+	return kDefaultSignPolicy;
 }
 
 // SetBase
@@ -96,7 +101,7 @@ BNumberFormatParameters::Base() const
 		return fBase;
 	if (fParent)
 		return fParent->Base();
-	return fBase;
+	return kDefaultBase;
 }
 
 // SetUseBasePrefix
@@ -115,7 +120,7 @@ BNumberFormatParameters::UseBasePrefix() const
 		return fUseBasePrefix;
 	if (fParent)
 		return fParent->UseBasePrefix();
-	return fUseBasePrefix;
+	return kDefaultUseBasePrefix;
 }
 
 // SetMinimalIntegerDigits
@@ -134,7 +139,26 @@ BNumberFormatParameters::MinimalIntegerDigits() const
 		return fMinimalIntegerDigits;
 	if (fParent)
 		return fParent->MinimalIntegerDigits();
-	return fMinimalIntegerDigits;
+	return kDefaultMinimalIntegerDigits;
+}
+
+// SetUseZeroPadding
+void
+BNumberFormatParameters::SetUseZeroPadding(bool useZeroPadding)
+{
+	fUseZeroPadding = useZeroPadding;
+	fFlags |= USE_ZERO_PADDING_SET;
+}
+
+// UseZeroPadding
+bool
+BNumberFormatParameters::UseZeroPadding() const
+{
+	if (fFlags & USE_ZERO_PADDING_SET)
+		return fUseZeroPadding;
+	if (fParent)
+		return fParent->UseZeroPadding();
+	return kDefaultUseZeroPadding;
 }
 
 // SetParentNumberParameters
@@ -143,6 +167,7 @@ BNumberFormatParameters::SetParentNumberParameters(
 	const BNumberFormatParameters *parent)
 {
 	fParent = parent;
+	SetParentParameters(parent);
 }
 
 // ParentNumberParameters
