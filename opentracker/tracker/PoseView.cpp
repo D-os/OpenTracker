@@ -5528,10 +5528,10 @@ BPoseView::SelectAll()
 void
 BPoseView::InvertSelection()
 {
-	//Since this function shares most code with
-	//SelectAll(), we could make SelectAll() empty the selection, 
-	//then call InvertSelection()
-	
+	// Since this function shares most code with
+	// SelectAll(), we could make SelectAll() empty the selection, 
+	// then call InvertSelection()
+
 	BRect bounds(Bounds());
 	
 	int32 startIndex = 0;
@@ -5563,10 +5563,9 @@ BPoseView::InvertSelection()
 		else
 			poseRect = pose->CalcRect(loc, this);
 
-		if (bounds.Intersects(poseRect)) {
-			pose->Draw(poseRect, this, false);
-			Flush();
-		}	
+		if (bounds.Intersects(poseRect))
+			Invalidate();
+
 		loc.y += fListElemHeight;
 	}
 

@@ -94,7 +94,7 @@ MakeNodeFromName(node_ref *node, char *name)
 {
 	char *nodeString = strchr(name,'_');
 	if (nodeString != NULL) {
-		node->node = strtoull(nodeString + 1, (char **)NULL, 10);
+		node->node = strtoll(nodeString + 1, (char **)NULL, 10);
 		node->device = atoi(name + 1);
 	}
 }
@@ -272,7 +272,7 @@ FSClipboardPaste(Model *model)
 			char modename[64];
 			int32 moveMode = 0;
 
-			uint32 index = 0;
+			int32 index = 0;
 			char *refname;
 			type_code type;
 			int32 count;
