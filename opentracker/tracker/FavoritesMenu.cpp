@@ -168,7 +168,7 @@ FavoritesMenu::AddNextItem()
 		fItems.MakeEmpty();
 
 		int32 apps, docs, folders;
-		TTrackerState().RecentCounts(&apps, &docs, &folders);
+		TrackerSettings().RecentCounts(&apps, &docs, &folders);
 
 		BRoster().GetRecentDocuments(&fItems, docs, NULL, info.signature);
 		fIndex = 0;
@@ -210,7 +210,7 @@ FavoritesMenu::AddNextItem()
 		fItems.MakeEmpty();
 
 		int32 apps, docs, folders;
-		TTrackerState().RecentCounts(&apps, &docs, &folders);
+		TrackerSettings().RecentCounts(&apps, &docs, &folders);
 
 		BRoster().GetRecentFolders(&fItems, folders, info.signature);
 		fIndex = 0;
