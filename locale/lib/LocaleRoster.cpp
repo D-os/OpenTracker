@@ -16,20 +16,27 @@
 #include <Directory.h>
 #include <Entry.h>
 #include <FindDirectory.h>
+#include <fs_index.h> 
 #include <Language.h>
 #include <Locale.h>
 #include <LocaleRoster.h>
 #include <Node.h>
 #include <Path.h>
 #include <String.h>
+#include <Volume.h>
+#include <VolumeRoster.h>
 
 static const char *kPriorityAttr = "ADDON:priority";
 
 typedef BCatalogAddOn *(*InstantiateCatalogFunc)(const char *name, 
+	const char *language, int32 fingerprint);
+
+typedef BCatalogAddOn *(*CreateCatalogFunc)(const char *name, 
 	const char *language);
 
 static BLocaleRoster gLocaleRoster;
 BLocaleRoster *be_locale_roster = &gLocaleRoster;
+
 
 /*
  * info about a single catalog-add-on (representing a catalog type):
@@ -39,6 +46,7 @@ struct BCatalogAddOnInfo {
 	BString fPath;
 	image_id fAddOnImage;
 	InstantiateCatalogFunc fInstantiateFunc;
+	CreateCatalogFunc fCreateFunc;
 	uint8 fPriority;
 	BList fLoadedCatalogs;
 	bool fIsEmbedded;
@@ -47,8 +55,10 @@ struct BCatalogAddOnInfo {
 
 	BCatalogAddOnInfo(const BString& name, const BString& path, uint8 priority);
 	~BCatalogAddOnInfo();
+	bool MakeSureItsLoaded();
 	void UnloadIfPossible();
 };
+
 
 BCatalogAddOnInfo::BCatalogAddOnInfo(const BString& name, const BString& path, 
 	uint8 priority)
@@ -57,10 +67,12 @@ BCatalogAddOnInfo::BCatalogAddOnInfo(const BString& name, const BString& path,
 	fPath(path),
 	fAddOnImage(B_NO_INIT),
 	fInstantiateFunc(NULL),
+	fCreateFunc(NULL),
 	fPriority(priority),
 	fIsEmbedded(path.Length()==0)
 {
 }
+
 
 BCatalogAddOnInfo::~BCatalogAddOnInfo()
 {
@@ -74,15 +86,57 @@ BCatalogAddOnInfo::~BCatalogAddOnInfo()
 	UnloadIfPossible();
 }
 	
+
+bool
+BCatalogAddOnInfo::MakeSureItsLoaded() {
+	if (!fIsEmbedded && fAddOnImage < B_OK) {
+		// add-on has not been loaded yet, so we try to load it:
+		BString fullAddOnPath(fPath);
+		fullAddOnPath << "/" << fName;
+		fAddOnImage = load_add_on(fullAddOnPath.String());
+		if (fAddOnImage >= B_OK) {
+			get_image_symbol(fAddOnImage, "instantiate_catalog",
+				B_SYMBOL_TYPE_TEXT, (void **)&fInstantiateFunc);
+			get_image_symbol(fAddOnImage, "create_catalog",
+				B_SYMBOL_TYPE_TEXT, (void **)&fCreateFunc);
+			return true;
+		} else
+			return false;
+	}
+	return true;
+}
+
+
 void
 BCatalogAddOnInfo::UnloadIfPossible() {
 	if (!fIsEmbedded && fLoadedCatalogs.IsEmpty()) {
 		unload_add_on(fAddOnImage);
 		fAddOnImage = B_NO_INIT;
 		fInstantiateFunc = NULL;
+		fCreateFunc = NULL;
 	}
 }
 
+
+// helper function that make sure an attribute-index exists:
+// ToDo: maybe this should be put into some util-file?
+static void EnsureIndexExists( const char *attrName) {
+	BVolume bootVol;
+	BVolumeRoster volRoster;
+	if (volRoster.GetBootVolume(&bootVol) != B_OK)
+		return;
+	struct index_info idxInfo;
+	if (fs_stat_index(bootVol.Device(), attrName, &idxInfo) != 0) {
+		status_t res = fs_create_index(bootVol.Device(), attrName, 
+			B_STRING_TYPE, 0);
+		if (res == 0)
+			// ToDo: write info about index creation to syslog
+			;
+		else
+			// ToDo: write info about index creation failure to syslog
+			;
+	}
+}
 
 
 /*
@@ -91,7 +145,7 @@ BCatalogAddOnInfo::UnloadIfPossible() {
 struct RosterData {
 	BLocker fLock;
 	BList fCatalogAddOnInfos;
-	BList fPreferredLanguages;
+	BMessage fPreferredLanguages;
 	//
 	RosterData();
 	~RosterData();
@@ -101,6 +155,7 @@ struct RosterData {
 };
 static RosterData gRosterData;
 
+
 RosterData::RosterData()
 	:
 	fLock( "LocaleRosterData")
@@ -108,11 +163,16 @@ RosterData::RosterData()
 	BAutolock lock( fLock);
 	assert( lock.IsLocked());
 
+	// make sure the indices required for catalog-traversal are there:
+	EnsureIndexExists(BLocaleRoster::kCatLangAttr);
+	EnsureIndexExists(BLocaleRoster::kCatSigAttr);
+
 	InitializeCatalogAddOns();
 	// ToDo: change this to fetch preferred languages from prefs
-	fPreferredLanguages.AddItem(const_cast<char *>("Deutsch"));
-	fPreferredLanguages.AddItem(const_cast<char *>("English"));
+	fPreferredLanguages.AddString("language", "german");
+	fPreferredLanguages.AddString("language", "english");
 }
+
 
 RosterData::~RosterData()
 {
@@ -121,12 +181,14 @@ RosterData::~RosterData()
 	CleanupCatalogAddOns();
 }
 
+
 int
 RosterData::CompareInfos(const void *left, const void *right)
 {
 	return ((BCatalogAddOnInfo*)right)->fPriority 
 		- ((BCatalogAddOnInfo*)left)->fPriority;
 }
+
 
 void 
 RosterData::InitializeCatalogAddOns() 
@@ -139,6 +201,7 @@ RosterData::InitializeCatalogAddOns()
 		= new BCatalogAddOnInfo("Default", "", 
 			 DefaultCatalog::gDefaultCatalogAddOnPriority);
 	defaultCatalogAddOnInfo->fInstantiateFunc = DefaultCatalog::Instantiate;
+	defaultCatalogAddOnInfo->fCreateFunc = DefaultCatalog::Create;
 	fCatalogAddOnInfos.AddItem((void*)defaultCatalogAddOnInfo);
 
 	directory_which folders[] = {
@@ -217,6 +280,7 @@ RosterData::InitializeCatalogAddOns()
 	fCatalogAddOnInfos.SortItems(CompareInfos);
 }
 
+
 void
 RosterData::CleanupCatalogAddOns() 
 {
@@ -231,17 +295,23 @@ RosterData::CleanupCatalogAddOns()
 }
 
 
-
 /*
  * BLocaleRoster, the exported interface to the locale roster data:
  */
+const char *BLocaleRoster::kCatLangAttr = "BEOS:LOCALE_LANGUAGE";
+const char *BLocaleRoster::kCatSigAttr = "BEOS:LOCALE_SIGNATURE";
+const char *BLocaleRoster::kCatFingerprintAttr = "BEOS:LOCALE_FINGERPRINT";
+
+
 BLocaleRoster::BLocaleRoster()
 {
 }
 
+
 BLocaleRoster::~BLocaleRoster()
 {
 }
+
 
 status_t 
 BLocaleRoster::GetDefaultCollator(BCollator **collator) const
@@ -254,6 +324,7 @@ BLocaleRoster::GetDefaultCollator(BCollator **collator) const
 	return B_OK;
 }
 
+
 status_t 
 BLocaleRoster::GetDefaultLanguage(BLanguage **language) const
 {
@@ -262,6 +333,7 @@ BLocaleRoster::GetDefaultLanguage(BLanguage **language) const
 	*language = new BLanguage(NULL);
 	return B_OK;
 }
+
 
 status_t 
 BLocaleRoster::GetDefaultCountry(BCountry **country) const
@@ -272,8 +344,9 @@ BLocaleRoster::GetDefaultCountry(BCountry **country) const
 	return B_OK;
 }
 
+
 status_t 
-BLocaleRoster::GetPreferredLanguages(BList *languages) const
+BLocaleRoster::GetPreferredLanguages(BMessage *languages) const
 {
 	if (!languages)
 		return B_BAD_VALUE;
@@ -281,25 +354,58 @@ BLocaleRoster::GetPreferredLanguages(BList *languages) const
 	BAutolock lock( gRosterData.fLock);
 	assert( lock.IsLocked());
 
-	languages->MakeEmpty();
-	languages->AddList(&gRosterData.fPreferredLanguages);
+	*languages = gRosterData.fPreferredLanguages;
 	return B_OK;
 }
 
+
 status_t 
-BLocaleRoster::SetPreferredLanguages(BList *languages)
+BLocaleRoster::SetPreferredLanguages(BMessage *languages)
 {
 	BAutolock lock( gRosterData.fLock);
 	assert( lock.IsLocked());
 
-	gRosterData.fPreferredLanguages.MakeEmpty();
 	if (languages)
-		gRosterData.fPreferredLanguages.AddList(languages);
+		gRosterData.fPreferredLanguages = *languages;
+	else
+		gRosterData.fPreferredLanguages.MakeEmpty();
 	return B_OK;
 }
 
+
 BCatalogAddOn*
-BLocaleRoster::LoadCatalog(const char *signature, const char *language)
+BLocaleRoster::CreateCatalog(const char *type, const char *signature, 
+	const char *language)
+{
+	if (!type || !signature || !language)
+		return NULL;
+
+	BAutolock lock( gRosterData.fLock);
+	assert( lock.IsLocked());
+
+	int32 count = gRosterData.fCatalogAddOnInfos.CountItems();
+	for (int32 i=0; i<count; ++i) {
+		BCatalogAddOnInfo *info 
+			= (BCatalogAddOnInfo*)gRosterData.fCatalogAddOnInfos.ItemAt(i);
+		if (info->fName.ICompare(type)!=0 || !info->MakeSureItsLoaded() 
+			|| !info->fCreateFunc)
+			continue;
+
+		BCatalogAddOn *catalog = info->fCreateFunc(signature, language);
+		if (catalog) {
+			info->fLoadedCatalogs.AddItem(catalog);
+			info->UnloadIfPossible();
+			return catalog;
+		}
+	}
+
+	return NULL;
+}
+
+
+BCatalogAddOn*
+BLocaleRoster::LoadCatalog(const char *signature, const char *language,
+	int32 fingerprint)
 {
 	if (!signature)
 		return NULL;
@@ -312,62 +418,50 @@ BLocaleRoster::LoadCatalog(const char *signature, const char *language)
 		BCatalogAddOnInfo *info 
 			= (BCatalogAddOnInfo*)gRosterData.fCatalogAddOnInfos.ItemAt(i);
 
-		if (!info->fIsEmbedded && info->fAddOnImage < B_OK) {
-			// add-on has not been loaded yet, so we try to load it:
-			BString fullAddOnPath(info->fPath);
-			fullAddOnPath << "/" << info->fName;
-			info->fAddOnImage = load_add_on(fullAddOnPath.String());
-			if (info->fAddOnImage < B_OK)
-				continue;
-					// add-on couldn't be loaded, try next one
-		}
+		if (!info->MakeSureItsLoaded() || !info->fInstantiateFunc)
+			continue;
+		BMessage languages;
+		if (language)
+			// try to load language with given name:
+			languages.AddString("language", language);
+		else
+			// try to load one of the preferred languages:
+			GetPreferredLanguages( &languages);
 
-		BCatalogAddOn *catalog = NULL;
-		if (info->fInstantiateFunc != NULL
-			|| get_image_symbol(info->fAddOnImage, "instantiate_catalog",
-				B_SYMBOL_TYPE_TEXT, (void **)&info->fInstantiateFunc) == B_OK) {
-			BList languages;
-			if (language)
-				// try to load language with given name:
-				languages.AddItem((void*)language);
-			else
-				// try to load one of the preferred languages:
-				GetPreferredLanguages( &languages);
-
-			int32 langCount = languages.CountItems();
-			for (int32 l=0; l<langCount; ++l) {
-				BString lang = (const char*)languages.ItemAt(l);
-				catalog = info->fInstantiateFunc(signature, lang.String());
-				if (catalog != NULL) {
-					info->fLoadedCatalogs.AddItem(catalog);
+		BCatalogAddOn *catalog;
+		const char *lang;
+		for (int32 l=0; languages.FindString("language", l, &lang)==B_OK; ++l) {
+			catalog = info->fInstantiateFunc(signature, lang, fingerprint);
+			if (catalog) {
+				info->fLoadedCatalogs.AddItem(catalog);
 /*
 The following could be used to chain-load catalogs for languages that 
 depend on other languages. We just need to define how we'd like to express
 the language hierarchy (such that this code can traverse from child to parent
 language). The implementation below uses the filename for that (i.e. it
 traverses from "english-british-oxford" to "english-british" to "english"):
-					int32 pos;
-					BCatalogAddOn *currCatalog=catalog, *nextCatalog;
-					while ((pos = lang.FindLast('-')) > B_OK) {
-						// language is based on parent, so we load that, too:
-						lang.Truncate(pos);
-						nextCatalog = info->fInstantiateFunc(signature, lang.String());
-						if (nextCatalog) {
-							info->fLoadedCatalogs.AddItem(nextCatalog);
-							currCatalog->fNext = nextCatalog;
-							currCatalog = nextCatalog;
-						}
+				char *pos;
+				BCatalogAddOn *currCatalog=catalog, *nextCatalog;
+				while ((pos = strrchr(lang, '-')) != NULL) {
+					// language is based on parent, so we load that, too:
+					*pos = '\0';
+					nextCatalog = info->fInstantiateFunc(signature, lang, fingerprint);
+					if (nextCatalog) {
+						info->fLoadedCatalogs.AddItem(nextCatalog);
+						currCatalog->fNext = nextCatalog;
+						currCatalog = nextCatalog;
 					}
-*/
-					return catalog;
 				}
+*/
+				return catalog;
 			}
-		} 
+		}
 		info->UnloadIfPossible();
 	}
 
 	return NULL;
 }
+
 
 status_t
 BLocaleRoster::UnloadCatalog(BCatalogAddOn *catalog)
@@ -393,4 +487,3 @@ BLocaleRoster::UnloadCatalog(BCatalogAddOn *catalog)
 	}
 	return B_ERROR;
 }
-
