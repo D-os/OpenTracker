@@ -1373,16 +1373,16 @@ BPoseView::AddRootPoses(bool watchIndividually, bool mountShared)
 	BVolumeRoster roster;
 	roster.Rewind();
 	BVolume volume;
-	
+
 	if (TrackerSettings().ShowDisksIcon() && !TargetModel()->IsRoot()) {
 		BEntry entry("/");
 		Model model(&entry);
 		if (model.InitCheck() == B_OK) {
 			BMessage monitorMsg;
 			monitorMsg.what = B_NODE_MONITOR;
-			
+
 			monitorMsg.AddInt32("opcode", B_ENTRY_CREATED);
-	
+
 			monitorMsg.AddInt32("device", model.NodeRef()->device);
 			monitorMsg.AddInt64("node", model.NodeRef()->node);
 			monitorMsg.AddInt64("directory", model.EntryRef()->directory);
@@ -1390,7 +1390,7 @@ BPoseView::AddRootPoses(bool watchIndividually, bool mountShared)
 			if (Window())
 				Window()->PostMessage(&monitorMsg, this);
 		}
-	} else 
+	} else {
 		while (roster.GetNextVolume(&volume) == B_OK) {
 	
 			if (!volume.IsPersistent())
@@ -1401,6 +1401,7 @@ BPoseView::AddRootPoses(bool watchIndividually, bool mountShared)
 	
 			CreateVolumePose(&volume, watchIndividually);
 		}
+	}
 
 	SortPoses();
 	UpdateCount();
@@ -1417,12 +1418,13 @@ BPoseView::RemoveRootPoses()
 		BPose *pose = fPoseList->ItemAt(index);
 		if (pose) {
 			Model *model = pose->TargetModel();
-			if (model)
+			if (model) {
 				if (model->IsVolume()) {
 					DeletePose(model->NodeRef());
 					count--;
 				} else
 					index++;
+			}
 		}
 	} 
 

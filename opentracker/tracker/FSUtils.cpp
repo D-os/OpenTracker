@@ -1999,7 +1999,7 @@ CalcItemsAndSize(BObjectList<entry_ref> *refList, int32 *totalCount, off_t *tota
 
 
 status_t
-FSGetTrashDir(BDirectory* trash_dir, dev_t dev)
+FSGetTrashDir(BDirectory *trash_dir, dev_t dev)
 {
 
 	BVolume volume(dev);

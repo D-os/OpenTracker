@@ -69,7 +69,7 @@ ShouldShowDesktopPose(dev_t device, const Model *model, const PoseInfo *)
 	return true;
 }
 
-}
+}	// namespace BPrivate
 
 
 DesktopEntryListCollection::DesktopEntryListCollection()
