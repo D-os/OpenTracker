@@ -110,7 +110,8 @@ CatKey::operator== (const CatKey& right) const
 static const char *kCatFolder = "catalogs";
 static const char *kCatExtension = ".catalog";
 
-static const char *kCatMimeType = "x-vnd.Be.locale-catalog.default";
+const char *DefaultCatalog::kCatMimeType 
+	= "locale/x-vnd.Be.locale-catalog.default";
 
 static int16 kCatArchiveVersion = 1;
 	// version of the catalog archive structure, bump this if you change it!
@@ -438,13 +439,6 @@ DefaultCatalog::MakeEmpty()
 }
 
 
-void
-DefaultCatalog::Resize(int32 size)
-{
-	fCatMap.resize(size);
-}
-
-
 int32
 DefaultCatalog::CountItems() const
 {
@@ -488,7 +482,7 @@ DefaultCatalog::SetString(const char *string, const char *translated,
 
 
 status_t
-DefaultCatalog::SetString(uint32 id, const char *translated)
+DefaultCatalog::SetString(int32 id, const char *translated)
 {
 	fCatMap[id] = translated;
 		// overwrite existing element
@@ -561,7 +555,8 @@ DefaultCatalog::Flatten(BDataIO *dataIO)
 	status_t res;
 	BMessage archive;
 	int32 count = fCatMap.size();
-	res = archive.AddInt32("c:sz", count)
+	res = archive.AddString("class", "DefaultCatalog")
+		|| archive.AddInt32("c:sz", count)
 		|| archive.AddInt16("c:ver", kCatArchiveVersion)
 		|| archive.AddString("c:lang", fLanguageName.String())
 		|| archive.AddString("c:sig", fSignature.String())
@@ -683,5 +678,5 @@ DefaultCatalog::Create(const char *signature, const char *language)
 }
 
 
-const uint8 DefaultCatalog::gDefaultCatalogAddOnPriority = 1;
+const uint8 DefaultCatalog::kDefaultCatalogAddOnPriority = 1;
 	// give highest priority to our embedded catalog-add-on

@@ -74,10 +74,10 @@ class DefaultCatalog : public BCatalogAddOn {
 		//
 		status_t SetString(const char *string, const char *translated, 
 					const char *context=NULL, const char *comment=NULL);
-		status_t SetString(uint32 id, const char *translated);
+		status_t SetString(int32 id, const char *translated);
 		void UpdateFingerprint();
 
-		// interface for catalog-editor-app (and testing apps):
+		// implementation for editor-interface:
 		status_t ReadFromFile(const char *path = NULL);
 		status_t ReadFromAttribute(entry_ref *appOrAddOnRef);
 		status_t ReadFromResource(entry_ref *appOrAddOnRef);
@@ -87,7 +87,6 @@ class DefaultCatalog : public BCatalogAddOn {
 		//
 		void MakeEmpty();
 		int32 CountItems() const;
-		void Resize(int32 size);
 
 		static BCatalogAddOn *Instantiate(const char *signature,
 								const char *language,
@@ -95,7 +94,8 @@ class DefaultCatalog : public BCatalogAddOn {
 		static BCatalogAddOn *InstantiateEmbedded(entry_ref *appOrAddOnRef);
 		static BCatalogAddOn *Create(const char *signature,
 								const char *language);
-		static const uint8 DefaultCatalog::gDefaultCatalogAddOnPriority;
+		static const uint8 kDefaultCatalogAddOnPriority;
+		static const char *kCatMimeType;
 
 	private:
 		status_t Flatten(BDataIO *dataIO);
