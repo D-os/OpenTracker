@@ -38,6 +38,7 @@ All rights reserved.
 #include <CheckBox.h>
 #include <RadioButton.h>
 #include <TextControl.h>
+#include <ColorControl.h>
 
 #include "Tracker.h"
 
