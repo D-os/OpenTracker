@@ -8721,7 +8721,8 @@ BPoseView::CheckAutoScroll(BPoint mouseLoc, bool shouldScroll,
 	if (!window)
 		return false;
 
-	if (!window->IsActive())
+	// selection scrolling will also work if the window is inactive
+	if (!selectionScrolling && !window->IsActive())
 		return false;
 
 	BRect bounds(Bounds());
