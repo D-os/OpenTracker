@@ -38,7 +38,6 @@ All rights reserved.
 #include <ctype.h>
 #include <parsedate.h>
 
-
 #include <Alert.h>
 #include <AppFileInfo.h>
 #include <Debug.h>
@@ -50,6 +49,7 @@ All rights reserved.
 
 #include "Attributes.h"
 #include "FindPanel.h"
+#include "FSUndoRedo.h"
 #include "FSUtils.h"
 #include "Model.h"
 #include "OpenWithWindow.h"
@@ -873,15 +873,25 @@ NameAttributeText::CommitEditedTextFlavor(BTextView *textView)
 	if (fModel->IsVolume()) {
 		BVolume	volume(fModel->NodeRef()->device);
 		result = volume.InitCheck();
-		if (result == B_OK)
+		if (result == B_OK) {
+			RenameVolumeUndo undo(volume, text);
+
 			result = volume.SetName(text);
+			if (result != B_OK)
+				undo.Remove();
+		}
 	} else {
 		if (fModel->IsQuery()) {
 			BModelWriteOpener opener(fModel);
 			ASSERT(fModel->Node());
 			MoreOptionsStruct::SetQueryTemporary(fModel->Node(), false);
 		}
+
+		RenameUndo undo(entry, text);
+
 		result = entry.Rename(text, removeExisting);
+		if (result != B_OK)
+			undo.Remove();
 	}
 
 	return result == B_OK;
