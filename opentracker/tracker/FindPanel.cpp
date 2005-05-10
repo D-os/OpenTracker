@@ -158,7 +158,7 @@ MoreOptionsStruct::QueryTemporary(const BNode *node)
 }
 
 
-//#pragma mark -
+//	#pragma mark -
 
 
 FindWindow::FindWindow(const entry_ref *newRef, bool editIfTemplateOnly)
@@ -304,10 +304,10 @@ MakeValidFilename(BString &string)
 	int32 length = string.Length();
 	char *buf = string.LockBuffer(length);
 	for (int32 index = length; index-- > 0;)
-		if (buf[index] == '/' || buf[index] == ':')
+		if (buf[index] == '/' /*|| buf[index] == ':'*/)
 			buf[index] = '_';
 	string.UnlockBuffer(length);
-	
+
 	return string.String();
 }
 
@@ -338,20 +338,7 @@ FindWindow::GetPredicateString(BString &predicate, bool &dynamicDate)
 void 
 FindWindow::GetDefaultName(BString &result)
 {
-	BTextControl *textControl = dynamic_cast<BTextControl *>(FindView("TextControl"));
-	switch (fBackground->Mode()) {
-		case kByNameItem:
-			result << "Name = " << textControl->TextView()->Text();
-			break;
-
-		case kByForumlaItem:
-			result << "Formula " << textControl->TextView()->Text();
-			break;
-
-		case kByAttributeItem:
-			result << "Attribute Query ";
-			break;
-	}
+	fBackground->GetDefaultName(result);
 
 	time_t timeValue = time(0);
 	char namebuf[B_FILE_NAME_LENGTH];
@@ -532,7 +519,7 @@ FindWindow::FindSaveCommon(bool find)
 	BPoint location;
 	bool hadLocation = false;
 	const char *userSpecifiedName = fBackground->UserSpecifiedName();
-	
+
 	if (readFromOldFile) {
 		entry.SetTo(&fRef);
 		BContainerWindow::GetLayoutState(fFile, &oldAttributes);
@@ -559,7 +546,7 @@ FindWindow::FindSaveCommon(bool find)
 		path.Append("queries");
 		// there might be no queries folder yet, create one
 		mkdir(path.Path(), 0777);
-		
+
 		// either use the user specified name, or go with the name
 		// generated from the predicate, etc.
 		if (!userSpecifiedName) {
@@ -579,7 +566,7 @@ FindWindow::FindSaveCommon(bool find)
 
 	SaveQueryAsAttributes(fFile, &entry, !find, newFile ? 0 : &oldAttributes,
 		(hadLocation && keepPoseLocation) ? &location : 0);
-	
+
 	return newFile;
 }
 
@@ -588,7 +575,6 @@ void
 FindWindow::MessageReceived(BMessage *message)
 {
 	switch (message->what) {
-	
 		case kFindButton:
 			Find();
 			break;
@@ -651,7 +637,7 @@ FindWindow::MessageReceived(BMessage *message)
 }
 
 
-//#pragma mark -
+//	#pragma mark -
 
 const float kMoreOptionsDelta = 20;
 
@@ -690,7 +676,7 @@ FindPanel::FindPanel(BRect frame, BFile *node, FindWindow *parent,
 	fMimeTypeMenu = new BPopUpMenu("MimeTypeMenu");
 	fMimeTypeMenu->SetRadioMode(false);
 	AddMimeTypesToMenu();
-	
+
 	rect.right = rect.left + 150;
 	fMimeTypeField = new BMenuField(rect, "MimeTypeMenu", "", fMimeTypeMenu);
 	fMimeTypeField->SetDivider(0.0f);
@@ -702,7 +688,7 @@ FindPanel::FindPanel(BRect frame, BFile *node, FindWindow *parent,
 	fSearchModeMenu->AddItem(new BMenuItem("by Name", new BMessage(kByNameItem)));
 	fSearchModeMenu->AddItem(new BMenuItem("by Attribute", new BMessage(kByAttributeItem)));
 	fSearchModeMenu->AddItem(new BMenuItem("by Formula", new BMessage(kByForumlaItem)));
-	
+
 	fSearchModeMenu->ItemAt(initialMode == kByNameItem ? 0 :
 		(initialMode == kByAttributeItem ? 1 : 2))->SetMarked(true);
 		// mark the appropriate mode
@@ -731,7 +717,7 @@ FindPanel::FindPanel(BRect frame, BFile *node, FindWindow *parent,
 		dragNDropMessage.AddString("be:filetypes", kDragNDropTypes[1]);
 		dragNDropMessage.AddString("be:actionspecifier", kDragNDropActionSpecifiers[0]);
 		dragNDropMessage.AddString("be:actionspecifier", kDragNDropActionSpecifiers[1]);
-	
+
 		BMessenger self(this);
 		fDraggableIcon = new DraggableQueryIcon(DraggableIcon::PreferredRect(draggableIconOrigin,
 			B_LARGE_ICON), "saveHere", &dragNDropMessage,
@@ -765,7 +751,7 @@ FindPanel::FindPanel(BRect frame, BFile *node, FindWindow *parent,
 	fQueryName->SetDivider(fQueryName->StringWidth(fQueryName->Label()) + 5);
 	fMoreOptionsPane->AddItem(fQueryName, 1);
 	FillCurrentQueryName(fQueryName, parent);
-	
+
 	rect.top = rect.bottom + 6;
 	rect.bottom = rect.top + 16;
 	rect.right = rect.left + 100;
@@ -776,12 +762,12 @@ FindPanel::FindPanel(BRect frame, BFile *node, FindWindow *parent,
 	fTemporaryCheck = new BCheckBox(rect, "temporary", "Temporary", 0);
 	fMoreOptionsPane->AddItem(fTemporaryCheck, 1);
 	fTemporaryCheck->SetValue(1);
-	
+
 	BRect latchRect(paneInitialRect);
 	latchRect.left -= 20;
 	latchRect.right = latchRect.left + 10;
 	latchRect.top = paneInitialRect.top + paneInitialRect.Height() / 2 - 5;
-	
+
 	latchRect.bottom = latchRect.top + 12;
 
 	fLatch = new PaneSwitch(latchRect, "moreOptionsLatch", true,
@@ -1324,6 +1310,36 @@ FindPanel::GetByAttrPredicate(BQuery *query, bool &dynamicDate) const
 	ASSERT(Mode() == (int32)kByAttributeItem);
 	BuildAttrQuery(query, dynamicDate);
 	PushMimeType(query);
+}
+
+
+void
+FindPanel::GetDefaultName(BString &result) const
+{
+	BTextControl *textControl = dynamic_cast<BTextControl *>(FindView("TextControl"));
+	switch (Mode()) {
+		case kByNameItem:
+			result << "Name = " << textControl->TextView()->Text();
+			break;
+
+		case kByForumlaItem:
+			result << "Formula " << textControl->TextView()->Text();
+			break;
+
+		case kByAttributeItem:
+		{
+			BMenuItem *item = fMimeTypeMenu->FindMarked();
+			if (item != NULL)
+				result << item->Label() << ": ";
+
+			for (int32 i = 0; i < fAttrViewList.CountItems(); i++) {
+				fAttrViewList.ItemAt(i)->GetDefaultName(result);
+				if (i + 1 < fAttrViewList.CountItems())
+					result << ", ";
+			}
+			break;
+		}
+	}
 }
 
 
@@ -2706,6 +2722,31 @@ TAttrView::AddMimeTypeAttrs(BMenu *menu)
 }
 
 
+void
+TAttrView::GetDefaultName(BString &result) const
+{
+	BMenuItem *item = NULL; 
+	if (fMenuField->Menu() != NULL)
+		item = fMenuField->Menu()->FindMarked();
+	if (item != NULL)
+		result << item->Label();
+	else
+		result << "Name";
+
+	if (item->Submenu() != NULL)
+		item = item->Submenu()->FindMarked();
+	else
+		item = NULL;
+
+	if (item != NULL)
+		result << " " << item->Label() << " ";
+	else
+		result << " = ";
+
+	result << fTextControl->Text();
+}
+
+
 // #pragma mark -
 
 
@@ -2873,7 +2914,7 @@ DeleteTransientQueriesTask::StartUpTransientQueryCleaner()
 }
 
 
-//#pragma mark -
+//	#pragma mark -
 
 
 RecentFindItemsMenu::RecentFindItemsMenu(const char *title, const BMessenger *target,
@@ -2908,7 +2949,7 @@ TrackerBuildRecentFindItemsMenu(const char *title)
 }
 
 
-//#pragma mark -
+//	#pragma mark -
 
 
 DraggableQueryIcon::DraggableQueryIcon(BRect frame, const char *name,

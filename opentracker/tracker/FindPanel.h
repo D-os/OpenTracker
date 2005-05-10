@@ -204,6 +204,7 @@ class FindPanel : public BView {
 		void GetByNamePredicate(BQuery *) const;
 			// build up a simple query from the name we are searching for
 
+		void GetDefaultName(BString &) const;
 		const char *UserSpecifiedName() const;
 			// name filled out in the query name text field
 
@@ -266,6 +267,7 @@ class FindPanel : public BView {
 		BPopUpMenu *fRecentQueries;
 		DialogPane *fMoreOptionsPane;
 		BTextControl *fQueryName;
+		BString fInitialQueryName;
 
 		BCheckBox *fTemporaryCheck;
 		BCheckBox *fSearchTrashCheck;
@@ -297,6 +299,8 @@ class TAttrView : public BView {
 		void RemoveLogicMenu();
 		void AddMimeTypeAttrs();
 		void MakeTextViewFocus();
+
+		void GetDefaultName(BString &result) const;
 
 	private:
 		void AddMimeTypeAttrs(BMenu *);
