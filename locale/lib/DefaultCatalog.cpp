@@ -1,7 +1,7 @@
-/* 
-** Copyright 2003, Oliver Tappe, zooey@hirschkaefer.de. All rights reserved.
-** Distributed under the terms of the OpenBeOS License.
-*/
+/*
+ * Copyright 2003, Oliver Tappe, zooey@hirschkaefer.de. All rights reserved.
+ * Distributed under the terms of the MIT License.
+ */
 
 
 #include <memory>
@@ -114,6 +114,7 @@ CatKey::GetStringParts(BString* str, BString* ctx, BString* cmt) const
 {
 	if (!str || !ctx || !cmt)
 		return B_BAD_VALUE;
+
 	int32 pos1 = fKey.FindFirst(kSeparator);
 	if (pos1 < B_OK) {
 		str->SetTo(fKey);
@@ -130,6 +131,8 @@ CatKey::GetStringParts(BString* str, BString* ctx, BString* cmt) const
 			cmt->SetTo(fKey.String()+pos2+1);
 		}
 	}
+
+	return B_OK;
 }
 
 
