@@ -2,9 +2,9 @@
 #define _DEFAULT_CATALOG_H_
 
 #ifdef __MWERKS__
-#include <hashmap.h>
+#	include <hashmap.h>
 #else
-#include <hash_map>
+#	include <hash_map>
 #endif
 
 #include <LocaleBuild.h>
@@ -13,6 +13,27 @@
 #include <String.h>
 
 class BFile;
+
+
+namespace BPrivate {
+	struct CatKey;
+}
+
+/*
+ * the hash-access functor which is being used to access the hash-value
+ * stored inside of each key.
+ */
+#ifdef __MWERKS__
+	// Codewarrior doesn't provide this declaration, so we do:
+template <class T> struct hash : public unary_function<T,size_t> {
+	size_t operator() (const T &key) const;
+};
+#endif
+
+struct hash<BPrivate::CatKey> {
+	size_t operator() (const BPrivate::CatKey &key) const;
+};
+
 
 namespace BPrivate {
 
@@ -43,22 +64,6 @@ struct _IMPEXP_LOCALE CatKey {
 	bool operator== (const CatKey& right) const;
 	status_t GetStringParts(BString* str, BString* ctx, BString* cmt) const;
 	static size_t HashFun(const char* s);
-};
-
-/*
- * the hash-access functor which is being used to access the hash-value
- * stored inside of each key.
- */
-#ifdef __MWERKS__
-	// Codewarrior doesn't provide this declaration, so we do:
-template <class T> struct hash : public unary_function<T,size_t> {
-	size_t operator() (const T &key) const;
-};
-#endif
-
-struct hash<CatKey>
-{
-	size_t operator() (const BPrivate::CatKey &key) const;
 };
 
 /*
@@ -183,7 +188,6 @@ DefaultCatalog::GetWalker(CatWalker *walker)
 	*walker = CatWalker(fCatMap);
 	return B_OK;
 }		
-
 
 }	// namespace BPrivate
 
