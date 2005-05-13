@@ -8,31 +8,55 @@
 #include <stdio.h>
 
 
+void
+unicode_char_to_string(uint32 c, char *text)
+{
+	BUnicodeChar::ToUTF8(c, &text);
+	text[0] = '\0';
+}
+
+
 int
 main()
 {
 	// Test BUnicodeChar class
 
+	char text[16];
+
 	for (int32 i = 30; i < 70; i++) {
-		printf("%c: alpha == %d, alNum == %d, lower == %d, upper == %d, defined == %d, charType == %d\n",i,
+		unicode_char_to_string(i, text);
+		printf("%s: alpha == %d, alNum == %d, lower == %d, upper == %d, defined == %d, charType == %d\n",
+			text,
 			BUnicodeChar::IsAlpha(i), BUnicodeChar::IsAlNum(i), BUnicodeChar::IsLower(i),
 			BUnicodeChar::IsUpper(i), BUnicodeChar::IsDefined(i), BUnicodeChar::Type(i));
 	}
 
 	uint32 chars[] = {(uint8)'ä', (uint8)'Ö', (uint8)'ß', (uint8)'è', (uint8)'á', (uint8)'é', 0};
-	for (int32 j = 0, i; i = chars[j]; j++) {
-		printf("%c: alpha == %d, alNum == %d, lower == %d, upper == %d, defined == %d, charType == %d\n",i,
+	for (int32 j = 0, i; (i = chars[j]) != 0; j++) {
+		unicode_char_to_string(i, text);
+		printf("%s: alpha == %d, alNum == %d, lower == %d, upper == %d, defined == %d, charType == %d\n",
+			text,
 			BUnicodeChar::IsAlpha(i), BUnicodeChar::IsAlNum(i), BUnicodeChar::IsLower(i),
 			BUnicodeChar::IsUpper(i), BUnicodeChar::IsDefined(i), BUnicodeChar::Type(i));
-		printf("toUpper == %c, toLower == %c\n", BUnicodeChar::ToUpper(i), BUnicodeChar::ToLower(i));
+
+		unicode_char_to_string(BUnicodeChar::ToUpper(i), text);
+		printf("toUpper == %s, ", text);
+		unicode_char_to_string(BUnicodeChar::ToLower(i), text);
+		printf("toLower == %s\n", text);
 	}
 
 	char *utf8chars[] = {"Ã ", "ÃŸ", "Ã±", "Ã©", "Ã§", "Ã¤", NULL};
-	for (int32 j = 0, i; i = BUnicodeChar::FromUTF8(utf8chars[j]); j++) {
-		printf("%c: alpha == %d, alNum == %d, lower == %d, upper == %d, defined == %d, charType == %d\n",i,
+	for (int32 j = 0, i; (i = BUnicodeChar::FromUTF8(utf8chars[j])) != 0; j++) {
+		unicode_char_to_string(i, text);
+		printf("%s: alpha == %d, alNum == %d, lower == %d, upper == %d, defined == %d, charType == %d\n",
+			text,
 			BUnicodeChar::IsAlpha(i), BUnicodeChar::IsAlNum(i), BUnicodeChar::IsLower(i),
 			BUnicodeChar::IsUpper(i), BUnicodeChar::IsDefined(i), BUnicodeChar::Type(i));
-		printf("toUpper == %c, toLower == %c\n", BUnicodeChar::ToUpper(i), BUnicodeChar::ToLower(i));
+
+		unicode_char_to_string(BUnicodeChar::ToUpper(i), text);
+		printf("toUpper == %s, ", text);
+		unicode_char_to_string(BUnicodeChar::ToLower(i), text);
+		printf("toLower == %s\n", text);
 	}
 	printf("%c: digitValue == %ld\n", '8', BUnicodeChar::DigitValue('8'));
 
@@ -50,7 +74,7 @@ main()
 
 			printf("%s sort keys: \"%s\" -> \"%s\", \"%s\" -> \"%s\"\n",
 				strengths[strength-1], strings[i], a.String(), strings[i+1], b.String());
-			printf("\tcmp = %ld (key compare = %ld)\n",
+			printf("\tcmp = %d (key compare = %d)\n",
 				collator->Compare(strings[i], strings[i + 1], -1, strength),
 				strcmp(a.String(), b.String()));
 		}
