@@ -53,14 +53,17 @@ All rights reserved.
 
 
 static const uint32 kStartPolling = 'strp';
+#if _INCLUDES_CLASS_DEVICE_MAP
 static const char *kAutoMounterSettings = "automounter_settings";
-
+#endif
 
 struct OneMountFloppyParams {
 	status_t result;
 };
 
+#if _INCLUDES_CLASS_DEVICE_MAP
 static bool gSilentAutoMounter;
+#endif
 static BMessage gSettingsMessage;
 
 
