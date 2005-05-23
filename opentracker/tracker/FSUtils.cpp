@@ -81,7 +81,6 @@ All rights reserved.
 #include "TrackerSettings.h"
 #include "Utilities.h"
 
-#include "md4checksum.h"
 
 enum {
 	kUserCanceled = B_ERRORS_END + 1,
@@ -2894,9 +2893,14 @@ LoaderErrorDetails(const entry_ref *app, BString &details)
 	
 	char *argv[2] = { const_cast<char *>(path.Path()), 0};
 
+#ifdef __HAIKU__
+	// ToDo: do this correctly!
+	result = load_image(1, (const char **)argv, (const char **)environ);
+	details.SetTo("ToDo: this is missing from Haiku");
+#else
 	result = _kload_image_etc_(1, argv, environ, details.LockBuffer(1024), 1024);
 	details.UnlockBuffer();
-
+#endif
 	return B_OK;
 }
 
