@@ -48,6 +48,7 @@ All rights reserved.
 #include <stdlib.h>
 #include <float.h>
 
+#include "tracker_private.h"
 #include "BarApp.h"
 #include "Switcher.h"
 #include "ResourceSet.h"
@@ -1979,7 +1980,7 @@ OKToUse(const TTeamGroup *teamGroup)
 		return false;
 
 	// skip the Deakbar itself
-	if (strcasecmp(teamGroup->Sig(), TASK_BAR_MIME_SIG) == 0)
+	if (strcasecmp(teamGroup->Sig(), kDeskbarSignature) == 0)
 		return false;
 
 	return true;

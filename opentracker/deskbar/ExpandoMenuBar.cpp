@@ -135,7 +135,7 @@ TExpandoMenuBar::AttachedToWindow()
 	for (int32 i = 0; i < count; i++) {
 		BarTeamInfo *barInfo = (BarTeamInfo *)teamList.ItemAt(i);
 		if ((barInfo->flags & B_BACKGROUND_APP) == 0
-			&& strcasecmp(barInfo->sig, TASK_BAR_MIME_SIG) != 0) {
+			&& strcasecmp(barInfo->sig, kDeskbarSignature) != 0) {
 			if ((settings->trackerAlwaysFirst)
 				&& (strcmp(barInfo->sig, kTrackerSignature)) == 0) {
 				AddItem(new TTeamMenuItem(barInfo->teams, barInfo->icon, 
@@ -208,7 +208,7 @@ TExpandoMenuBar::MessageReceived(BMessage *message)
 
 			const char *sig;
 			if (message->FindString("sig", &sig) == B_OK
-				&&strcasecmp(sig, TASK_BAR_MIME_SIG) == 0) {
+				&&strcasecmp(sig, kDeskbarSignature) == 0) {
 				delete teams;
 				delete icon;
 				break;

@@ -46,9 +46,6 @@ All rights reserved.
 #define _FLOATER_W_TYPE_ 4
 #define _STD_W_TYPE_ 0
 
-// from roster_private.h
-extern
-const char *TASK_BAR_MIME_SIG;
 
 class BarTeamInfo {
 public:

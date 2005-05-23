@@ -85,7 +85,7 @@ TTeamMenu::AttachedToWindow()
 		BarTeamInfo *barInfo = (BarTeamInfo *)teamList.ItemAt(i);
 
 		if (((barInfo->flags & B_BACKGROUND_APP) == 0)
-			&& (strcasecmp(barInfo->sig, TASK_BAR_MIME_SIG) != 0)) {
+			&& (strcasecmp(barInfo->sig, kDeskbarSignature) != 0)) {
 			TTeamMenuItem *item = new TTeamMenuItem(barInfo->teams, barInfo->icon, 
 				barInfo->name, barInfo->sig, -1, -1, true, true);
 
