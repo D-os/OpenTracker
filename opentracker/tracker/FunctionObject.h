@@ -35,11 +35,11 @@ All rights reserved.
 #ifndef __FUNCTION_OBJECT__
 #define __FUNCTION_OBJECT__
 
-#include <Entry.h>
 #include <Message.h>
 #include <MessageFilter.h>
 
 #include <Entry.h>
+#include <Node.h>
 
 // parameter binders serve to store a copy of a struct and
 // pass it in and out by pointers, allowing struct parameters to share
