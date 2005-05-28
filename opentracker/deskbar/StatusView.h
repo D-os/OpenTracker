@@ -147,17 +147,18 @@ private:
 	void MoveItem(entry_ref *, ino_t toDirectory);
 #endif		
 
-	BPoint LocForReplicant(int32 replicantCount, int32 index, float width);
+	BPoint LocationForReplicant(int32 index, float width);
 	BShelf *Shelf() const;
-	
+
 	friend class TReplicantShelf;
 
 	TTimeView *fClock;
 	TBarView *fBarView;
 	TReplicantShelf *fShelf;
-	
+	BRect fRightBottomReplicant;
+
 	bool fMultiRowMode;
-	
+
 	bool fAlignmentSupport;		
 #ifdef DB_ADDONS
 	BList *fItemList;
