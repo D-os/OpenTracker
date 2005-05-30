@@ -280,17 +280,18 @@ TBeMenu::AddStandardBeMenuItems()
 	item = new BMenuItem("Always on Top", new BMessage(msg_AlwaysTop));
  	item->SetTarget(be_app);
  	// set checkbox based on current state of Deskbar's main window feel
- 	item->SetMarked((be_app->WindowAt(1)->Feel() & B_FLOATING_ALL_WINDOW_FEEL) != 0);
+ 	if (BWindow *window = static_cast<TBarApp *>(be_app)->BarWindow())
+	 	item->SetMarked((window->Feel() & B_FLOATING_ALL_WINDOW_FEEL) != 0);
  	subMenu->AddItem(item);
 
 	item = new BMenuItem("Sort Running Applications", new BMessage(msg_sortRunningApps));
 	item->SetTarget(be_app);
-	item->SetMarked( static_cast<TBarApp *>(be_app)->Settings()->sortRunningApps);
+	item->SetMarked(static_cast<TBarApp *>(be_app)->Settings()->sortRunningApps);
 	subMenu->AddItem(item);
 
 	item = new BMenuItem("Tracker Always First", new BMessage(msg_trackerFirst));
 	item->SetTarget(be_app);
-	item->SetMarked( static_cast<TBarApp *>(be_app)->Settings()->trackerAlwaysFirst);
+	item->SetMarked(static_cast<TBarApp *>(be_app)->Settings()->trackerAlwaysFirst);
 	subMenu->AddItem(item);
 
  	subMenu->AddSeparatorItem();
@@ -325,12 +326,12 @@ TBeMenu::AddStandardBeMenuItems()
 
 	item = new BMenuItem("Show Application Expander", new BMessage(msg_superExpando));
 	item->SetTarget(be_app);
-	item->SetMarked( static_cast<TBarApp *>(be_app)->Settings()->superExpando);
+	item->SetMarked(static_cast<TBarApp *>(be_app)->Settings()->superExpando);
 	subMenu->AddItem(item);
 
 	item = new BMenuItem("Expand New Applications", new BMessage(msg_expandNewTeams));
 	item->SetTarget(be_app);
-	item->SetMarked( static_cast<TBarApp *>(be_app)->Settings()->expandNewTeams);
+	item->SetMarked(static_cast<TBarApp *>(be_app)->Settings()->expandNewTeams);
 	item->SetEnabled(static_cast<TBarApp *>(be_app)->Settings()->superExpando);
 	subMenu->AddItem(item);
  

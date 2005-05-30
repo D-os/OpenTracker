@@ -130,41 +130,43 @@ class TFavoritesConfigWindow;
 using namespace BPrivate;
 
 class TBarApp : public BApplication {
-public:
-	TBarApp();
-	virtual ~TBarApp();
+	public:
+		TBarApp();
+		virtual ~TBarApp();
 
-	virtual	bool QuitRequested();
-	virtual void MessageReceived(BMessage *);
+		virtual	bool QuitRequested();
+		virtual void MessageReceived(BMessage *);
 
-	desk_settings *Settings()
-		{ return &fSettings; };
-	TBarView *BarView() const
-		{ return fBarWindow->BarView(); };
-	
-	static void Subscribe(const BMessenger &subscriber, BList *);
-	static void Unsubscribe(const BMessenger &subscriber);
-	
-private:
-	void AddTeam(team_id team, uint32 flags, const char	*sig, entry_ref	*);
-	void RemoveTeam(team_id);
+		desk_settings *Settings()
+			{ return &fSettings; }
+		TBarView *BarView() const
+			{ return fBarWindow->BarView(); }
+		TBarWindow *BarWindow() const
+			{ return fBarWindow; }
 
-	void InitSettings();
-	void SaveSettings();
-	
-	void ShowConfigWindow();
+		static void Subscribe(const BMessenger &subscriber, BList *);
+		static void Unsubscribe(const BMessenger &subscriber);
 
-	TBarWindow *fBarWindow;
-	BMessenger fSwitcherMess;
-	BMessenger fStatusViewMess;
-	BFile *fSettingsFile;
-	desk_settings fSettings;
-	
-	TFavoritesConfigWindow *fConfigWindow;
-	
-	static BLocker sSubscriberLock;
-	static BList sBarTeamInfoList;
-	static BList sSubscribers;
+	private:
+		void AddTeam(team_id team, uint32 flags, const char	*sig, entry_ref	*);
+		void RemoveTeam(team_id);
+
+		void InitSettings();
+		void SaveSettings();
+
+		void ShowConfigWindow();
+
+		TBarWindow *fBarWindow;
+		BMessenger fSwitcherMess;
+		BMessenger fStatusViewMess;
+		BFile *fSettingsFile;
+		desk_settings fSettings;
+
+		TFavoritesConfigWindow *fConfigWindow;
+
+		static BLocker sSubscriberLock;
+		static BList sBarTeamInfoList;
+		static BList sSubscribers;
 };
 
 #endif
