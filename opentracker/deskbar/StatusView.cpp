@@ -1105,13 +1105,16 @@ TReplicantTray::RemoveIcon(const char *name)
 
 
 void
-TReplicantTray::RealReplicantAdjustment(int32 startindex)
+TReplicantTray::RealReplicantAdjustment(int32 startIndex)
 {
-	if (startindex < 0)
+	if (startIndex < 0)
 		return;
 
+	if (startIndex == fLastReplicant)
+		startIndex = 0;
+
 	// reset the locations of all replicants after the one deleted
-	RealignReplicants(startindex);
+	RealignReplicants(startIndex);
 
 	float oldWidth = Bounds().Width();
 	float oldHeight = Bounds().Height();
@@ -1265,8 +1268,10 @@ TReplicantTray::LocationForReplicant(int32 index, float width)
 	}
 
 	if ((loc.y == fRightBottomReplicant.top && loc.x > fRightBottomReplicant.left)
-		|| loc.y > fRightBottomReplicant.top)
+		|| loc.y > fRightBottomReplicant.top) {
 		fRightBottomReplicant.Set(loc.x, loc.y, loc.x + width, loc.y + kMaxReplicantHeight);
+		fLastReplicant = index;
+	}
 
 	return loc;
 }

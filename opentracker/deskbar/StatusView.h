@@ -156,6 +156,7 @@ private:
 	TBarView *fBarView;
 	TReplicantShelf *fShelf;
 	BRect fRightBottomReplicant;
+	int32 fLastReplicant;
 
 	bool fMultiRowMode;
 
