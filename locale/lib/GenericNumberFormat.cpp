@@ -810,7 +810,8 @@ class BGenericNumberFormat::Float {
 			writer.Append(mantissaSuffix);
 			// the exponent
 			writer.Append(exponentSymbol);
-			Integer((int64)exponent).Format(writer, digitSymbols,
+
+			Integer(static_cast<int64>(exponent)).Format(writer, digitSymbols,
 				exponentSignSymbols, B_USE_POSITIVE_SIGN, &kNoGroupingInfo, 2);
 			// sign suffix
 			writer.Append(suffix);
