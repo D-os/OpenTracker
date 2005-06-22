@@ -8581,54 +8581,61 @@ BPoseView::MouseMoved(BPoint mouseLoc, uint32 moveCode, const BMessage *message)
 	if (!fDropEnabled || !message)
 		return;
 
-	BContainerWindow* window = dynamic_cast<BContainerWindow*>(Window());
+	BContainerWindow* window = ContainerWindow();
 	if (!window)
 		return;
 
 	switch (moveCode) {
 		case B_INSIDE_VIEW:
 		case B_ENTERED_VIEW:
-			UpdateDropTarget(mouseLoc, message, window->ContextMenu());	
-			if (fDropTarget) {
-				bigtime_t dropMenuDelay;
-				get_click_speed(&dropMenuDelay);
-				dropMenuDelay *= 3;
-				
-				BContainerWindow *window = ContainerWindow();
-				if (!window || !message || window->ContextMenu())
+		{
+			UpdateDropTarget(mouseLoc, message, window->ContextMenu());
+			if (fAutoScrollState == kAutoScrollOff) {
+				// turn on auto scrolling if it's not yet on
+				fAutoScrollState = kWaitForTransition;
+				window->SetPulseRate(100000);
+			}
+
+			bigtime_t dropActionDelay;
+			get_click_speed(&dropActionDelay);
+			dropActionDelay *= 3;
+
+			if (window->ContextMenu())
+				break;
+
+			bigtime_t clickTime = system_time();
+			BPoint loc;
+			uint32 buttons;
+			GetMouse(&loc, &buttons);
+			for (;;) {
+				if (buttons == 0
+					|| fabs(loc.x - mouseLoc.x) > 4 || fabs(loc.y - mouseLoc.y) > 4) {
+					// only loop if mouse buttons are down
+					// moved the mouse, cancel showing the context menu
 					break;
+				}
 
-				bigtime_t clickTime = system_time();
-				BPoint loc;
-				uint32 buttons;
-				GetMouse(&loc, &buttons);
-				for (;;) {
-					if (buttons == 0
-						|| fabs(loc.x - mouseLoc.x) > 4 || fabs(loc.y - mouseLoc.y) > 4)
-						// only loop if mouse buttons are down
-						// moved the mouse, cancel showing the context menu
-						break;
-
-					//	handle drag and drop
-					bigtime_t now = system_time();
-					//	use shift key to get around over-loading of Control key
-					//	for context menus and auto-dnd menu
-					if (((modifiers() & B_SHIFT_KEY)
-							&& (now - clickTime) > 200000)
-						|| now - clickTime > dropMenuDelay) {
-						// let go of button or pressing for a while, show menu now
+				//	handle drag and drop
+				bigtime_t now = system_time();
+				//	use shift key to get around over-loading of Control key
+				//	for context menus and auto-dnd menu
+				if (((modifiers() & B_SHIFT_KEY) && (now - clickTime) > 200000)
+					|| now - clickTime > dropActionDelay) {
+					// let go of button or pressing for a while, show menu now
+					if (fDropTarget) {
 						window->DragStart(message);				
 						FrameForPose(fDropTarget, true, &fStartFrame);
 						ShowContextMenu(mouseLoc);					
-						break;
-					}
-		
-					snooze(10000);
-					GetMouse(&loc, &buttons);
+					} else
+						window->Activate();
+					break;
 				}
 
+				snooze(10000);
+				GetMouse(&loc, &buttons);
 			}
 			break;
+		}
 
 		case B_EXITED_VIEW:
 			// ToDo:
