@@ -213,7 +213,6 @@ BPoseView::BPoseView(Model *model, BRect bounds, uint32 viewMode, uint32 resizeM
 	fIsWatchingDateFormatChange(false),
 	fHasPosesInClipboard(false)
 {
-	
 	fViewState->SetViewMode(viewMode);
 	fShowSelectionWhenInactive = TrackerSettings().ShowSelectionWhenInactive();
 	fTransparentSelection = TrackerSettings().TransparentSelection();
@@ -297,7 +296,7 @@ BPoseView::InitCommon()
 	EnableScrollBars();
 
 	StartWatching();
-		// trun on volume node monitor, metamime monitor, etc.
+		// turn on volume node monitor, metamime monitor, etc.
 
 	if (window && window->ShouldAddCountView())
 		AddCountView();
@@ -772,7 +771,8 @@ void
 BPoseView::StartWatching()
 {
 	// watch volumes
-	TTracker::WatchNode(0, B_WATCH_MOUNT, this);
+	TTracker::WatchNode(NULL, B_WATCH_MOUNT, this);
+	TTracker::WatchNode(TargetModel()->NodeRef(), B_WATCH_ATTR, this);
 	BMimeType::StartWatching(BMessenger(this));
 }
 
@@ -5107,6 +5107,19 @@ BPoseView::AttributeChanged(const BMessage *message)
 
 	const char *attrName;
 	message->FindString("attr", &attrName);
+
+	if (*TargetModel()->NodeRef() == itemNode && TargetModel()->AttrChanged(attrName)) {
+		// the icon of our target has changed, update drag icon
+		// TODO: make this simpler (ie. store the icon with the window)
+		BView *view = Window()->FindView("MenuBar");
+		if (view != NULL) {
+			view = view->FindView("ThisContainer");
+			if (view != NULL) {
+				IconCache::sIconCache->IconChanged(TargetModel());
+				view->Invalidate();
+			}
+		}
+	}
 
 	int32 index;
 	BPose *pose = fPoseList->DeepFindPose(&itemNode, &index);
