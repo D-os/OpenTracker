@@ -135,14 +135,16 @@ TBarMenuTitle::DrawContent()
 		menu->SetHighColor(black);
 	}
 
-	menu->SetDrawingMode(B_OP_OVER);
+	menu->SetDrawingMode(B_OP_ALPHA);
 
-	BRect dstRect(fIcon->Bounds());
-	dstRect.OffsetTo(frame.LeftTop());
-	dstRect.OffsetBy(rintf(((frame.Width() - dstRect.Width()) / 2) - 1.0f),
-		rintf(((frame.Height() - dstRect.Height()) / 2) - 0.0f));
+	if (fIcon != NULL) {
+		BRect dstRect(fIcon->Bounds());
+		dstRect.OffsetTo(frame.LeftTop());
+		dstRect.OffsetBy(rintf(((frame.Width() - dstRect.Width()) / 2) - 1.0f),
+			rintf(((frame.Height() - dstRect.Height()) / 2) - 0.0f));
 
-	menu->DrawBitmapAsync(fIcon, dstRect);
+		menu->DrawBitmapAsync(fIcon, dstRect);
+	}
 }
 
 
