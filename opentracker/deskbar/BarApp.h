@@ -82,7 +82,7 @@ const uint32 msg_expandNewTeams = 'ExTm';
 // if you want to extend this structure, maintain the
 // constants below (used in TBarApp::InitSettings())
 
-struct	desk_settings {
+struct desk_settings {
 	bool vertical;				// version 1
 	bool left;
 	bool top;
@@ -122,9 +122,7 @@ class TBarView;
 class BFile;
 
 namespace BPrivate {
-
-class TFavoritesConfigWindow;
-
+	class TFavoritesConfigWindow;
 }
 
 using namespace BPrivate;
@@ -157,8 +155,8 @@ class TBarApp : public BApplication {
 		void ShowConfigWindow();
 
 		TBarWindow *fBarWindow;
-		BMessenger fSwitcherMess;
-		BMessenger fStatusViewMess;
+		BMessenger fSwitcherMessenger;
+		BMessenger fStatusViewMessenger;
 		BFile *fSettingsFile;
 		desk_settings fSettings;
 

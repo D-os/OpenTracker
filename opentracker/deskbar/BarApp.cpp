@@ -109,15 +109,15 @@ TBarApp::TBarApp()
 
 	sSubscribers.MakeEmpty();
 
-	fSwitcherMess = BMessenger(new TSwitchMgr(fSettings.switcherLoc));
+	fSwitcherMessenger = BMessenger(new TSwitchManager(fSettings.switcherLoc));
 
 	fBarWindow = new TBarWindow();
 	fBarWindow->Show();
 
-	//	this messenger now targets the barview instead of the
-	//	statusview so that all additions to the tray
-	//	follow the same path
-	fStatusViewMess = BMessenger(fBarWindow->FindView("BarView"));
+	// this messenger now targets the barview instead of the
+	// statusview so that all additions to the tray
+	// follow the same path
+	fStatusViewMessenger = BMessenger(fBarWindow->FindView("BarView"));
 }
 
 
@@ -360,7 +360,7 @@ TBarApp::MessageReceived(BMessage *message)
 
 		case B_ARCHIVED_OBJECT:
 			message->AddString("special", "Alex Osadzinski");
-			fStatusViewMess.SendMessage(message);
+			fStatusViewMessenger.SendMessage(message);
 			break;
 
 		case msg_Be:
@@ -446,7 +446,7 @@ TBarApp::MessageReceived(BMessage *message)
 		}
 
 		case 'TASK': 
-			fSwitcherMess.SendMessage(message);
+			fSwitcherMessenger.SendMessage(message);
 			break;
 
 		default:
