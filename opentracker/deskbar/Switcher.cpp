@@ -384,7 +384,7 @@ TSwitchMgr::MainEntry(BMessage *message)
 
 
 void
-TSwitchMgr::Stop(bool do_action, uint32 )
+TSwitchMgr::Stop(bool do_action, uint32)
 {
 	fWindow->Hide();
 	if (do_action)
@@ -464,7 +464,6 @@ TSwitchMgr::QuickSwitch(BMessage *message)
 
 	team_id team;
 	if (message->FindInt32("team", &team) == B_OK) {
-	
 		bool forward = ((modifiers & B_SHIFT_KEY) == 0);
 	
 		if ((modifiers & B_OPTION_KEY) != 0) 
@@ -592,7 +591,6 @@ LowBitIndex(uint32 value)
 bool
 TSwitchMgr::ActivateApp(bool forceShow, bool allowWorkspaceSwitch)
 {
-
 	// Let's get the info about the selected window. If it doesn't exist
 	// anymore then get info about first window. If that doesn't exist then
 	// do nothing.
@@ -602,9 +600,9 @@ TSwitchMgr::ActivateApp(bool forceShow, bool allowWorkspaceSwitch)
 		if (!windowInfo)
 			return false;
 	}
-	
+
 	int32 currentWorkspace = current_workspace();
-	TTeamGroup *teamGroup = (TTeamGroup *) fGroupList.ItemAt(fCurIndex);
+	TTeamGroup *teamGroup = (TTeamGroup *)fGroupList.ItemAt(fCurIndex);
 	// Let's handle the easy case first: There's only 1 team in the group
 	if (teamGroup->TeamList()->CountItems() == 1) {
 		bool result;
@@ -622,7 +620,7 @@ TSwitchMgr::ActivateApp(bool forceShow, bool allowWorkspaceSwitch)
 			result = false;
 		else {
 			result = true;
-			be_roster->ActivateApp((team_id) teamGroup->TeamList()->ItemAt(0));
+			be_roster->ActivateApp((team_id)teamGroup->TeamList()->ItemAt(0));
 		}
 		
 		ASSERT(windowInfo);
@@ -679,9 +677,9 @@ TSwitchMgr::ActivateApp(bool forceShow, bool allowWorkspaceSwitch)
 			free(matchWindowInfo);
 			break;
 		}
-		if ((matchWindowInfo->id != windowInfo->id)
+		if (matchWindowInfo->id != windowInfo->id
 			&& teamGroup->TeamList()->HasItem((void *)matchWindowInfo->team))
-				windowsToActivate.AddItem((void *)matchWindowInfo->id);
+			windowsToActivate.AddItem((void *)matchWindowInfo->id);
 
 		free(matchWindowInfo);
 	}
@@ -704,10 +702,43 @@ TSwitchMgr::ActivateApp(bool forceShow, bool allowWorkspaceSwitch)
 }
 
 
+void
+TSwitchMgr::QuitApp()
+{
+	TTeamGroup *teamGroup = (TTeamGroup *)fGroupList.ItemAt(fCurIndex);
+
+	if (fCurIndex == fGroupList.CountItems() - 1) {
+		// switch to previous app in the list so that we don't jump to
+		// the start of the list (try to keep the same position when
+		// the apps at the current index go away)
+		SwitchToApp(fCurIndex, fCurIndex - 1, false);
+	}
+
+	// send the quit request to all teams in this group
+
+	for (int32 i = teamGroup->TeamList()->CountItems(); i-- > 0;) {
+		team_id team = (team_id)teamGroup->TeamList()->ItemAt(i);
+		app_info info;
+		if (be_roster->GetRunningAppInfo(team, &info) == B_OK) {
+			uint32 command = B_QUIT_REQUESTED;
+			if (!strcasecmp(info.signature, kTrackerSignature)) {
+				// if you try to quit Tracker, its windows will be closed instead
+				command = 'Tall';
+			} else if (!strcasecmp(info.signature, kDeskbarSignature)) {
+				// we don't like to quit ourselves, either
+				break;
+			}
+
+			BMessenger messenger(NULL, team);
+			messenger.SendMessage(command);
+		}
+	}
+}
+
+
 window_info *
 TSwitchMgr::WindowInfo(int32 groupIndex, int32 windowIndex)
 {
-
 	TTeamGroup *teamGroup = (TTeamGroup *) fGroupList.ItemAt(groupIndex);
 	if (!teamGroup)
 		return NULL;
@@ -1285,31 +1316,13 @@ TSwitcherWindow::DoKey(uint32 key, uint32 modifiers)
 	bool forward = ((modifiers & B_SHIFT_KEY) == 0);
 
 	switch (key) {
-		case '~': 
-			fMgr->CycleWindow(false, false);
-			break;
-
-		case '`': 
-			fMgr->CycleWindow(true, false);
-			break;
-
-#if _ALLOW_STICKY_
-		case 's': 
-		case 'S':
-			if (fHairTrigger) {
-				SetLook(B_TITLED_WINDOW_LOOK);
-				fHairTrigger = false;
-			} else {
-				SetLook(B_MODAL_WINDOW_LOOK);
-				fHairTrigger = true;
-			}
-			break;
-#endif
 		case B_RIGHT_ARROW: 
+		case '`': 
 			fMgr->CycleApp(true, false);
 			break;
 
 		case B_LEFT_ARROW: 
+		case '~': 
 			fMgr->CycleApp(false, false);
 			break;
 
@@ -1334,6 +1347,23 @@ TSwitcherWindow::DoKey(uint32 key, uint32 modifiers)
 			fMgr->Stop(true, modifiers);
 			break;
 
+		case 'q':
+		case 'Q':
+			fMgr->QuitApp();
+			break;
+
+#if _ALLOW_STICKY_
+		case 's': 
+		case 'S':
+			if (fHairTrigger) {
+				SetLook(B_TITLED_WINDOW_LOOK);
+				fHairTrigger = false;
+			} else {
+				SetLook(B_MODAL_WINDOW_LOOK);
+				fHairTrigger = true;
+			}
+			break;
+#endif
 	}
 }
 

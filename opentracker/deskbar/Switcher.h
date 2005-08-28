@@ -93,6 +93,7 @@ public:
 	int32 CurSlot();
 	BList *GroupList();
 	int32 CountVisibleGroups();
+	void QuitApp();
 	void CycleApp(bool forward, bool activate = false);	
 	void CycleWindow(bool forward, bool wrap = true);	
 	void SwitchToApp(int32 prevIndex, int32 newIndex, bool forward);	
