@@ -1457,7 +1457,7 @@ TIconView::TIconView(BRect frame, TSwitchManager *manager, TSwitcherWindow *swit
 
 	fOffView = new BView(rect, "off_view", B_FOLLOW_NONE, B_WILL_DRAW);
 	fOffView->SetHighColor(color);
-	fOffBitmap = new BBitmap(rect, B_COLOR_8_BIT, true);
+	fOffBitmap = new BBitmap(rect, B_RGB32, true);
 	fOffBitmap->AddChild(fOffView);
 
 	fCurrentSmall = new BBitmap(BRect(0, 0, 15, 15), B_COLOR_8_BIT);
@@ -1507,10 +1507,9 @@ TIconView::AnimateIcon(BBitmap *startIcon, BBitmap *endIcon)
 	float width = startIconBounds.Width();
 	int32 amount = (width < 20) ? -2 : 2;
 
-
 	// center the starting icon inside of centerRect
 	float off = (centerRect.Width() - width) / 2;
-	startIconBounds.OffsetTo(BPoint(off,off));
+	startIconBounds.OffsetTo(BPoint(off, off));
 
 	// scroll the centerRect to correct location
 	centerRect.OffsetBy(bounds.left, 0);
@@ -1520,7 +1519,7 @@ TIconView::AnimateIcon(BBitmap *startIcon, BBitmap *endIcon)
 	destRect.OffsetTo(centerRect.left, 0);
 	// center the destRect inside of centerRect.
 	off = (centerRect.Width() - destRect.Width()) / 2;
-	destRect.OffsetBy(BPoint(off,off));
+	destRect.OffsetBy(BPoint(off, off));
 
 	fOffBitmap->Lock();
 	fOffView->SetDrawingMode(B_OP_OVER);
@@ -1552,7 +1551,7 @@ TIconView::Update(int32, int32 current, int32 previousSlot, int32 currentSlot,
 {
 	// Animate the shrinking of the currently centered icon.
 	AnimateIcon(fCurrentLarge, fCurrentSmall);
-	
+
 	int32 nslots = abs(previousSlot - currentSlot);
 	int32 stepSize = kScrollStep;
 
@@ -1560,14 +1559,13 @@ TIconView::Update(int32, int32 current, int32 previousSlot, int32 currentSlot,
 		// we were at the end of the list and we just moved to the start
 		forward = false;
 		if (previousSlot - currentSlot > 4)
-			stepSize = stepSize*2;
-
+			stepSize *= 2;
 	} else if (!forward && (currentSlot > previousSlot)) {
 		// we're are moving backwards and we just hit start of list and
 		// we wrapped to the end.
 		forward = true;
 		if (currentSlot - previousSlot > 4)
-			stepSize = stepSize*2;
+			stepSize *= 2;
 	}
 
 	int32 scrollValue = forward ? stepSize : -stepSize;
@@ -1703,7 +1701,7 @@ TIconView::DrawTeams(BRect update)
 
 		if (rect.Intersects(update) && teamGroup) {
 			SetDrawingMode(B_OP_OVER);
-			
+
 			teamGroup->Draw(this, rect, !fAutoScrolling && (i == mainIndex));
 
 			if (i == mainIndex) 
