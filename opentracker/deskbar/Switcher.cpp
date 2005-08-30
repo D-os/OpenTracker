@@ -562,9 +562,8 @@ TSwitchManager::CycleApp(bool forward, bool activateNow)
 		}
 		if ((fCurrentIndex == startIndex)) 
 			// we've gone completely through the list without finding
-			// an good app. Oh well.
+			// a good app. Oh well.
 			return;
-
 
 		if (!OKToUse((TTeamGroup *)fGroupList.ItemAt(fCurrentIndex)))
 			continue;
@@ -648,13 +647,13 @@ TSwitchManager::ActivateApp(bool forceShow, bool allowWorkspaceSwitch)
 			free(windowInfo);
 			return false;
 		}
-		int32 dest_ws = LowBitIndex(windowInfo->workspaces);
+		int32 destWorkspace = LowBitIndex(windowInfo->workspaces);
 		// now switch to that workspace
-		activate_workspace(dest_ws);
+		activate_workspace(destWorkspace);
 	}
 
 	if (!forceShow && windowInfo->is_mini) {
-		// If the first window in the list is hiddenm then no windows in
+		// If the first window in the list is hidden then no windows in
 		// this group are visible. So we can't switch to this app.
 		ASSERT(windowInfo);
 		free(windowInfo);
@@ -675,9 +674,10 @@ TSwitchManager::ActivateApp(bool forceShow, bool allowWorkspaceSwitch)
 	// As we hit member teams we build the "activate" list.
 	for (int32 i = 0; i < tokenCount; i++) {
 		window_info	*matchWindowInfo = get_window_info(tokens[i]);
-		if (!matchWindowInfo) 
+		if (!matchWindowInfo) {
 			// That window probably closed. Just go to the next one.
 			continue;
+		}
 		if (!IsVisibleInCurrentWorkspace(matchWindowInfo)) {
 			// first non-visible in workspace window means we're done.
 			free(matchWindowInfo);
@@ -711,13 +711,26 @@ TSwitchManager::ActivateApp(bool forceShow, bool allowWorkspaceSwitch)
 void
 TSwitchManager::QuitApp()
 {
-	TTeamGroup *teamGroup = (TTeamGroup *)fGroupList.ItemAt(fCurrentIndex);
+	// check if we're in the last slot already (the last usable team group)
 
-	if (fCurrentIndex == fGroupList.CountItems() - 1) {
+	TTeamGroup *teamGroup;
+	int32 count = 0;
+	for (int32 i = fCurrentIndex + 1; i < fGroupList.CountItems(); i++) {
+		teamGroup = (TTeamGroup *)fGroupList.ItemAt(i);
+
+		if (!OKToUse(teamGroup))
+			continue;
+
+		count++;
+	}
+
+	teamGroup = (TTeamGroup *)fGroupList.ItemAt(fCurrentIndex);
+
+	if (count == 0) {
 		// switch to previous app in the list so that we don't jump to
 		// the start of the list (try to keep the same position when
 		// the apps at the current index go away)
-		SwitchToApp(fCurrentIndex, fCurrentIndex - 1, false);
+		CycleApp(false, false);
 	}
 
 	// send the quit request to all teams in this group
@@ -1666,20 +1679,20 @@ BRect
 TIconView::FrameOf(int32 index) const 
 {
 	BList *list = fManager->GroupList();
-	int32 visi = kCenterSlot - 1;
+	int32 visible = kCenterSlot - 1;
 		// first few slots in view are empty
 
 	TTeamGroup *teamGroup;
 	for (int32 i = 0; i <= index; i++) {
-		teamGroup = (TTeamGroup *) list->ItemAt(i);
+		teamGroup = (TTeamGroup *)list->ItemAt(i);
 
 		if (!OKToUse(teamGroup))
 			continue;
 
-		visi++;
+		visible++;
 	}
 
-	return BRect(visi * kSlotSize, 0, (visi + 1) * kSlotSize - 1, kSlotSize - 1);
+	return BRect(visible * kSlotSize, 0, (visible + 1) * kSlotSize - 1, kSlotSize - 1);
 }
 
 
