@@ -2969,29 +2969,16 @@ BPoseView::NewFileFromTemplate(const BMessage *message)
 	// try to place new item at click point or under mouse if possible
 	PlaceFolder(&destEntryRef, message);
 
-	if (dir.InitCheck() == B_OK) {
-		// special-case directories - start renaming them
-		int32 index;
-		BPose *pose = EntryCreated(TargetModel()->NodeRef(), &destNodeRef,
-			destEntryRef.name, &index);
+	// start renaming the entry
+	int32 index;
+	BPose *pose = EntryCreated(TargetModel()->NodeRef(), &destNodeRef,
+		destEntryRef.name, &index);
 
-		if (pose) {					
-			UpdateScrollRange();
-			CommitActivePose();
-			SelectPose(pose, index);
-			pose->EditFirstWidget(BPoint(0, index * fListElemHeight), this);
-		}
-	} else {
-		// open the corresponding application
-		BMessage openMessage(B_REFS_RECEIVED);
-		openMessage.AddRef("refs", &destEntryRef);
-
-		// add a messenger to the launch message that will be used to
-		// dispatch scripting calls from apps to the PoseView
-		openMessage.AddMessenger("TrackerViewToken", BMessenger(this));
-
-		if (fSelectionHandler)
-			fSelectionHandler->PostMessage(&openMessage);
+	if (pose) {					
+		UpdateScrollRange();
+		CommitActivePose();
+		SelectPose(pose, index);
+		pose->EditFirstWidget(BPoint(0, index * fListElemHeight), this);
 	}
 }
 
