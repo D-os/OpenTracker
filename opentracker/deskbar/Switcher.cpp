@@ -739,17 +739,13 @@ TSwitchManager::QuitApp()
 		team_id team = (team_id)teamGroup->TeamList()->ItemAt(i);
 		app_info info;
 		if (be_roster->GetRunningAppInfo(team, &info) == B_OK) {
-			uint32 command = B_QUIT_REQUESTED;
 			if (!strcasecmp(info.signature, kTrackerSignature)) {
-				// if you try to quit Tracker, its windows will be closed instead
-				command = 'Tall';
-			} else if (!strcasecmp(info.signature, kDeskbarSignature)) {
-				// we don't like to quit ourselves, either
-				break;
+				// Tracker can't be quit this way
+				continue;
 			}
 
 			BMessenger messenger(NULL, team);
-			messenger.SendMessage(command);
+			messenger.SendMessage(B_QUIT_REQUESTED);
 		}
 	}
 }
