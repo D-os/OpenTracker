@@ -111,6 +111,25 @@ TWindowMenuItem::ChangedState()
 }
 
 
+void
+TWindowMenuItem::SetLabel(const char* string)
+{
+	fFullTitle = string;
+	BString truncatedTitle = fFullTitle;
+
+	if (fExpanded && Menu()) {
+		BPoint contLoc = ContentLocation() + BPoint(kHPad, kVPad);
+		contLoc.x += kIconRect.Width() + kLabelOffset;
+	
+		be_plain_font->TruncateString(&truncatedTitle, B_TRUNCATE_MIDDLE,
+									  Frame().Width() - contLoc.x - 3.0);
+	}
+
+	if (strcmp(Label(), truncatedTitle.String()) != 0)
+		BMenuItem::SetLabel(truncatedTitle.String());
+}
+
+
 int32
 TWindowMenuItem::ID()
 {
@@ -126,7 +145,7 @@ TWindowMenuItem::GetContentSize(float *width, float *height)
 		if (fID >= 0)
 			*width += fBitmap->Bounds().Width() + kLabelOffset;
 	} else
-		*width = Frame().Width() - kHPad;
+		*width = Frame().Width()/* - kHPad*/;
 
 	// ToDo: label width is not correct yet - the text label is
 	//	always written completely, if it fits or not!
@@ -155,7 +174,7 @@ TWindowMenuItem::Draw()
 			menu->FillRect(frame);
 
 			if (fExpanded) {
-				rgb_color shadow = tint_color(menuColor, B_DARKEN_1_TINT);
+				rgb_color shadow = tint_color(menuColor, (B_NO_TINT + B_DARKEN_1_TINT) / 2.0);
 				menu->SetHighColor(shadow);
 				frame.right = frame.left + kHPad / 2;
 				menu->FillRect(frame);
@@ -169,7 +188,6 @@ TWindowMenuItem::Draw()
 		} else 
 			menu->SetLowColor(menuColor);
 
-		menu->MovePenTo(ContentLocation());
 		DrawContent();
 		menu->PopState();
 	}
@@ -185,8 +203,8 @@ TWindowMenuItem::DrawContent()
 
 	BRect frame(Frame());
 	BPoint contLoc = ContentLocation() + BPoint(kHPad, kVPad);
-	if (fExpanded)
-		contLoc.x += kHPad;
+//	if (fExpanded)
+//		contLoc.x += kHPad;
 	menu->SetDrawingMode(B_OP_COPY);
 
 	if (fID >= 0) {
@@ -213,6 +231,7 @@ TWindowMenuItem::DrawContent()
 	menu->MovePenTo(contLoc);
 	// Set the pen color so that the label is always visible.
 	menu->SetHighColor(0, 0, 0);
+
 	BMenuItem::DrawContent();
 }
 
@@ -249,7 +268,10 @@ TWindowMenuItem::Invoke(BMessage *)
 void
 TWindowMenuItem::ExpandedItem(bool status)
 {
-	fExpanded = status;
+	if (fExpanded != status) {
+		fExpanded = status;
+		SetLabel(fFullTitle.String());
+	}
 }
 
 
