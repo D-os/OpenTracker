@@ -61,7 +61,8 @@ TWindowMenuItem::TWindowMenuItem(const char *title, int32 id,
 	fDragging(dragging),
 	fExpanded(false),
 	fRequireUpdate(false),
-	fModified(false)
+	fModified(false),
+	fFullTitle("")
 {
 	Initialize(title);
 }
@@ -147,8 +148,10 @@ TWindowMenuItem::GetContentSize(float *width, float *height)
 	} else
 		*width = Frame().Width()/* - kHPad*/;
 
-	// ToDo: label width is not correct yet - the text label is
-	//	always written completely, if it fits or not!
+	// Note: when the item is in "expanded mode", ie embedded into
+	// the Deskbar itself, then a truncated label is used in SetLabel()
+	// The code here is ignorant of this fact, but it doesn't seem to
+	// hurt anything.
 
 	*height = (fID >= 0) ? fBitmap->Bounds().Height() : 0.0f;
 	float labelHeight = fTitleAscent + fTitleDescent;
