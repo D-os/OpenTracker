@@ -2860,7 +2860,7 @@ BPoseView::UpdatePosesClipboardModeFromClipboard(BMessage *clipboardReport)
 	fSelectionList->MakeEmpty();
 	fMimeTypesInSelectionCache.MakeEmpty();
 
-	SetHasPosesInClipboard(hasPosesInClipboard | fHasPosesInClipboard);
+	SetHasPosesInClipboard(hasPosesInClipboard || fHasPosesInClipboard);
 
 	if (fullInvalidateNeeded)
 		Invalidate();
