@@ -123,7 +123,7 @@ TWindowMenuItem::SetLabel(const char* string)
 		contLoc.x += kIconRect.Width() + kLabelOffset;
 	
 		be_plain_font->TruncateString(&truncatedTitle, B_TRUNCATE_MIDDLE,
-									  Frame().Width() - contLoc.x - 3.0);
+									  Frame().Width() - contLoc.x - 3.0f);
 	}
 
 	if (strcmp(Label(), truncatedTitle.String()) != 0)
@@ -177,7 +177,7 @@ TWindowMenuItem::Draw()
 			menu->FillRect(frame);
 
 			if (fExpanded) {
-				rgb_color shadow = tint_color(menuColor, (B_NO_TINT + B_DARKEN_1_TINT) / 2.0);
+				rgb_color shadow = tint_color(menuColor, (B_NO_TINT + B_DARKEN_1_TINT) / 2.0f);
 				menu->SetHighColor(shadow);
 				frame.right = frame.left + kHPad / 2;
 				menu->FillRect(frame);
