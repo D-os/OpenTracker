@@ -3861,7 +3861,7 @@ BPoseView::HandleDropCommon(BMessage *message, Model *targetModel, BPose *target
 
 	// look for srcWindow to determine whether drag was initiated in tracker
 	BContainerWindow *srcWindow = NULL;
-	message->FindPointer("src_window", (void **) &srcWindow);
+	message->FindPointer("src_window", (void **)&srcWindow);
 
 	if (!srcWindow) {
 		// drag was from another app
@@ -4046,7 +4046,7 @@ BPoseView::HandleDropCommon(BMessage *message, Model *targetModel, BPose *target
 			}
 
 			// handle refs by performing a copy
-			BObjectList<entry_ref> *entryList = new BObjectList<entry_ref>();
+			BObjectList<entry_ref> *entryList = new BObjectList<entry_ref>(10, true);
 
 			for (int32 index = 0; ; index++) {
 				// copy all enclosed refs into a list
