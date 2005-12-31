@@ -47,6 +47,10 @@ All rights reserved.
 #include <Path.h>
 #include <Roster.h>
 
+#if __HAIKU__
+#	include <RosterPrivate.h>
+#endif
+
 #include "FavoritesConfig.h"
 
 #include "icons.h"
@@ -93,6 +97,10 @@ TBarApp::TBarApp()
 	InitSettings();
 	InitIconPreloader();
 
+#ifdef __HAIKU__
+	be_roster->StartWatching(this);
+#endif
+
 	sBarTeamInfoList.MakeEmpty();
 
 	BList teamList;
@@ -102,9 +110,10 @@ TBarApp::TBarApp()
 	for (int32 i = 0; i < numTeams; i++) {
 		app_info appInfo;
 		team_id tID = (team_id)teamList.ItemAt(i);
-		if (be_roster->GetRunningAppInfo(tID, &appInfo) == B_OK)
+		if (be_roster->GetRunningAppInfo(tID, &appInfo) == B_OK) {
 			AddTeam(appInfo.team, appInfo.flags, appInfo.signature,
 				&appInfo.ref);
+		}
 	}
 
 	sSubscribers.MakeEmpty();
@@ -123,6 +132,10 @@ TBarApp::TBarApp()
 
 TBarApp::~TBarApp()
 {
+#ifdef __HAIKU__
+	be_roster->StopWatching(this);
+#endif
+
 	int32 teamCount = sBarTeamInfoList.CountItems();
 	for (int32 i = 0; i < teamCount; i++) {
 		BarTeamInfo *barInfo = (BarTeamInfo *)sBarTeamInfoList.ItemAt(i);
@@ -359,6 +372,7 @@ TBarApp::MessageReceived(BMessage *message)
 		}
 
 		case B_ARCHIVED_OBJECT:
+			// TODO: what's this???
 			message->AddString("special", "Alex Osadzinski");
 			fStatusViewMessenger.SendMessage(message);
 			break;
@@ -449,6 +463,23 @@ TBarApp::MessageReceived(BMessage *message)
 			fSwitcherMessenger.SendMessage(message);
 			break;
 
+#if __HAIKU__
+		case CMD_SUSPEND_SYSTEM:
+			break;
+
+		case CMD_REBOOT_SYSTEM:
+		case CMD_SHUTDOWN_SYSTEM: {
+			bool reboot = (message->what == CMD_REBOOT_SYSTEM);
+			BRoster roster;
+			BRoster::Private rosterPrivate(roster);
+			status_t error = rosterPrivate.ShutDown(reboot, true, false);
+			if (error != B_OK)
+				fprintf(stderr, "Shutdown failed: %s\n", strerror(error));
+
+			break;
+		}
+#endif // __HAIKU__
+
 		default:
 			BApplication::MessageReceived(message);		
 			break;
@@ -523,7 +554,7 @@ TBarApp::AddTeam(team_id team, uint32 flags, const char *sig, entry_ref *ref)
 			return;
 		if (strcasecmp(barInfo->sig, sig) == 0)
 			multiLaunchTeam = barInfo;
-	} 
+	}
 
 	if (multiLaunchTeam != NULL) {
 		multiLaunchTeam->teams->AddItem((void *)team);
@@ -540,8 +571,8 @@ TBarApp::AddTeam(team_id team, uint32 flags, const char *sig, entry_ref *ref)
 		return;
 	}
 
-	BFile theFile(ref, O_RDONLY);
-	BAppFileInfo appMime(&theFile);
+	BFile file(ref, B_READ_ONLY);
+	BAppFileInfo appMime(&file);
 
 	BarTeamInfo *barInfo = new BarTeamInfo(new BList(), flags, strdup(sig), 
 		new BBitmap(kIconSize, B_COLOR_8_BIT), strdup(ref->name));
