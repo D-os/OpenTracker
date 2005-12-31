@@ -136,15 +136,15 @@ void
 TReplicantTray::AttachedToWindow()
 {
 	BView::AttachedToWindow();
-	
+
 	SetViewColor(tint_color(ui_color(B_MENU_BACKGROUND_COLOR), B_DARKEN_1_TINT));
 	SetDrawingMode(B_OP_COPY);
 	Window()->SetPulseRate(1000000);
-	DealWithClock(fBarView->ShowingClock());	
+	DealWithClock(fBarView->ShowingClock());
 
-#ifdef DB_ADDONS		
-	// load addons and rehydrate archives		
-	InitAddOnSupport();	
+#ifdef DB_ADDONS
+	// load addons and rehydrate archives
+	InitAddOnSupport();
 #endif
 	ResizeToPreferred();
 }
@@ -156,7 +156,7 @@ TReplicantTray::DetachedFromWindow()
 #ifdef DB_ADDONS
 	// clean up add-on support
 	DeleteAddOnSupport();
-#endif	
+#endif
 	BView::DetachedFromWindow();
 }
 
