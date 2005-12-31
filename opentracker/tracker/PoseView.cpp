@@ -772,7 +772,10 @@ BPoseView::StartWatching()
 {
 	// watch volumes
 	TTracker::WatchNode(NULL, B_WATCH_MOUNT, this);
-	TTracker::WatchNode(TargetModel()->NodeRef(), B_WATCH_ATTR, this);
+
+	if (TargetModel() != NULL)
+		TTracker::WatchNode(TargetModel()->NodeRef(), B_WATCH_ATTR, this);
+
 	BMimeType::StartWatching(BMessenger(this));
 }
 
