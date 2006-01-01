@@ -31,13 +31,14 @@ of Be Incorporated in the United States and other countries. Other brand product
 names are registered trademarks or trademarks of their respective holders.
 All rights reserved.
 */
-
 #ifndef BAR_APP_H
 #define BAR_APP_H
+
 
 #include <Application.h>
 #include <List.h>
 #include "BarWindow.h"
+
 
 /* ------------------------------------ */
 // Private app_server defines that I need to use
@@ -76,6 +77,11 @@ const uint32 msg_trackerFirst = 'TkFt';
 const uint32 msg_sortRunningApps = 'SAps';
 const uint32 msg_superExpando = 'SprE';
 const uint32 msg_expandNewTeams = 'ExTm';
+
+// from roster_private.h
+const uint32 CMD_SHUTDOWN_SYSTEM = 301;
+const uint32 CMD_REBOOT_SYSTEM = 302;
+const uint32 CMD_SUSPEND_SYSTEM = 304;
 
 /* --------------------------------------------- */
 

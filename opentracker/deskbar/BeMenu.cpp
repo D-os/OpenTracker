@@ -48,11 +48,6 @@ All rights reserved.
 #include "StatusView.h"
 #include "IconMenuItem.h"
 
-// from roster_private.h
-const uint32 CMD_SHUTDOWN_SYSTEM = 301;
-const uint32 CMD_REBOOT_SYSTEM = 302;
-const uint32 CMD_SUSPEND_SYSTEM = 304;
-
 #define ROSTER_SIG "application/x-vnd.Be-ROST"
 
 #ifdef B_BEOS_VERSION_5
@@ -93,8 +88,8 @@ using namespace BPrivate;
 
 TBeMenu::TBeMenu(TBarView *barview)
 	: BNavMenu("BeMenu", B_REFS_RECEIVED, BMessenger(kTrackerSignature)),
-		fAddState(kStart),
-		fBarView(barview)
+	fAddState(kStart),
+	fBarView(barview)
 {
 }
 
@@ -133,10 +128,8 @@ TBeMenu::DetachedFromWindow()
 		}
 	}
 
-	//
-	//	don't call BNavMenu::DetachedFromWindow
-	//	it sets the TypesList to NULL
-	//	
+	// don't call BNavMenu::DetachedFromWindow
+	// it sets the TypesList to NULL
 	BMenu::DetachedFromWindow();
 }
 
@@ -190,7 +183,7 @@ TBeMenu::AddNextItem()
 		}
 		if (count > 0) {
 			AddSeparatorItem();
-			
+
 			for (int i = 0;i < recentTypes;i++) {			
 				if (!recentItem[i])
 					continue;
@@ -212,10 +205,10 @@ TBeMenu::AddNextItem()
 		fAddState = kAddingBeMenu;
 		return true;
 	}
-	
+
 	if (fAddState == kAddingBeMenu) {
-		//	keep reentering and adding items
-		//	until this returns false
+		// keep reentering and adding items
+		// until this returns false
 		bool done = BNavMenu::AddNextItem();
 		BMenuItem *item = ItemAt(CountItems() - 1);
 		if (item) {
@@ -233,7 +226,7 @@ TBeMenu::AddNextItem()
 			fAddState = kDone;
 		return done;
 	}
-	
+
 	return false;
 }
 
@@ -241,14 +234,18 @@ TBeMenu::AddNextItem()
 bool
 TBeMenu::AddStandardBeMenuItems()
 {
-	bool dragging=false;
+	bool dragging = false;
 	if (fBarView)
 		dragging = fBarView->Dragging();
 
+#ifdef __HAIKU__
+	BMenuItem* item = new BMenuItem("About Haiku", new BMessage(kShowSplash));
+#else
 	BMenuItem* item = new BMenuItem("About BeOS", new BMessage(kShowSplash));
+#endif
 	item->SetEnabled(!dragging);
 	AddItem(item);
-	
+
 #ifdef SHOW_RECENT_FIND_ITEMS
 	item = new BMenuItem(TrackerBuildRecentFindItemsMenu("Find"B_UTF8_ELLIPSIS),
 		new BMessage(kFindButton));
@@ -295,7 +292,7 @@ TBeMenu::AddStandardBeMenuItems()
 	subMenu->AddItem(item);
 
  	subMenu->AddSeparatorItem();
- 	
+ 
  	TReplicantTray *replicantTray = ((TBarApp *)be_app)->BarView()->fReplicantTray;
 
 	item = new BMenuItem("24 Hour Clock", new BMessage(kMsgMilTime));
@@ -334,9 +331,9 @@ TBeMenu::AddStandardBeMenuItems()
 	item->SetMarked(static_cast<TBarApp *>(be_app)->Settings()->expandNewTeams);
 	item->SetEnabled(static_cast<TBarApp *>(be_app)->Settings()->superExpando);
 	subMenu->AddItem(item);
- 
- 	subMenu->SetFont(be_plain_font);
-  	AddItem(subMenu);
+
+	subMenu->SetFont(be_plain_font);
+	AddItem(subMenu);
 
 	if ((modifiers() & (B_LEFT_SHIFT_KEY|B_LEFT_CONTROL_KEY|B_LEFT_COMMAND_KEY))
 		== (B_LEFT_SHIFT_KEY|B_LEFT_CONTROL_KEY|B_LEFT_COMMAND_KEY)) {
@@ -452,7 +449,11 @@ TBeMenu::ResetTargets()
 				case CMD_SUSPEND_SYSTEM:
 				case CMD_SHUTDOWN_SYSTEM:
 					// restart/shutdown
+#if __HAIKU__
+					item->SetTarget(be_app);
+#else
 					item->SetTarget(BMessenger(ROSTER_SIG));
+#endif
 					break;
 			}
 		}
