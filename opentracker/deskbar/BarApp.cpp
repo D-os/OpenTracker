@@ -510,7 +510,9 @@ TBarApp::RefsReceived(BMessage *refs)
 		BMessage refsReceived(B_REFS_RECEIVED);
 		refsReceived.AddRef("refs", &ref);
 
-		TrackerLaunch(&refsReceived, true);
+		BEntry entry(&ref);
+		if (!entry.IsDirectory())
+			TrackerLaunch(&refsReceived, true);
 	}
 }
 
