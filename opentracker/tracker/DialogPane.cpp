@@ -70,22 +70,24 @@ ViewList::AddAll(BView *toParent)
 
 DialogPane::DialogPane(BRect mode1Frame, BRect mode2Frame, int32 initialMode,
 	const char *name, uint32 followFlags, uint32 flags)
-	:	BView(FrameForMode(initialMode, mode1Frame, mode2Frame, mode2Frame),
-			name, followFlags, flags),
-		fMode1Frame(mode1Frame),
-		fMode2Frame(mode2Frame),
-		fMode3Frame(mode2Frame)
+	: BView(FrameForMode(initialMode, mode1Frame, mode2Frame, mode2Frame),
+		name, followFlags, flags),
+	fMode(initialMode),
+	fMode1Frame(mode1Frame),
+	fMode2Frame(mode2Frame),
+	fMode3Frame(mode2Frame)
 {
 }
 
 
 DialogPane::DialogPane(BRect mode1Frame, BRect mode2Frame, BRect mode3Frame,
 	int32 initialMode, const char *name, uint32 followFlags, uint32 flags)
-	:	BView(FrameForMode(initialMode, mode1Frame, mode2Frame, mode3Frame),
-			name, followFlags, flags),
-		fMode1Frame(mode1Frame),
-		fMode2Frame(mode2Frame),
-		fMode3Frame(mode3Frame)
+	: BView(FrameForMode(initialMode, mode1Frame, mode2Frame, mode3Frame),
+		name, followFlags, flags),
+	fMode(initialMode),
+	fMode1Frame(mode1Frame),
+	fMode2Frame(mode2Frame),
+	fMode3Frame(mode3Frame)
 {
 }
 
@@ -101,17 +103,16 @@ void
 DialogPane::SetMode(int32 mode, bool initialSetup)
 {
 	ASSERT(mode < 3 && mode >= 0);
-	
+
 	if (!initialSetup && mode == fMode)
 		return;
-	
+
 	int32 oldMode = fMode;
 	fMode = mode;
-	
+
 	bool followBottom = (ResizingMode() & B_FOLLOW_BOTTOM) != 0;
 	// if we are follow bottom, we will move ourselves, need to place us back
 	float bottomOffset = 0;
-printf("followBottom = %s, Window() = %p\n", followBottom ? "true" : "false", Window());
 	if (followBottom && Window() != NULL)
 		bottomOffset = Window()->Bounds().bottom - Frame().bottom;
 
@@ -122,9 +123,9 @@ printf("followBottom = %s, Window() = %p\n", followBottom ? "true" : "false", Wi
 	ResizeTo(newBounds.Width(), newBounds.Height());
 
 	float delta = 0;
-	if (followBottom)
+	if (followBottom && Window() != NULL)
 		delta = (Window()->Bounds().bottom - Frame().bottom) - bottomOffset;
-	
+
 	if (delta != 0) {
 		MoveBy(0, delta);
 		if (fLatch && (fLatch->ResizingMode() & B_FOLLOW_BOTTOM))
@@ -138,7 +139,7 @@ printf("followBottom = %s, Window() = %p\n", followBottom ? "true" : "false", Wi
 				fMode3Items.RemoveAll(this);
 			if (oldMode > 0)
 				fMode2Items.RemoveAll(this);
-			
+
 			BView *separator = FindView("separatorLine");
 			if (separator) {
 				BRect frame(separator->Frame());
@@ -146,7 +147,7 @@ printf("followBottom = %s, Window() = %p\n", followBottom ? "true" : "false", Wi
 				RemoveChild(separator);
 				Invalidate();
 			}
-				
+
 			AddChild(new SeparatorLine(BPoint(newBounds.left, newBounds.top
 				+ newBounds.Height() / 2), newBounds.Width(), false,
 				"separatorLine"));
@@ -196,7 +197,7 @@ DialogPane::AttachedToWindow()
 		SetLowColor(parent->LowColor());
 	}
 
-	SetMode(initialMode, true);
+	SetMode(fMode, true);
 }
 
 
