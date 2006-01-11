@@ -37,11 +37,12 @@ All rights reserved.
 #include "Thread.h"
 #include "Utilities.h"
 
-void 
-ViewList::RemoveAll(BView *)
-{
-	EachListItemIgnoreResult(this, &BView::RemoveSelf);
-}
+
+const uint32 kValueChanged = 'swch';
+
+const rgb_color kNormalColor = {150, 150, 150, 255};
+const rgb_color kHighlightColor = {100, 100, 0, 255};
+
 
 static void
 AddSelf(BView *self, BView *to)
@@ -49,11 +50,22 @@ AddSelf(BView *self, BView *to)
 	to->AddChild(self);
 }
 
+
+void
+ViewList::RemoveAll(BView *)
+{
+	EachListItemIgnoreResult(this, &BView::RemoveSelf);
+}
+
+
 void
 ViewList::AddAll(BView *toParent)
 {
 	EachListItem(this, &AddSelf, toParent);
 }
+
+
+//	#pragma mark -
 
 
 DialogPane::DialogPane(BRect mode1Frame, BRect mode2Frame, int32 initialMode,
@@ -64,7 +76,6 @@ DialogPane::DialogPane(BRect mode1Frame, BRect mode2Frame, int32 initialMode,
 		fMode2Frame(mode2Frame),
 		fMode3Frame(mode2Frame)
 {
-	SetMode(initialMode, true);
 }
 
 
@@ -76,7 +87,6 @@ DialogPane::DialogPane(BRect mode1Frame, BRect mode2Frame, BRect mode3Frame,
 		fMode2Frame(mode2Frame),
 		fMode3Frame(mode3Frame)
 {
-	SetMode(initialMode, true);
 }
 
 
@@ -87,7 +97,7 @@ DialogPane::~DialogPane()
 }
 
 
-void 
+void
 DialogPane::SetMode(int32 mode, bool initialSetup)
 {
 	ASSERT(mode < 3 && mode >= 0);
@@ -101,7 +111,8 @@ DialogPane::SetMode(int32 mode, bool initialSetup)
 	bool followBottom = (ResizingMode() & B_FOLLOW_BOTTOM) != 0;
 	// if we are follow bottom, we will move ourselves, need to place us back
 	float bottomOffset = 0;
-	if (followBottom)
+printf("followBottom = %s, Window() = %p\n", followBottom ? "true" : "false", Window());
+	if (followBottom && Window() != NULL)
 		bottomOffset = Window()->Bounds().bottom - Frame().bottom;
 
 	BRect newBounds(BoundsForMode(fMode));
@@ -122,60 +133,61 @@ DialogPane::SetMode(int32 mode, bool initialSetup)
 
 	switch (fMode) {
 		case 0:
-			{
-				if (oldMode > 1)
-					fMode3Items.RemoveAll(this);
-				if (oldMode > 0)
-					fMode2Items.RemoveAll(this);
+		{
+			if (oldMode > 1)
+				fMode3Items.RemoveAll(this);
+			if (oldMode > 0)
+				fMode2Items.RemoveAll(this);
+			
+			BView *separator = FindView("separatorLine");
+			if (separator) {
+				BRect frame(separator->Frame());
+				frame.InsetBy(-1, -1);
+				RemoveChild(separator);
+				Invalidate();
+			}
 				
-				BView *separator = FindView("separatorLine");
-				if (separator) {
-					BRect frame(separator->Frame());
-					frame.InsetBy(-1, -1);
-					RemoveChild(separator);
-					Invalidate();
-				}
-					
-				AddChild(new SeparatorLine(BPoint(newBounds.left, newBounds.top
-					+ newBounds.Height() / 2), newBounds.Width(), false,
-					"separatorLine"));
-			}
+			AddChild(new SeparatorLine(BPoint(newBounds.left, newBounds.top
+				+ newBounds.Height() / 2), newBounds.Width(), false,
+				"separatorLine"));
 			break;
+		}
 		case 1:
-			{
-				if (oldMode > 1) 
-					fMode3Items.RemoveAll(this);
-				else 
-					fMode2Items.AddAll(this);
+		{
+			if (oldMode > 1) 
+				fMode3Items.RemoveAll(this);
+			else 
+				fMode2Items.AddAll(this);
 
-				BView *separator = FindView("separatorLine");
-				if (separator) {
-					BRect frame(separator->Frame());
-					frame.InsetBy(-1, -1);
-					RemoveChild(separator);
-					Invalidate();
-				}
+			BView *separator = FindView("separatorLine");
+			if (separator) {
+				BRect frame(separator->Frame());
+				frame.InsetBy(-1, -1);
+				RemoveChild(separator);
+				Invalidate();
 			}
 			break;						
+		}
 		case 2:
-			{
-				fMode3Items.AddAll(this);
-				if (oldMode < 1) 
-					fMode2Items.AddAll(this);
-	
-				BView *separator = FindView("separatorLine");
-				if (separator) {
-					BRect frame(separator->Frame());
-					frame.InsetBy(-1, -1);
-					RemoveChild(separator);
-					Invalidate();
-				}
+		{
+			fMode3Items.AddAll(this);
+			if (oldMode < 1) 
+				fMode2Items.AddAll(this);
+
+			BView *separator = FindView("separatorLine");
+			if (separator) {
+				BRect frame(separator->Frame());
+				frame.InsetBy(-1, -1);
+				RemoveChild(separator);
+				Invalidate();
 			}
 			break;						
+		}
 	}
 }
 
-void 
+
+void
 DialogPane::AttachedToWindow()
 {
 	BView *parent = Parent();
@@ -183,9 +195,12 @@ DialogPane::AttachedToWindow()
 		SetViewColor(parent->ViewColor());
 		SetLowColor(parent->LowColor());
 	}
+
+	SetMode(initialMode, true);
 }
 
-void 
+
+void
 DialogPane::ResizeParentWindow(int32 from, int32 to)
 {
 	if (!Window())
@@ -199,7 +214,8 @@ DialogPane::ResizeParentWindow(int32 from, int32 to)
 		Window()->ResizeBy(by.x, by.y);
 }
 
-void 
+
+void
 DialogPane::AddItem(BView *view, int32 toMode)
 {
 	if (toMode == 1)
@@ -210,7 +226,8 @@ DialogPane::AddItem(BView *view, int32 toMode)
 		AddChild(view);
 }
 
-BRect 
+
+BRect
 DialogPane::FrameForMode(int32 mode)
 {
 	switch (mode) {
@@ -224,7 +241,8 @@ DialogPane::FrameForMode(int32 mode)
 	return fMode1Frame;
 }
 
-BRect 
+
+BRect
 DialogPane::BoundsForMode(int32 mode)
 {
 	BRect result;
@@ -243,7 +261,8 @@ DialogPane::BoundsForMode(int32 mode)
 	return result;
 }
 
-BRect 
+
+BRect
 DialogPane::FrameForMode(int32 mode, BRect mode1Frame, BRect mode2Frame,
 	BRect mode3Frame)
 {
@@ -258,9 +277,8 @@ DialogPane::FrameForMode(int32 mode, BRect mode1Frame, BRect mode2Frame,
 	return mode1Frame;
 }
 
-const uint32 kValueChanged = 'swch';
 
-void 
+void
 DialogPane::SetSwitch(BControl *control)
 {
 	fLatch = control; 
@@ -268,7 +286,8 @@ DialogPane::SetSwitch(BControl *control)
 	control->SetTarget(this);
 }
 
-void 
+
+void
 DialogPane::MessageReceived(BMessage *message)
 {
 	if (message->what == kValueChanged) {
@@ -279,6 +298,10 @@ DialogPane::MessageReceived(BMessage *message)
 		_inherited::MessageReceived(message);
 }
 
+
+//	#pragma mark -
+
+
 PaneSwitch::PaneSwitch(BRect frame, const char *name, bool leftAligned,
 	uint32 resizeMask, uint32 flags)
 	:	BControl(frame, name, "", 0, resizeMask, flags),
@@ -287,7 +310,8 @@ PaneSwitch::PaneSwitch(BRect frame, const char *name, bool leftAligned,
 {
 }
 
-void 
+
+void
 PaneSwitch::DoneTracking(BPoint point)
 {
 	BRect bounds(Bounds());
@@ -301,7 +325,8 @@ PaneSwitch::DoneTracking(BPoint point)
 	}
 }
 
-void 
+
+void
 PaneSwitch::Track(BPoint point, uint32)
 {
 	BRect bounds(Bounds());
@@ -315,21 +340,18 @@ PaneSwitch::Track(BPoint point, uint32)
 }
 
 
-void 
+void
 PaneSwitch::MouseDown(BPoint)
 {
 	if (!IsEnabled())
 		return;
-	
+
 	fPressing = true;
 	MouseDownThread<PaneSwitch>::TrackMouse(this, &PaneSwitch::DoneTracking,
 		&PaneSwitch::Track);
 	Invalidate();
 }
 
-
-const rgb_color kNormalColor = {150, 150, 150, 255};
-const rgb_color kHighlightColor = {100, 100, 0, 255};
 
 void
 PaneSwitch::Draw(BRect)
@@ -340,7 +362,6 @@ PaneSwitch::Draw(BRect)
 		DrawInState(kExpanded);
 	else
 		DrawInState(kCollapsed);
-
 
 	rgb_color markColor = ui_color(B_KEYBOARD_NAVIGATION_COLOR);
 	
@@ -354,7 +375,8 @@ PaneSwitch::Draw(BRect)
 	EndLineArray();
 }
 
-void 
+
+void
 PaneSwitch::DrawInState(PaneSwitch::State state)
 {
 	BRect rect(0, 0, 10, 10);
@@ -362,9 +384,8 @@ PaneSwitch::DrawInState(PaneSwitch::State state)
 	rgb_color outlineColor = {0, 0, 0, 255};
 	rgb_color middleColor = state == kPressed ? kHighlightColor : kNormalColor;
 
-
 	SetDrawingMode(B_OP_COPY);
-	
+
 	switch (state) {
 		case kCollapsed:
 			BeginLineArray(6);
@@ -376,7 +397,7 @@ PaneSwitch::DrawInState(PaneSwitch::State state)
 					BPoint(rect.left + 7, rect.top + 5), outlineColor);
 				AddLine(BPoint(rect.left + 7, rect.top + 5), 
 					BPoint(rect.left + 3, rect.bottom - 1), outlineColor);
-					
+
 				AddLine(BPoint(rect.left + 4, rect.top + 3), 
 					BPoint(rect.left + 4, rect.bottom - 3), middleColor);
 				AddLine(BPoint(rect.left + 5, rect.top + 4), 
@@ -390,7 +411,7 @@ PaneSwitch::DrawInState(PaneSwitch::State state)
 					BPoint(rect.right - 7, rect.top + 5), outlineColor);
 				AddLine(BPoint(rect.right - 7, rect.top + 5), 
 					BPoint(rect.right - 3, rect.bottom - 1), outlineColor);
-					
+
 				AddLine(BPoint(rect.right - 4, rect.top + 3), 
 					BPoint(rect.right - 4, rect.bottom - 3), middleColor);
 				AddLine(BPoint(rect.right - 5, rect.top + 4), 
@@ -410,7 +431,7 @@ PaneSwitch::DrawInState(PaneSwitch::State state)
 					BPoint(rect.left + 7, rect.top + 7), outlineColor);
 				AddLine(BPoint(rect.left + 1, rect.top + 7), 
 					BPoint(rect.left + 7, rect.top + 1), outlineColor);
-					
+
 				AddLine(BPoint(rect.left + 3, rect.top + 6), 
 					BPoint(rect.left + 6, rect.top + 6), middleColor);
 				AddLine(BPoint(rect.left + 4, rect.top + 5), 
@@ -426,7 +447,7 @@ PaneSwitch::DrawInState(PaneSwitch::State state)
 					BPoint(rect.right - 7, rect.top + 7), outlineColor);
 				AddLine(BPoint(rect.right - 1, rect.top + 7), 
 					BPoint(rect.right - 7, rect.top + 1), outlineColor);
-					
+
 				AddLine(BPoint(rect.right - 3, rect.top + 6), 
 					BPoint(rect.right - 6, rect.top + 6), middleColor);
 				AddLine(BPoint(rect.right - 4, rect.top + 5), 
