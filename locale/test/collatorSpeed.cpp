@@ -53,8 +53,8 @@ test(BCollator *collator, const char *name, int8 strength)
 
 	BStopWatch watch(name, true);
 
-	for (int j = 0; j < kIterations; j++) {
-		for (int i = 0; i < kNumStrings; i++) {
+	for (uint32 j = 0; j < kIterations; j++) {
+		for (uint32 i = 0; i < kNumStrings; i++) {
 			BString key;
 			collator->GetSortKey(kStrings[i], &key);
 		}
@@ -62,7 +62,7 @@ test(BCollator *collator, const char *name, int8 strength)
 
 	watch.Suspend();
 	double secs = watch.ElapsedTime() / 1000000.0;
-	printf("\t%s%9Ld usecs, %6.3g secs,%9u keys/s\n",
+	printf("\t%s%9Ld usecs, %6.3g secs,%9lu keys/s\n",
 		name, watch.ElapsedTime(), secs, uint32(kIterations * kNumStrings / secs));
 }
 

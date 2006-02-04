@@ -73,7 +73,7 @@ printArray(const char *label, const char **strings, size_t size)
 		if (i > 0) {
 			int compare = gCollator->Compare(strings[i], strings[i - 1]);
 			if (compare > 0)
-				printf("\n% 2u)", bucket++);
+				printf("\n%2lu)", bucket++);
 			else if (compare < 0) {
 				printf("\t*** broken sort order!\n");
 				exit(-1);
@@ -91,7 +91,7 @@ printArray(const char *label, const char **strings, size_t size)
 					printf(" (*** \"%s\" wrong keys \"%s\" ***) ", a.String(), b.String());
 			}
 		} else
-			printf("% 2u)", bucket++);
+			printf("%2lu)", bucket++);
 
 		printf("\t%s", strings[i]);
 		
@@ -130,7 +130,7 @@ main(int argc, char **argv)
 		if (argv[0][0] == '-' && argv[0][1] != '-') {
 			char *arg = argv[0] + 1;
 			char c;
-			while (c = *arg++) {
+			while ((c = *arg++)) {
 				if (c == 'i')
 					ignorePunctuation = true;
 				else if (c == 'c')
