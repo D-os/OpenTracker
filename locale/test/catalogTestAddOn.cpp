@@ -62,7 +62,7 @@ CatalogTestAddOn::Run() {
 	s = cat1.GetString("string", TR_CONTEXT, "Deutsches Fachbuch");
 	assert(s == "Leine_A");
 
-	// now we create a new (base) catalog and embed this one into the app-file:
+	// now we create a new (base) catalog and embed this one into the add-on-file:
 	BPrivate::EditableCatalog cat2("Default", catSig, "English");
 	assert(cat2.InitCheck() == B_OK);
 	// the following string is unique to the embedded catalog:
@@ -136,9 +136,16 @@ CatalogTestAddOn::Check() {
 	s = TR("string");
 	assert(s == "Schnur_A");
 
-	// check access to app-catalog from insided add-on:
-//	s = be_app_catalog->GetString("string", TR_CONTEXT);
-//	assert(s == "Schnur");
+	// check access to app-catalog from inside add-on:
+	BCatalog appCat;
+	res = be_locale->GetAppCatalog(&appCat);
+	assert(res == B_OK);
+	s = be_app_catalog->GetString("string", "CatalogTest");
+	assert(s == "Schnur");
+	s = be_app_catalog->GetString("string", "CatalogTest", "Deutsches Fachbuch");
+	assert(s == "Leine");
+	s = be_app_catalog->GetString("string", "programming", "Deutsches Fachbuch");
+	assert(s == "Textpuffer");
 
 	printf("ok.\n");
 }
