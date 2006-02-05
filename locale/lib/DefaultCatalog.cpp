@@ -100,10 +100,8 @@ CatKey::CatKey()
 bool 
 CatKey::operator== (const CatKey& right) const
 {
-	// This operator== checks for equivalence (not equality or identity)!
-	//
-	// Two keys are equivalent if their hashval and key (string,context,comment) 
-	// are equivalent:
+	// Two keys are equal if their hashval and key (string,context,comment) 
+	// are equal:
 	return fHashVal == right.fHashVal
 		&& fKey == right.fKey;
 }
@@ -112,23 +110,28 @@ CatKey::operator== (const CatKey& right) const
 status_t
 CatKey::GetStringParts(BString* str, BString* ctx, BString* cmt) const
 {
-	if (!str || !ctx || !cmt)
-		return B_BAD_VALUE;
-
 	int32 pos1 = fKey.FindFirst(kSeparator);
 	if (pos1 < B_OK) {
-		str->SetTo(fKey);
-		ctx->Truncate(0);
-		cmt->Truncate(0);
+		if (str)
+			str->SetTo(fKey);
+		if (ctx)
+			ctx->Truncate(0);
+		if (cmt)
+			cmt->Truncate(0);
 	} else {
-		fKey.CopyInto(*str, 0, pos1);
+		if (str)
+			fKey.CopyInto(*str, 0, pos1);
 		int32 pos2 = fKey.FindFirst(kSeparator, pos1+1);
 		if (pos2 < B_OK) {
-			ctx->SetTo(fKey, pos1+1);
-			cmt->Truncate(0);
+			if (ctx)
+				ctx->SetTo(fKey, pos1+1);
+			if (cmt)
+				cmt->Truncate(0);
 		} else {
-			fKey.CopyInto(*ctx, pos1+1, pos2-pos1-1);
-			cmt->SetTo(fKey.String()+pos2+1);
+			if (ctx)
+				fKey.CopyInto(*ctx, pos1+1, pos2-pos1-1);
+			if (cmt)
+				cmt->SetTo(fKey.String()+pos2+1);
 		}
 	}
 
@@ -218,7 +221,7 @@ DefaultCatalog::DefaultCatalog(const char *signature, const char *language,
 
 /*
  * constructs a DefaultCatalog and reads it from the resources of the
- * given entry-ref (which usually is an app- or add-on-file.
+ * given entry-ref (which usually is an app- or add-on-file).
  * InitCheck() will be B_OK if catalog could be loaded successfully, it will
  * give an appropriate error-code otherwise.
  */
