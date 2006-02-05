@@ -18,10 +18,11 @@
 BCatalog* be_catalog = NULL;
 	// catalog used by translation macros
 BCatalog* be_app_catalog = NULL;
-	// app-catalog (useful for accessing app's catalog from inside and add-on,
+	// app-catalog (useful for accessing app's catalog from inside an add-on,
 	// since in an add-on, be_catalog will hold the add-on's catalog.
 
 
+//#pragma mark - BCatalog
 BCatalog::BCatalog()
 	:
 	fCatalog(NULL)
@@ -148,9 +149,7 @@ BCatalog::GetAppCatalog(BCatalog* catalog)
 }
 
 
-//	#pragma mark -
-
-
+//#pragma mark - BCatalogAddOn
 BCatalogAddOn::BCatalogAddOn(const char *signature, const char *language,
 	int32 fingerprint)
 	:
@@ -297,8 +296,8 @@ BCatalogAddOn::CountItems() const
 }
 
 
+//#pragma mark - EditableCatalog
 namespace BPrivate {
-	
 EditableCatalog::EditableCatalog(const char *type, const char *signature, 
 	const char *language)
 {

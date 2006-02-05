@@ -56,7 +56,6 @@ extern _IMPEXP_LOCALE BCatalog* be_app_catalog;
 
 
 #ifndef B_AVOID_TRANSLATION_MACROS
-#include <typeinfo>
 // macros for easy catalog-access, define B_AVOID_TRANSLATION_MACROS if
 // you don't want these:
 

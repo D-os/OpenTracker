@@ -5,6 +5,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <typeinfo>
 #include <unistd.h>
 
 #include <Application.h>
