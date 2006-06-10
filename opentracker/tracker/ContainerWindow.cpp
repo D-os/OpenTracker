@@ -110,6 +110,7 @@ class DraggableContainerIcon : public BView {
 		virtual void MouseDown(BPoint where);
 		virtual void MouseUp(BPoint where);
 		virtual void MouseMoved(BPoint point, uint32 /*transit*/, const BMessage *message);
+		virtual void FrameMoved(BPoint newLocation);
 		virtual void Draw(BRect updateRect);
 
 	private:
@@ -320,7 +321,7 @@ AddMimeTypeString(BObjectList<BString> &list, Model *model)
 
 DraggableContainerIcon::DraggableContainerIcon(BRect rect, const char *name,
 	uint32 resizeMask)
-	: BView(rect, name, resizeMask, B_WILL_DRAW),
+	: BView(rect, name, resizeMask, B_WILL_DRAW | B_FRAME_EVENTS),
 	fDragButton(0),
 	fDragStarted(false)
 {
@@ -330,8 +331,9 @@ DraggableContainerIcon::DraggableContainerIcon(BRect rect, const char *name,
 void
 DraggableContainerIcon::AttachedToWindow()
 {
-	//SetViewColor(B_TRANSPARENT_COLOR);
 	SetViewColor(ui_color(B_MENU_BACKGROUND_COLOR));
+	FrameMoved(BPoint(0, 0));
+		// this decides whether to hide the icon or not
 }
 
 
@@ -376,7 +378,8 @@ DraggableContainerIcon::MouseUp(BPoint /*point*/)
 
 
 void
-DraggableContainerIcon::MouseMoved(BPoint point, uint32 /*transit*/, const BMessage */*message*/)
+DraggableContainerIcon::MouseMoved(BPoint point, uint32 /*transit*/,
+	const BMessage */*message*/)
 {
 	if (fDragButton == 0 || fDragStarted
 		|| (abs((int32)(point.x - fClickPoint.x)) <= kDragSlop
@@ -454,6 +457,39 @@ DraggableContainerIcon::MouseMoved(BPoint point, uint32 /*transit*/, const BMess
 
 	DragMessage(&message, dragBitmap, B_OP_ALPHA,
 		BPoint(fClickPoint.x + hIconOffset, fClickPoint.y), this);
+}
+
+
+void
+DraggableContainerIcon::FrameMoved(BPoint /*newLocation*/)
+{
+	BMenuBar* bar = dynamic_cast<BMenuBar *>(Parent());
+	if (bar == NULL)
+		return;
+
+	// TODO: ugly hack following:
+	// This is a trick to get the actual width of all menu items
+	// (BMenuBar may not have set the item coordinates yet...)
+	float width, height;
+	int32 resizingMode = bar->ResizingMode();
+	bar->SetResizingMode(B_FOLLOW_NONE);
+	bar->GetPreferredSize(&width, &height);
+	bar->SetResizingMode(resizingMode);
+
+/*
+	BMenuItem* item = bar->ItemAt(bar->CountItems() - 1);
+	if (item == NULL)
+		return;
+*/
+	// BeOS shifts the coordinates for hidden views, so we cannot
+	// use them to decide if we should be visible or not...
+
+	float gap = bar->Frame().Width() - 2 - width; //item->Frame().right;
+
+	if (gap <= Bounds().Width() && !IsHidden())
+		Hide();
+	else if (gap > Bounds().Width() && IsHidden())
+		Show();
 }
 
 
