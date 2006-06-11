@@ -2264,12 +2264,11 @@ BContainerWindow::SetupMoveCopyMenus(const entry_ref *item_ref, BMenu *parent)
 	uint32 modifierKeys = modifiers();
 
 	// re-parent items to this menu since they're shared
-	int32 index = parent->CountItems() - 7;
-	if (index > 0 && dynamic_cast<BSeparatorItem *>(parent->ItemAt(index - 1)) == NULL) {
-		// The items below the items to be added vary in number, so
-		// this little "hack" makes sure they are always in place
-		index++;
-	} else
+ 	int32 index;
+ 	BMenuItem *trash = parent->FindItem(kMoveToTrash);
+ 	if (trash)
+ 		index = parent->IndexOf(trash) + 2;
+ 	else
 		index = 0;
 
 	if (fMoveToItem->Menu() != parent) {
@@ -2397,25 +2396,25 @@ BContainerWindow::ShowContextMenu(BPoint loc, const entry_ref *ref, BView *)
 
 			BEntry entry;
 			model.GetEntry(&entry);
+
+			// only show for directories (directory, volume, root)
 			//
-			//	only show for directories (directory, volume, root)
+			// don't show a popup for the trash or printers
+			// trash is handled in DeskWindow
 			//
-			//	don't show a popup for the trash or printers
-			//	trash is handled in DeskWindow
-			//
-			//	since this menu is opened asynchronously
-			//	we need to make sure we don't open it more
-			//	than once, the IsShowing flag is set in
-			//	SlowContextPopup::AttachedToWindow and
-			//	reset in DetachedFromWindow
-			//	see the notes in SlowContextPopup::AttachedToWindow
-			//
+			// since this menu is opened asynchronously
+			// we need to make sure we don't open it more
+			// than once, the IsShowing flag is set in
+			// SlowContextPopup::AttachedToWindow and
+			// reset in DetachedFromWindow
+			// see the notes in SlowContextPopup::AttachedToWindow
+
 			if (!FSIsPrintersDir(&entry) && !fDragContextMenu->IsShowing()) {
 				// printf("ShowContextMenu - target is %s %i\n", ref->name, IsShowing(ref));
 				fDragContextMenu->ClearMenu();
-				//
-				//	in case the ref is a symlink, resolve it
-				//	only pop open for directories
+
+				// in case the ref is a symlink, resolve it
+				// only pop open for directories
 				BEntry resolvedEntry(ref, true);
 				if (!resolvedEntry.IsDirectory())
 					return;
@@ -2423,7 +2422,7 @@ BContainerWindow::ShowContextMenu(BPoint loc, const entry_ref *ref, BView *)
 				entry_ref resolvedRef;
 				resolvedEntry.GetRef(&resolvedRef);
 
-				//	use the resolved ref for the menu
+				// use the resolved ref for the menu
 				fDragContextMenu->SetNavDir(&resolvedRef);
 				fDragContextMenu->SetTypesList(fCachedTypesList);
 				fDragContextMenu->SetTarget(BMessenger(this));
@@ -2434,8 +2433,8 @@ BContainerWindow::ShowContextMenu(BPoint loc, const entry_ref *ref, BView *)
 						&BPoseView::MenuTrackingHook, &tmpTarget, fDragMessage);
 				}
 
-				//	this is now asynchronous so that we don't
-				//	deadlock in Window::Quit,
+				// this is now asynchronous so that we don't
+				// deadlock in Window::Quit,
 				fDragContextMenu->Go(global, true, false, true);
 			}
 			return;
@@ -2524,10 +2523,12 @@ BContainerWindow::AddFileContextMenus(BMenu *menu)
 		menu->AddItem(new BMenuItem("Restore", new BMessage(kRestoreFromTrash), 0));
 	}
 
+#ifdef CUT_COPY_PASTE_IN_CONTEXT_MENU
 	menu->AddSeparatorItem();
 	BMenuItem *cutItem, *copyItem;
 	menu->AddItem(cutItem = new BMenuItem("Cut", new BMessage(B_CUT), 'X'));
 	menu->AddItem(copyItem = new BMenuItem("Copy", new BMessage(B_COPY), 'C'));
+#endif
 
 	menu->AddSeparatorItem();
 	menu->AddItem(new BMenuItem("Identify", new BMessage(kIdentifyEntry)));
@@ -2537,8 +2538,10 @@ BContainerWindow::AddFileContextMenus(BMenu *menu)
 
 	// set targets as needed
 	menu->SetTargetForItems(PoseView());
+#ifdef CUT_COPY_PASTE_IN_CONTEXT_MENU
 	cutItem->SetTarget(this);
 	copyItem->SetTarget(this);
+#endif
 }
 
 
@@ -2587,16 +2590,11 @@ BContainerWindow::AddWindowContextMenus(BMenu *menu)
 	if (needSeparator)
 		menu->AddSeparatorItem();
 
-	menu->AddItem(new BMenuItem("Icon View", new BMessage(kIconMode), '1'));
-	menu->AddItem(new BMenuItem("Mini Icon View", new BMessage(kMiniIconMode), '2'));
-	menu->AddItem(new BMenuItem("List View", new BMessage(kListMode), '3'));
-	menu->AddSeparatorItem();
+#if 0
 	BMenuItem *pasteItem = new BMenuItem("Paste", new BMessage(B_PASTE), 'V');
 	menu->AddItem(pasteItem);
+#endif
 	menu->AddSeparatorItem();
-	BMenuItem *resizeItem = new BMenuItem("Resize to Fit",
-		new BMessage(kResizeToFit), 'Y');
-	menu->AddItem(resizeItem);
 	menu->AddItem(new BMenuItem("Clean Up", new BMessage(kCleanup), 'K'));
 	menu->AddItem(new BMenuItem("Select"B_UTF8_ELLIPSIS,
 		new BMessage(kShowSelectionWindow), 'A', B_SHIFT_KEY));
@@ -2605,9 +2603,6 @@ BContainerWindow::AddWindowContextMenus(BMenu *menu)
 		menu->AddItem(new BMenuItem("Open Parent", new BMessage(kOpenParentDir),
 			B_UP_ARROW));
 
-	BMenuItem *closeItem = new BMenuItem("Close", new BMessage(B_QUIT_REQUESTED),
-		'W');
-	menu->AddItem(closeItem);
 	menu->AddSeparatorItem();
 	BMenu *addOnMenuItem = new BMenu(kAddOnsMenuName);
 	addOnMenuItem->SetFont(be_plain_font);
@@ -2621,9 +2616,9 @@ BContainerWindow::AddWindowContextMenus(BMenu *menu)
 
 	// target items as needed
 	menu->SetTargetForItems(PoseView());
-	closeItem->SetTarget(this);
-	resizeItem->SetTarget(this);
+#ifdef CUT_COPY_PASTE_IN_CONTEXT_MENU
 	pasteItem->SetTarget(this);
+#endif
 }
 
 
