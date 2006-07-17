@@ -471,7 +471,7 @@ DraggableContainerIcon::FrameMoved(BPoint /*newLocation*/)
 	// This is a trick to get the actual width of all menu items
 	// (BMenuBar may not have set the item coordinates yet...)
 	float width, height;
-	int32 resizingMode = bar->ResizingMode();
+	uint32 resizingMode = bar->ResizingMode();
 	bar->SetResizingMode(B_FOLLOW_NONE);
 	bar->GetPreferredSize(&width, &height);
 	bar->SetResizingMode(resizingMode);
