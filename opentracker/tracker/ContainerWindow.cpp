@@ -1502,6 +1502,16 @@ BContainerWindow::MessageReceived(BMessage *message)
 					if (settings.ShowNavigator() || settings.ShowFullPathInTitleBar())
 						SetPathWatchingEnabled(true);
 
+					// Update draggable folder icon
+					BView *view = FindView("MenuBar");
+					if (view != NULL) {
+						view = view->FindView("ThisContainer");
+						if (view != NULL) {
+							IconCache::sIconCache->IconChanged(TargetModel());
+							view->Invalidate();
+						}
+					}
+
 					// Update window title
 					UpdateTitle();
 				}
