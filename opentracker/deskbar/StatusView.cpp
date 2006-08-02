@@ -296,8 +296,7 @@ TReplicantTray::AdjustPlacement()
 {
 	// called when an add-on has been added or removed
 	// need to resize the parent of this accordingly
-	//		
-	// call to Parent will call ResizeToPreferred
+
 	BRect bounds = Bounds();
 	float width, height;
 	GetPreferredSize(&width, &height);
@@ -344,7 +343,7 @@ TReplicantTray::MessageReceived(BMessage *message)
 			AdjustPlacement();
 			break;
 
-		case 'trfm':
+		case 'Trfm':
 			// time string reformat -> realign
 			DealWithClock(fBarView->ShowingClock());
 			RealignReplicants();
@@ -1070,12 +1069,12 @@ TReplicantTray::AddIcon(BMessage *icon, int32 *id, const entry_ref *addOn)
 	float oldHeight = Bounds().Height();
 	float width, height;
 	GetPreferredSize(&width, &height);
-	if (oldWidth != width || oldHeight != height) 
+	if (oldWidth != width || oldHeight != height)
 		AdjustPlacement();
 
 	int32 count = fShelf->CountReplicants();
 	BView *view;
-	fShelf->ReplicantAt(count-1, &view, (uint32 *)id, NULL);
+	fShelf->ReplicantAt(count - 1, &view, (uint32 *)id, NULL);
 
 	// add the item to the add-on list
 
