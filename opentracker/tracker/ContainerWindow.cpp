@@ -1288,47 +1288,31 @@ BContainerWindow::ResizeToFit()
 
 	BRect frame(Frame());
 
+	float widthDiff = frame.Width() - PoseView()->Frame().Width();
+	float heightDiff = frame.Height() - PoseView()->Frame().Height();
+
 	// move frame left top on screen
 	BPoint leftTop(frame.LeftTop());
 	leftTop.ConstrainTo(screenFrame);
 	frame.OffsetTo(leftTop);
 
 	// resize to extent size
-	float menuHeight;
-	if (KeyMenuBar())
-		menuHeight = KeyMenuBar()->Bounds().Height();
-	else
-		menuHeight = 0;
-
 	BRect extent(PoseView()->Extent());
-	frame.right = frame.left + extent.Width() + (float)B_V_SCROLL_BAR_WIDTH + 1.0f;
-	frame.bottom = frame.top + extent.Height() + (float)B_H_SCROLL_BAR_HEIGHT + 1.0f
-		+ menuHeight;
+	frame.right = frame.left + extent.Width() + widthDiff;
+	frame.bottom = frame.top + extent.Height() + heightDiff;
 
-	if (PoseView()->ViewMode() == kListMode)
-		frame.bottom += kTitleViewHeight + 1;  // account for list titles
-	
-	TrackerSettings settings;
-	if (settings.SingleWindowBrowse()
-		&& settings.ShowNavigator()
-		&& Navigator())
-		frame.bottom += fNavigator->Bounds().bottom + 1;
-
-	// ToDo:
-	// clean this up, move each special case to respective class
-
-	if (!TargetModel())
-		frame.bottom += 60;						// Open with window
-	else if (TargetModel()->IsQuery())
-		frame.bottom += 15;						// account for query string
-	
 	// make sure entire window fits on screen
 	frame = frame & screenFrame;
 
 	ResizeTo(frame.Width(), frame.Height());
 	MoveTo(frame.LeftTop());
 	PoseView()->DisableScrollBars();
-	PoseView()->ScrollTo(extent.LeftTop());
+
+	if (PoseView()->Bounds().bottom > extent.bottom)
+		PoseView()->ScrollBy(0, extent.bottom - PoseView()->Bounds().bottom);
+	if (PoseView()->Bounds().right > extent.right)
+		PoseView()->ScrollBy(extent.right - PoseView()->Bounds().right, 0);
+
 	PoseView()->UpdateScrollRange();
 	PoseView()->EnableScrollBars();
 }
