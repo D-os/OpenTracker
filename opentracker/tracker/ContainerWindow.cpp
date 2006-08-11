@@ -1068,11 +1068,23 @@ BContainerWindow::UpdateBackgroundImage()
 void
 BContainerWindow::FrameResized(float, float)
 {
-	if (PoseView()) {
+	if (PoseView() && dynamic_cast<BDeskWindow *>(this) == NULL) {
+		BRect extent = PoseView()->Extent();
+		if (extent.bottom < PoseView()->Bounds().bottom
+			&& fPreviousBounds.Height() < Bounds().Height()) {
+			PoseView()->ScrollBy(0, max_c(extent.bottom - PoseView()->Bounds().bottom,
+				fPreviousBounds.Height() - Bounds().Height()));
+		}
+		if (extent.right < PoseView()->Bounds().right
+			&& fPreviousBounds.Width() < Bounds().Width()) {
+			PoseView()->ScrollBy(max_c(extent.right - PoseView()->Bounds().right,
+				fPreviousBounds.Width() - Bounds().Width()), 0);
+		}
 		PoseView()->UpdateScrollRange();
 		PoseView()->ResetPosePlacementHint();
 	}
-	
+
+	fPreviousBounds = Bounds();
 	fStateNeedsSaving = true;
 }
 
@@ -3343,6 +3355,8 @@ BContainerWindow::RestoreWindowState(AttributeStreamNode *node)
 		ResizeTo(frame.Width(), frame.Height());
 	} else
 		sNewWindRect.OffsetBy(kWindowStaggerBy, kWindowStaggerBy);
+
+	fPreviousBounds = Bounds();
 
 	uint32 workspace;
 	if ((fContainerWindowFlags & kRestoreWorkspace)
