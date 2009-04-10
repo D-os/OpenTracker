@@ -52,50 +52,66 @@ SetupCatalogBasics()
 	BMimeType mt;
 	status_t res = mt.SetTo(DefaultCatalog::kCatMimeType);
 	if (res == B_OK && !mt.IsInstalled()) {
-		// info about the attributes of a catalog...
-		BMessage attrMsg;
-		// ...the catalog signature...
-		attrMsg.AddString("attr:public_name", "Signature");
-		attrMsg.AddString("attr:name", BLocaleRoster::kCatSigAttr);
-		attrMsg.AddInt32("attr:type", B_STRING_TYPE);
-		attrMsg.AddBool("attr:editable", false);
-		attrMsg.AddBool("attr:viewable", true);
-		attrMsg.AddBool("attr:extra", false);
-		attrMsg.AddInt32("attr:alignment", 0);
-		attrMsg.AddInt32("attr:width", 140);
-		// ...the catalog language...
-		attrMsg.AddString("attr:public_name", "Language");
-		attrMsg.AddString("attr:name", BLocaleRoster::kCatLangAttr);
-		attrMsg.AddInt32("attr:type", B_STRING_TYPE);
-		attrMsg.AddBool("attr:editable", false);
-		attrMsg.AddBool("attr:viewable", true);
-		attrMsg.AddBool("attr:extra", false);
-		attrMsg.AddInt32("attr:alignment", 0);
-		attrMsg.AddInt32("attr:width", 60);
-		// ...and the catalog fingerprint...
-		attrMsg.AddString("attr:public_name", "Fingerprint");
-		attrMsg.AddString("attr:name", BLocaleRoster::kCatFingerprintAttr);
-		attrMsg.AddInt32("attr:type", B_INT32_TYPE);
-		attrMsg.AddBool("attr:editable", false);
-		attrMsg.AddBool("attr:viewable", true);
-		attrMsg.AddBool("attr:extra", false);
-		attrMsg.AddInt32("attr:alignment", 0);
-		attrMsg.AddInt32("attr:width", 70);
-		res = mt.SetAttrInfo(&attrMsg);
+		// install supertype, if it isn't available
+		BMimeType supertype;
+		res = mt.GetSupertype(&supertype);
+		if (res == B_OK && !supertype.IsInstalled()) {
+			res = supertype.Install();
+		}
+		
+		if (res == B_OK) {
+			// info about the attributes of a catalog...
+			BMessage attrMsg;
+			// ...the catalog signature...
+			attrMsg.AddString("attr:public_name", "Signature");
+			attrMsg.AddString("attr:name", BLocaleRoster::kCatSigAttr);
+			attrMsg.AddInt32("attr:type", B_STRING_TYPE);
+			attrMsg.AddBool("attr:editable", false);
+			attrMsg.AddBool("attr:viewable", true);
+			attrMsg.AddBool("attr:extra", false);
+			attrMsg.AddInt32("attr:alignment", 0);
+			attrMsg.AddInt32("attr:width", 140);
+			// ...the catalog language...
+			attrMsg.AddString("attr:public_name", "Language");
+			attrMsg.AddString("attr:name", BLocaleRoster::kCatLangAttr);
+			attrMsg.AddInt32("attr:type", B_STRING_TYPE);
+			attrMsg.AddBool("attr:editable", false);
+			attrMsg.AddBool("attr:viewable", true);
+			attrMsg.AddBool("attr:extra", false);
+			attrMsg.AddInt32("attr:alignment", 0);
+			attrMsg.AddInt32("attr:width", 60);
+			// ...and the catalog fingerprint...
+			attrMsg.AddString("attr:public_name", "Fingerprint");
+			attrMsg.AddString("attr:name", BLocaleRoster::kCatFingerprintAttr);
+			attrMsg.AddInt32("attr:type", B_INT32_TYPE);
+			attrMsg.AddBool("attr:editable", false);
+			attrMsg.AddBool("attr:viewable", true);
+			attrMsg.AddBool("attr:extra", false);
+			attrMsg.AddInt32("attr:alignment", 0);
+			attrMsg.AddInt32("attr:width", 70);
+			res = mt.SetAttrInfo(&attrMsg);
+		}
 
-		// file extensions (.catalog):
-		BMessage extMsg;
-		extMsg.AddString("extensions", "catalog");
-		res = mt.SetFileExtensions(&extMsg);
+		if (res == B_OK) {
+			// file extensions (.catalog):
+			BMessage extMsg;
+			extMsg.AddString("extensions", "catalog");
+			res = mt.SetFileExtensions(&extMsg);
+		}
 
-		// short and long descriptions:
-		mt.SetShortDescription("Translation Catalog");
-		res = mt.SetLongDescription("Catalog with translated application resources");
+		if (res == B_OK) {
+			// short and long descriptions:
+			mt.SetShortDescription("Translation Catalog");
+			res = mt.SetLongDescription("Catalog with translated application resources");
+		}
 
-		// preferred app is catalog manager:
-		res = mt.SetPreferredApp(BLocaleRoster::kCatManagerMimeType, B_OPEN);
-
-		res = mt.Install();
+		if (res == B_OK) {
+			// preferred app is catalog manager:
+			res = mt.SetPreferredApp(BLocaleRoster::kCatManagerMimeType, B_OPEN);
+		}
+		
+		if (res == B_OK)
+			res = mt.Install();
 	}
 	if (res != B_OK) {
 		log_team(LOG_ERR, "Could not install mimetype %s (%s)",
@@ -103,6 +119,18 @@ SetupCatalogBasics()
 	}
 }
 
+
+#if defined(__HAIKU__)
+
+extern "C"
+_IMPEXP_LOCALE 
+void
+initialize_after()
+{
+	SetupCatalogBasics();
+}
+
+#else
 
 // [zooey]:
 // 	hack suggested by Ingo Weinhold to make the be_roster work
@@ -124,3 +152,5 @@ initialize_after()
 
 	SetupCatalogBasics();
 }
+
+#endif
