@@ -5,6 +5,7 @@
 #include <Entry.h>
 #include <Locale.h>
 #include <LocaleRoster.h>
+#include <Node.h>
 #include <TypeConstants.h>
 
 /*
@@ -45,9 +46,7 @@ get_add_on_ref(entry_ref *ref)
 		char *dataStart = static_cast<char*>(imageInfo.data);
 		if (imageInfo.type == B_ADD_ON_IMAGE && dataStart <= dataPtr 
 			&& dataStart+imageInfo.data_size > dataPtr) {
-			ref->device = imageInfo.device;
-			ref->directory = imageInfo.node;
-			ref->set_name(imageInfo.name);
+			get_ref_for_path(imageInfo.name, ref);
 			break;
 		}
 	}
