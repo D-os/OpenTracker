@@ -12,6 +12,7 @@
 #include <Catalog.h>
 #include <Locale.h>
 #include <LocaleRoster.h>
+#include <Node.h>
 #include <Roster.h>
 
 

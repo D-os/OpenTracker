@@ -14,6 +14,7 @@
 #include <FindDirectory.h>
 #include <fs_attr.h>
 #include <Message.h>
+#include <Mime.h>
 #include <Path.h>
 #include <Resources.h>
 #include <Roster.h>
@@ -32,7 +33,7 @@
 extern "C" uint32 adler32(uint32 adler, const uint8 *buf, uint32 len);
 	// definition lives in adler32.c
 
-#if B_BEOS_VERSION <= B_BEOS_VERSION_5
+#if B_BEOS_VERSION <= B_BEOS_VERSION_5 && !defined(__HAIKU__)
 // B_BAD_DATA was introduced with DANO, so we define it for R5:
 #	define B_BAD_DATA -2147483632L
 #endif

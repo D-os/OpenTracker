@@ -10,7 +10,7 @@
 #include <Path.h>
 #include <FindDirectory.h>
 
-#if B_BEOS_VERSION <= B_BEOS_VERSION_5
+#if B_BEOS_VERSION <= B_BEOS_VERSION_5 && !defined(__HAIKU__)
 // B_BAD_DATA was introduced with DANO, so we define it for R5:
 #	define B_BAD_DATA -2147483632L
 #endif

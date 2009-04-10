@@ -10,6 +10,7 @@
 #include <LocaleBuild.h>
 
 #include <Catalog.h>
+#include <DataIO.h>
 #include <String.h>
 
 class BFile;
